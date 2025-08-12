@@ -1,0 +1,265 @@
+const express = require('express');
+const { body, validationResult } = require('express-validator');
+const { query, get, run } = require('../config/database');
+const router = express.Router();
+
+// 网络分析
+router.post('/network', [
+  body('proteins').isArray().withMessage('蛋白质列表必须是数组'),
+  body('species').optional().isString().withMessage('物种必须是字符串'),
+  body('confidence').optional().isFloat({ min: 0, max: 1 }).withMessage('置信度必须在0-1之间')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        error: '参数验证失败',
+        details: errors.array()
+      });
+    }
+
+    const { proteins, species = 'homo sapiens', confidence = 0.4 } = req.body;
+
+    if (!proteins || proteins.length === 0) {
+      return res.status(400).json({
+        error: '蛋白质列表不能为空'
+      });
+    }
+
+    // 模拟STRING API调用
+    const mockNetworkData = {
+      nodes: proteins.map((protein, index) => ({
+        id: protein,
+        name: protein,
+        type: 'protein',
+        score: Math.random() * 0.6 + 0.4
+      })),
+      edges: [],
+      nodeCount: proteins.length,
+      edgeCount: 0,
+      species,
+      confidence
+    };
+
+    // 生成模拟的边连接
+    for (let i = 0; i < proteins.length; i++) {
+      for (let j = i + 1; j < proteins.length; j++) {
+        if (Math.random() > 0.7) { // 30%的概率生成连接
+          const score = Math.random() * 0.6 + 0.4;
+          mockNetworkData.edges.push({
+            source: proteins[i],
+            target: proteins[j],
+            score: score,
+            type: 'interaction'
+          });
+          mockNetworkData.edgeCount++;
+        }
+      }
+    }
+
+    // 记录分析日志
+    try {
+      await run(`
+        INSERT INTO analysis_logs (analysis_type, input_data, parameters, result_summary, created_at)
+        VALUES (?, ?, ?, ?, datetime('now'))
+      `, [
+        'network_analysis',
+        JSON.stringify({ proteins: proteins }),
+        JSON.stringify({ species, confidence }),
+        JSON.stringify({ nodeCount: mockNetworkData.nodeCount, edgeCount: mockNetworkData.edgeCount })
+      ]);
+    } catch (logError) {
+      console.error('记录分析日志失败:', logError);
+    }
+
+    res.json({
+      success: true,
+      data: mockNetworkData
+    });
+
+  } catch (error) {
+    console.error('网络分析失败:', error);
+    res.status(500).json({
+      error: '服务器内部错误',
+      message: '网络分析失败'
+    });
+  }
+});
+
+// 富集分析
+router.post('/enrichment', [
+  body('genes').isArray().withMessage('基因列表必须是数组'),
+  body('analysisType').optional().isIn(['GO', 'KEGG', 'Reactome']).withMessage('分析类型无效'),
+  body('pValue').optional().isFloat({ min: 0, max: 1 }).withMessage('P值必须在0-1之间')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        error: '参数验证失败',
+        details: errors.array()
+      });
+    }
+
+    const { genes, analysisType = 'GO', pValue = 0.05 } = req.body;
+
+    if (!genes || genes.length === 0) {
+      return res.status(400).json({
+        error: '基因列表不能为空'
+      });
+    }
+
+    // 模拟富集分析结果
+    const mockEnrichmentData = {
+      analysisType,
+      pValue,
+      results: [
+        {
+          id: 'GO:0008150',
+          term: 'biological_process',
+          description: 'Any process specifically pertinent to the functioning of integrated living units',
+          pValue: 0.001,
+          adjustedPValue: 0.005,
+          geneCount: Math.floor(genes.length * 0.8),
+          totalGenes: genes.length,
+          genes: genes.slice(0, Math.floor(genes.length * 0.8))
+        },
+        {
+          id: 'GO:0005575',
+          term: 'cellular_component',
+          description: 'A location, relative to cellular compartments and structures',
+          pValue: 0.003,
+          adjustedPValue: 0.012,
+          geneCount: Math.floor(genes.length * 0.6),
+          totalGenes: genes.length,
+          genes: genes.slice(0, Math.floor(genes.length * 0.6))
+        },
+        {
+          id: 'GO:0003674',
+          term: 'molecular_function',
+          description: 'Elemental activities, such as catalysis or binding',
+          pValue: 0.008,
+          adjustedPValue: 0.025,
+          geneCount: Math.floor(genes.length * 0.4),
+          totalGenes: genes.length,
+          genes: genes.slice(0, Math.floor(genes.length * 0.4))
+        }
+      ],
+      significantCount: 3,
+      totalCount: genes.length
+    };
+
+    // 记录分析日志
+    try {
+      await run(`
+        INSERT INTO analysis_logs (analysis_type, input_data, parameters, result_summary, created_at)
+        VALUES (?, ?, ?, ?, datetime('now'))
+      `, [
+        'enrichment_analysis',
+        JSON.stringify({ genes: genes }),
+        JSON.stringify({ analysisType, pValue }),
+        JSON.stringify({ significantCount: mockEnrichmentData.significantCount, totalCount: mockEnrichmentData.totalCount })
+      ]);
+    } catch (logError) {
+      console.error('记录分析日志失败:', logError);
+    }
+
+    res.json({
+      success: true,
+      data: mockEnrichmentData
+    });
+
+  } catch (error) {
+    console.error('富集分析失败:', error);
+    res.status(500).json({
+      error: '服务器内部错误',
+      message: '富集分析失败'
+    });
+  }
+});
+
+// 获取分析历史
+router.get('/history', async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
+    // 获取总数
+    const countResult = await get(
+      'SELECT COUNT(*) as total FROM analysis_logs'
+    );
+    const total = countResult?.total || 0;
+
+    // 获取分析历史
+    const rows = await query(`
+      SELECT 
+        id, analysis_type, parameters, result_summary, created_at
+      FROM analysis_logs 
+      ORDER BY created_at DESC
+      LIMIT ? OFFSET ?
+    `, [limit, offset]);
+
+    res.json({
+      success: true,
+      data: rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+
+  } catch (error) {
+    console.error('获取分析历史失败:', error);
+    res.status(500).json({
+      error: '服务器内部错误',
+      message: '获取分析历史失败'
+    });
+  }
+});
+
+// 获取分析工具信息
+router.get('/tools', async (req, res) => {
+  try {
+    const tools = [
+      {
+        id: 'network',
+        name: 'Protein-Protein Interaction Network',
+        description: 'Analyze protein-protein interactions using STRING database',
+        inputType: 'proteins',
+        maxInputs: 100,
+        parameters: [
+          { name: 'species', type: 'select', default: 'homo sapiens' },
+          { name: 'confidence', type: 'number', default: 0.4, min: 0, max: 1 }
+        ]
+      },
+      {
+        id: 'enrichment',
+        name: 'Gene Enrichment Analysis',
+        description: 'Perform GO, KEGG, and Reactome pathway enrichment analysis',
+        inputType: 'genes',
+        maxInputs: 500,
+        parameters: [
+          { name: 'analysisType', type: 'select', default: 'GO', options: ['GO', 'KEGG', 'Reactome'] },
+          { name: 'pValue', type: 'number', default: 0.05, min: 0, max: 1 }
+        ]
+      }
+    ];
+
+    res.json({
+      success: true,
+      data: tools
+    });
+
+  } catch (error) {
+    console.error('获取分析工具信息失败:', error);
+    res.status(500).json({
+      error: '服务器内部错误',
+      message: '获取分析工具信息失败'
+    });
+  }
+});
+
+module.exports = router;
