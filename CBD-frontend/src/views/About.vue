@@ -75,17 +75,17 @@
           <div class="partners-content">
             <el-row :gutter="40" align="middle">
               <el-col :span="8" class="partner-item">
-                <img src="/images/liu.png" alt="Linköping University" class="partner-logo">
+                <img src="/images/liu-logo.svg" alt="Linköping University" class="partner-logo">
                 <h4>Linköping University</h4>
                 <p>Bioinformatics Research Center, Linköping University, Sweden</p>
               </el-col>
               <el-col :span="8" class="partner-item">
-                <img src="/images/suda.png" alt="Soochow University" class="partner-logo">
+                <img src="/images/suda-logo.svg" alt="Soochow University" class="partner-logo">
                 <h4>Soochow University</h4>
                 <p>Bioinformatics Laboratory, Medical School, Soochow University</p>
               </el-col>
               <el-col :span="8" class="partner-item">
-                <img src="/images/gdph.png" alt="Guangdong Provincial People's Hospital" class="partner-logo">
+                <img src="/images/gdph-logo.svg" alt="Guangdong Provincial People's Hospital" class="partner-logo">
                 <h4>Guangdong Provincial People's Hospital</h4>
                 <p>Cancer Center, Guangdong Provincial People's Hospital</p>
               </el-col>

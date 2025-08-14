@@ -1,8 +1,8 @@
-# CBD3 - 结直肠癌生物标记物数据库系统
+# CBD3 - 结直肠癌生物标记物数据库
 
 ## 🎯 项目概述
 
-CBD3（Colorectal Cancer Biomarker Database 2）是一个现代化的生物标记物数据库系统，专门用于结直肠癌相关的生物标记物数据管理、搜索和分析。本项目将原有的PHP项目重构为Vue3 + Node.js的现代化全栈应用。
+CBD3（Colorectal Cancer Biomarker Database 3）是一个现代化的生物标记物数据库，专门用于结直肠癌相关的生物标记物数据管理、搜索和分析。本项目将原PHP项目重构为Vue3 + Node.js的现代化全栈应用。
 
 ## ✨ 主要功能
 
@@ -51,8 +51,8 @@ CBD3（Colorectal Cancer Biomarker Database 2）是一个现代化的生物标�
 
 1. **克隆项目**
 ```bash
-git clone <repository-url>
-cd CBD3
+git clone git@github.com:WhyLIM/CBD-vue.git
+cd CBD3-vue
 ```
 
 2. **安装前端依赖**
@@ -275,3 +275,4 @@ CORS_ORIGIN=https://your-domain.com
 - Claude-3.7-Sonnet、Claude-4.0-Sonnet 用于代码重构
 - GPT-4o 用于头图生成
 - Gemini-2.5-Pro 用于文档完善
+- DeepSeek 用于细节修补

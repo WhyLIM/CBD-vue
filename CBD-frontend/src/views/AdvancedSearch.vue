@@ -12,14 +12,11 @@
       </div>
     </section>
 
-    <!-- Quick Search Section -->
-    <QuickSearch :show-title="false" placeholder="输入生物标志物名称、基因符号或关键词..." @search="handleQuickSearch" />
-
     <!-- Search Form Section -->
     <section class="search-form-section">
       <div class="container">
-        <el-card class="search-form-card">
-          <template #header>
+        <!-- <el-card class="search-form-card"> -->
+        <!-- <template #header>
             <div class="card-header">
               <h2 class="form-title">
                 <font-awesome-icon :icon="['fas', 'filter']" class="title-icon" />
@@ -36,254 +33,257 @@
                 </el-button>
               </div>
             </div>
-          </template>
+          </template> -->
 
-          <el-form :model="searchForm" ref="searchFormRef" label-width="120px" class="advanced-form">
-            <!-- 基本信息搜索 -->
-            <div class="form-section">
-              <h3 class="section-title">
-                <font-awesome-icon :icon="['fas', 'info-circle']" />
-                基本信息
-              </h3>
-              <el-row :gutter="20">
-                <el-col :span="12">
-                  <el-form-item label="生物标志物">
-                    <el-input v-model="searchForm.biomarker" placeholder="输入生物标志物名称" clearable />
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                  <el-form-item label="分类">
-                    <el-select v-model="searchForm.category" placeholder="选择分类" clearable multiple>
-                      <el-option v-for="category in filterOptions.categories" :key="category" :label="category"
-                        :value="category" />
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-              </el-row>
+        <el-form :model="searchForm" ref="searchFormRef" label-width="120px" class="advanced-form">
+          <!-- 基本信息搜索 -->
+          <div class="form-section">
+            <h3 class="section-title">
+              <font-awesome-icon :icon="['fas', 'info-circle']" />
+              基本信息
+            </h3>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="生物标志物">
+                  <el-input v-model="searchForm.biomarker" placeholder="输入生物标志物名称" clearable />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="分类">
+                  <el-select v-model="searchForm.category" placeholder="选择分类" clearable multiple>
+                    <el-option v-for="category in filterOptions.categories" :key="category" :label="category"
+                      :value="category" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
 
-              <el-row :gutter="20">
-                <el-col :span="12">
-                  <el-form-item label="String名称">
-                    <el-input v-model="searchForm.string_name" placeholder="输入String名称" clearable />
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                  <el-form-item label="描述">
-                    <el-input v-model="searchForm.description" placeholder="输入描述关键词" clearable />
-                  </el-form-item>
-                </el-col>
-              </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="String名称">
+                  <el-input v-model="searchForm.string_name" placeholder="输入String名称" clearable />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="描述">
+                  <el-input v-model="searchForm.description" placeholder="输入描述关键词" clearable />
+                </el-form-item>
+              </el-col>
+            </el-row>
 
-              <el-row :gutter="20">
-                <el-col :span="12">
-                  <el-form-item label="区域">
-                    <el-select v-model="searchForm.region" placeholder="选择区域" clearable>
-                      <el-option v-for="region in filterOptions.regions" :key="region" :label="region"
-                        :value="region" />
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                  <el-form-item label="种族">
-                    <el-select v-model="searchForm.race" placeholder="选择种族" clearable>
-                      <el-option v-for="race in filterOptions.races" :key="race" :label="race" :value="race" />
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-              </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="区域">
+                  <el-select v-model="searchForm.region" placeholder="选择区域" clearable>
+                    <el-option v-for="region in filterOptions.regions" :key="region" :label="region" :value="region" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="种族">
+                  <el-select v-model="searchForm.race" placeholder="选择种族" clearable>
+                    <el-option v-for="race in filterOptions.races" :key="race" :label="race" :value="race" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
 
-              <el-row :gutter="20">
-                <el-col :span="12">
-                  <el-form-item label="位置">
-                    <el-input v-model="searchForm.location" placeholder="输入位置信息" clearable />
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                  <el-form-item label="阶段">
-                    <el-select v-model="searchForm.stage" placeholder="选择阶段" clearable>
-                      <el-option v-for="stage in filterOptions.stages" :key="stage" :label="stage" :value="stage" />
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-              </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="位置">
+                  <el-input v-model="searchForm.location" placeholder="输入位置信息" clearable />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="阶段">
+                  <el-select v-model="searchForm.stage" placeholder="选择阶段" clearable>
+                    <el-option v-for="stage in filterOptions.stages" :key="stage" :label="stage" :value="stage" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
 
-              <el-row :gutter="20">
-                <el-col :span="12">
-                  <el-form-item label="来源">
-                    <el-select v-model="searchForm.source" placeholder="选择来源" clearable>
-                      <el-option v-for="source in filterOptions.sources" :key="source" :label="source"
-                        :value="source" />
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                  <el-form-item label="实验方法">
-                    <el-select v-model="searchForm.experiment" placeholder="选择实验方法" clearable>
-                      <el-option v-for="experiment in filterOptions.experiments" :key="experiment" :label="experiment"
-                        :value="experiment" />
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-              </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="来源">
+                  <el-select v-model="searchForm.source" placeholder="选择来源" clearable>
+                    <el-option v-for="source in filterOptions.sources" :key="source" :label="source" :value="source" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="实验方法">
+                  <el-select v-model="searchForm.experiment" placeholder="选择实验方法" clearable>
+                    <el-option v-for="experiment in filterOptions.experiments" :key="experiment" :label="experiment"
+                      :value="experiment" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
 
-              <el-row :gutter="20">
-                <el-col :span="12">
-                  <el-form-item label="应用">
-                    <el-input v-model="searchForm.application" placeholder="输入应用领域" clearable />
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                  <el-form-item label="临床使用">
-                    <el-select v-model="searchForm.clinical_use" placeholder="选择临床使用状态" clearable>
-                      <el-option label="是" value="Yes" />
-                      <el-option label="否" value="No" />
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-              </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="应用">
+                  <el-input v-model="searchForm.application" placeholder="输入应用领域" clearable />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="临床使用">
+                  <el-select v-model="searchForm.clinical_use" placeholder="选择临床使用状态" clearable>
+                    <el-option label="是" value="Yes" />
+                    <el-option label="否" value="No" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
 
-              <el-row :gutter="20">
-                <el-col :span="12">
-                  <el-form-item label="是否为靶点">
-                    <el-select v-model="searchForm.target" placeholder="选择是否为靶点" clearable>
-                      <el-option label="是" :value="1" />
-                      <el-option label="否" :value="0" />
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                  <el-form-item label="药物">
-                    <el-input v-model="searchForm.drugs" placeholder="输入相关药物" clearable />
-                  </el-form-item>
-                </el-col>
-              </el-row>
-            </div>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="是否为靶点">
+                  <el-select v-model="searchForm.target" placeholder="选择是否为靶点" clearable>
+                    <el-option label="是" :value="1" />
+                    <el-option label="否" :value="0" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="药物">
+                  <el-input v-model="searchForm.drugs" placeholder="输入相关药物" clearable />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
 
-            <!-- 样本信息搜索 -->
-            <div class="form-section">
-              <h3 class="section-title">
-                <font-awesome-icon :icon="['fas', 'users']" />
-                样本信息
-              </h3>
-              <el-row :gutter="20">
-                <el-col :span="12">
-                  <el-form-item label="样本总数">
-                    <div class="range-input">
-                      <el-input-number v-model="searchForm.number_min" placeholder="最小值" :min="0" />
-                      <span class="range-separator">至</span>
-                      <el-input-number v-model="searchForm.number_max" placeholder="最大值" :min="0" />
-                    </div>
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                  <el-form-item label="男性样本数">
-                    <div class="range-input">
-                      <el-input-number v-model="searchForm.male_min" placeholder="最小值" :min="0" />
-                      <span class="range-separator">至</span>
-                      <el-input-number v-model="searchForm.male_max" placeholder="最大值" :min="0" />
-                    </div>
-                  </el-form-item>
-                </el-col>
-              </el-row>
+          <!-- 样本信息搜索 -->
+          <div class="form-section">
+            <h3 class="section-title">
+              <font-awesome-icon :icon="['fas', 'users']" />
+              样本信息
+            </h3>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="样本总数">
+                  <div class="range-input">
+                    <el-input-number v-model="searchForm.number_min" placeholder="最小值" :min="0" />
+                    <span class="range-separator">至</span>
+                    <el-input-number v-model="searchForm.number_max" placeholder="最大值" :min="0" />
+                  </div>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="男性样本数">
+                  <div class="range-input">
+                    <el-input-number v-model="searchForm.male_min" placeholder="最小值" :min="0" />
+                    <span class="range-separator">至</span>
+                    <el-input-number v-model="searchForm.male_max" placeholder="最大值" :min="0" />
+                  </div>
+                </el-form-item>
+              </el-col>
+            </el-row>
 
-              <el-row :gutter="20">
-                <el-col :span="12">
-                  <el-form-item label="女性样本数">
-                    <div class="range-input">
-                      <el-input-number v-model="searchForm.female_min" placeholder="最小值" :min="0" />
-                      <span class="range-separator">至</span>
-                      <el-input-number v-model="searchForm.female_max" placeholder="最大值" :min="0" />
-                    </div>
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                  <el-form-item label="平均年龄">
-                    <div class="range-input">
-                      <el-input-number v-model="searchForm.age_mean_min" placeholder="最小值" :min="0" />
-                      <span class="range-separator">至</span>
-                      <el-input-number v-model="searchForm.age_mean_max" placeholder="最大值" :min="0" />
-                    </div>
-                  </el-form-item>
-                </el-col>
-              </el-row>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="女性样本数">
+                  <div class="range-input">
+                    <el-input-number v-model="searchForm.female_min" placeholder="最小值" :min="0" />
+                    <span class="range-separator">至</span>
+                    <el-input-number v-model="searchForm.female_max" placeholder="最大值" :min="0" />
+                  </div>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="平均年龄">
+                  <div class="range-input">
+                    <el-input-number v-model="searchForm.age_mean_min" placeholder="最小值" :min="0" />
+                    <span class="range-separator">至</span>
+                    <el-input-number v-model="searchForm.age_mean_max" placeholder="最大值" :min="0" />
+                  </div>
+                </el-form-item>
+              </el-col>
+            </el-row>
 
-              <el-row :gutter="20">
-                <el-col :span="12">
-                  <el-form-item label="年龄范围">
-                    <div class="range-input">
-                      <el-input-number v-model="searchForm.age_min" placeholder="最小值" :min="0" />
-                      <span class="range-separator">至</span>
-                      <el-input-number v-model="searchForm.age_max" placeholder="最大值" :min="0" />
-                    </div>
-                  </el-form-item>
-                </el-col>
-              </el-row>
-            </div>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="年龄范围">
+                  <div class="range-input">
+                    <el-input-number v-model="searchForm.age_min" placeholder="最小值" :min="0" />
+                    <span class="range-separator">至</span>
+                    <el-input-number v-model="searchForm.age_max" placeholder="最大值" :min="0" />
+                  </div>
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
 
-            <!-- 文献信息搜索 -->
-            <div class="form-section">
-              <h3 class="section-title">
-                <font-awesome-icon :icon="['fas', 'book']" />
-                文献信息
-              </h3>
-              <el-row :gutter="20">
-                <el-col :span="12">
-                  <el-form-item label="第一作者">
-                    <el-input v-model="searchForm.reference_first_author" placeholder="输入第一作者姓名" clearable />
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                  <el-form-item label="期刊名称">
-                    <el-input v-model="searchForm.reference_journal" placeholder="输入期刊名称" clearable />
-                  </el-form-item>
-                </el-col>
-              </el-row>
+          <!-- 文献信息搜索 -->
+          <div class="form-section">
+            <h3 class="section-title">
+              <font-awesome-icon :icon="['fas', 'book']" />
+              文献信息
+            </h3>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="第一作者">
+                  <el-input v-model="searchForm.reference_first_author" placeholder="输入第一作者姓名" clearable />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="期刊名称">
+                  <el-input v-model="searchForm.reference_journal" placeholder="输入期刊名称" clearable />
+                </el-form-item>
+              </el-col>
+            </el-row>
 
-              <el-row :gutter="20">
-                <el-col :span="12">
-                  <el-form-item label="发表年份">
-                    <div class="range-input">
-                      <el-input-number v-model="searchForm.reference_year_from" placeholder="起始年份" :min="1900"
-                        :max="2030" />
-                      <span class="range-separator">至</span>
-                      <el-input-number v-model="searchForm.reference_year_to" placeholder="结束年份" :min="1900"
-                        :max="2030" />
-                    </div>
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                  <el-form-item label="PMID">
-                    <el-input v-model="searchForm.pmid" placeholder="输入PMID" clearable />
-                  </el-form-item>
-                </el-col>
-              </el-row>
-            </div>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="发表年份">
+                  <div class="range-input">
+                    <!-- <el-date-picker v-model="searchForm.reference_year_from" type="year" placeholder="Pick a year" style="width: 100%" value-format="YYYY" />
+                    <span class="range-separator">to</span>
+                    <el-date-picker v-model="searchForm.reference_year_to" type="year" placeholder="Pick a year" style="width: 100%" value-format="YYYY" /> -->
+                    <el-date-picker v-model="reference_year_range" type="yearrange" style="width: 100%" start-placeholder="1900" end-placeholder="2025" />
+                    <!-- <el-input-number v-model="searchForm.reference_year_from" placeholder="起始年份" :min="1900"
+                      :max=currentYear />
+                    <span class="range-separator">至</span>
+                    <el-input-number v-model="searchForm.reference_year_to" placeholder="结束年份" :min="1900"
+                      :max=currentYear + 1 /> -->
+                  </div>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="PMID">
+                  <el-input v-model="searchForm.pmid" placeholder="输入PMID" clearable />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
 
-            <!-- 关键词搜索 -->
-            <div class="form-section">
-              <h3 class="section-title">
-                <font-awesome-icon :icon="['fas', 'search']" />
-                关键词搜索
-              </h3>
-              <el-row :gutter="20">
-                <el-col :span="24">
-                  <el-form-item label="关键词">
-                    <el-input v-model="searchForm.keywords" placeholder="输入关键词，将在多个字段中搜索" clearable type="textarea"
-                      :rows="2" />
-                  </el-form-item>
-                </el-col>
-              </el-row>
-            </div>
+          <!-- 关键词搜索 -->
+          <div class="form-section">
+            <h3 class="section-title">
+              <font-awesome-icon :icon="['fas', 'search']" />
+              关键词搜索
+            </h3>
+            <el-row :gutter="20">
+              <el-col :span="24">
+                <el-form-item label="关键词">
+                  <el-input v-model="searchForm.keywords" placeholder="输入关键词，将在多个字段中搜索" clearable type="textarea"
+                    :rows="2" />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
 
-            <!-- 搜索按钮 -->
-            <div class="form-actions">
-              <el-button type="primary" @click="handleSearch" :loading="loading" size="large" class="search-btn">
-                <font-awesome-icon :icon="['fas', 'search']" />
-                开始搜索
-              </el-button>
-            </div>
-          </el-form>
-        </el-card>
+          <!-- 搜索按钮 -->
+          <div class="form-actions">
+            <el-button type="primary" @click="handleSearch" :loading="loading" size="large" class="search-btn">
+              <font-awesome-icon :icon="['fas', 'search']" />&nbsp;开始搜索
+            </el-button>
+            <el-button @click="handleReset" size="large">
+              <font-awesome-icon :icon="['fas', 'undo']" />&nbsp;重置
+            </el-button>
+          </div>
+        </el-form>
       </div>
     </section>
 
@@ -454,8 +454,8 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useBiomarkerStore } from '@/stores/biomarker'
 import { ElMessage } from 'element-plus'
-import QuickSearch from '@/components/common/QuickSearch.vue'
 import axios from 'axios'
+import { text } from '@fortawesome/fontawesome-svg-core'
 
 const router = useRouter()
 const route = useRoute()
@@ -470,6 +470,18 @@ const pageSize = ref(20)
 const totalResults = ref(0)
 const sortBy = ref('relevance')
 const viewMode = ref('table')
+
+const currentYear = computed(() => new Date().getFullYear())
+// const defaultYear = [
+//   {
+//     text: 'startYear',
+//     value: new Date(1900, 0, 1), // 1900-01-01
+//   },
+//   {
+//     text: 'currentYear',
+//     value: new Date(new Date().getFullYear() + 1, 0, 1), // 下一年 1 月 1 日
+//   },
+// ];
 
 const searchForm = reactive({
   biomarker: '',
@@ -498,8 +510,9 @@ const searchForm = reactive({
   age_max: '',
   reference_first_author: '',
   reference_journal: '',
-  reference_year_from: '',
-  reference_year_to: '',
+  reference_year_from: 1900,
+  reference_year_to: new Date().getFullYear() + 1,
+  reference_year_range: [1900, new Date().getFullYear() + 1],
   pmid: '',
   keywords: ''
 })
@@ -701,53 +714,6 @@ onMounted(() => {
   background: #fafbfc;
 }
 
-/* Hero Section */
-.hero-section {
-  background-color: var(--el-color-primary);
-  color: white;
-  position: relative;
-  overflow: hidden;
-}
-
-.hero-background {
-  background: linear-gradient(135deg, var(--el-color-primary), var(--el-color-primary-light-3));
-  padding: 60px 0;
-  position: relative;
-}
-
-.hero-background::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  /* background-image: url('@/assets/images/pattern-bg.svg'); */
-  background-size: cover;
-  opacity: 0.1;
-}
-
-.hero-content {
-  text-align: center;
-  position: relative;
-  z-index: 2;
-}
-
-.hero-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.hero-subtitle {
-  font-size: 1.2rem;
-  font-weight: 400;
-  max-width: 600px;
-  margin: 0 auto;
-  opacity: 0.9;
-}
-
 /* Search Form Section */
 .search-form-section {
   padding: 40px 0;
@@ -791,7 +757,7 @@ onMounted(() => {
   font-size: 1.1rem;
   font-weight: 600;
   margin-bottom: 20px;
-  color: var(--el-color-primary);
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -821,7 +787,7 @@ onMounted(() => {
 }
 
 .search-btn {
-  min-width: 180px;
+  /* min-width: 120px; */
   font-weight: 600;
 }
 

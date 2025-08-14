@@ -9,7 +9,8 @@
                         <font-awesome-icon :icon="['fas', 'search']" />
                     </template>
                     <template #append>
-                        <el-button type="primary" @click="handleQuickSearch" :loading="searchLoading" class="search-btn">
+                        <el-button type="primary" @click="handleQuickSearch" :loading="searchLoading"
+                            class="search-btn">
                             Search
                         </el-button>
                     </template>
@@ -139,7 +140,16 @@ defineExpose({
 }
 
 .search-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: white !important;
+    background: var(--primary-light) !important;
     height: -webkit-fill-available;
+}
+
+.search-btn:hover {
+    background: var(--primary-color) !important;
 }
 
 .example-searches {

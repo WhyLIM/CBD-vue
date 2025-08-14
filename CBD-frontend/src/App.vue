@@ -21,21 +21,8 @@ import AppFooter from './components/layout/AppFooter.vue'
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* 确保Element Plus样式与原有样式兼容 */
-.el-button {
-  /* font-family: LXGW, sans-serif; */
-}
-
-.el-input__inner {
-  /* font-family: LXGW, sans-serif; */
-}
-
-.el-table {
-  /* font-family: LXGW, sans-serif; */
-}
-
 /* 覆盖Element Plus的一些默认样式以匹配原设计 */
-.el-button--primary {
+/* .el-button--primary {
   background-color: #1B9CFC;
   border-color: #1B9CFC;
 }
@@ -43,7 +30,7 @@ import AppFooter from './components/layout/AppFooter.vue'
 .el-button--primary:hover {
   background-color: #0d699e;
   border-color: #0d699e;
-}
+} */
 
 .el-link {
   color: #0d699e;

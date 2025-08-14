@@ -79,7 +79,7 @@ h2 {
 p {
     margin: 8px 0;
     padding: 0 0 8px 0;
-    /* font-family: LXGW, Georgia, "Times New Roman", Times, serif; */
+    /* font-family: harmony, Georgia, "Times New Roman", Times, serif; */
     font-size: 15px;
     font-style: normal;
     line-height: 1.8em;
@@ -278,20 +278,20 @@ a {
 }
 
 /* 按钮样式 */
-#searchinput {
+/* #searchinput {
     border: 2px solid #f0f0f0;
     font-size: 14px;
     box-shadow: 0 5px 10px #e1e5ee;
     padding: 14px 10px;
     border-radius: 5px;
-    font-family: LXGW;
+    font-family: harmony;
     outline: 0 none;
-}
+} */
 
-#cbutton,
+/* #cbutton,
 .btn-primary {
     position: relative;
-    font-family: LXGW;
+    font-family: harmony;
     font-size: 14px;
     border: 2px solid #d3e4f5;
     padding: 14px 35px;
@@ -318,7 +318,7 @@ a {
 #cbutton:focus,
 .btn-primary:focus {
     outline: 0;
-}
+} */
 
 /* 表格样式 */
 .data-table {
@@ -347,7 +347,7 @@ a {
 
 .data-table td {
     padding: 0.5rem 0.7rem;
-    font-family: LXGW;
+    font-family: harmony;
     font-size: 0.85rem;
     box-shadow: 3px 0px 5px #ddd;
 }
@@ -370,7 +370,7 @@ a {
 
 .category-tree li div {
     position: relative;
-    font-family: LXGW;
+    font-family: harmony;
     border: 2px solid #d3e4f5;
     padding: 0.5rem 0.7rem;
     overflow: hidden;

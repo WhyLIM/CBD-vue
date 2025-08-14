@@ -58,8 +58,15 @@ export const useBiomarkerStore = defineStore('biomarker', {
 
       try {
         const response = await api.get('/biomarkers', { params })
-        this.biomarkers = response.data.data || []
-        this.pagination = response.data.pagination || this.pagination
+        // console.log('API 响应数据:', response.data); // 调试日志
+        this.biomarkers = response.data || []; // 当前页数据
+        // 更新分页信息
+        this.pagination = {
+          page: response.pagination?.current || 1,
+          limit: response.pagination?.limit || 20,
+          total: response.pagination?.count || 0,
+          pages: response.pagination?.total || 0
+        };
         return response.data
       } catch (error) {
         this.error = error.message

@@ -686,11 +686,11 @@ onMounted(() => {
   align-items: center;
   gap: 0.5rem;
   color: white;
-  background: #2a5298;
+  background: var(--primary-light);
 }
 
 .copy-btn:hover {
-  background: #1e3c72;
+  background: var(--primary-color);
 }
 
 /* 响应式设计 */

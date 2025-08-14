@@ -232,7 +232,7 @@ body {
 }
 
 /* 按钮样式 */
-.btn {
+/* .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -249,15 +249,25 @@ body {
 }
 
 .btn-primary {
-    background: var(--primary-gradient);
+    background: var(--primary-light);
     color: white;
-    border-color: var(--primary-color);
 }
 
 .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+    background: var(--primary-color);
+} */
+
+/* .copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: white;
+  background: #2a5298;
 }
+
+.copy-btn:hover {
+  background: #1e3c72;
+} */
 
 .btn-secondary {
     background: var(--accent-gradient);
@@ -597,22 +607,13 @@ body {
 }
 
 .el-button--primary {
-    background: var(--primary-gradient);
-    border-color: var(--primary-color);
+    background: var(--primary-light);
+    color: white;
+    border-color: var(--primary-light);
 }
 
 .el-button--primary:hover {
-    background: var(--primary-light);
-    transform: translateY(-2px);
-}
-
-.el-input__wrapper {
-    border-radius: var(--radius-md);
-    transition: all var(--transition-normal);
-}
-
-.el-input__wrapper:hover {
-    box-shadow: var(--shadow-sm);
+    background: var(--primary-color);
 }
 
 .el-table {

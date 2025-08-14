@@ -63,19 +63,24 @@ router.get('/', async (req, res) => {
     const whereClause = whereConditions.length > 0 ?
       `WHERE ${whereConditions.join(' AND ')}` : '';
 
-    // 构建排序条件
-    const validSortFields = ['id', 'biomarker', 'category', 'reference_year', 'created_at'];
+    // 在路由/控制器层拆解参数
+    const [sortField, sortDirection] = req.query.sort.split('_');
+
+    const validSortFields = ['id', 'name', 'year'];
     const validSortOrders = ['asc', 'desc'];
 
-    let actualSortBy = 'ID';
-    if (sortBy === 'biomarker') actualSortBy = 'Biomarker';
-    else if (sortBy === 'category') actualSortBy = 'Category';
-    else if (sortBy === 'reference_year') actualSortBy = 'Reference_year';
-    else if (sortBy === 'created_at') actualSortBy = 'ID'; // 使用ID作为创建时间的替代
+    // 字段映射表（避免直接拼接SQL）
+    const fieldMap = {
+      id: 'ID',
+      name: 'Biomarker',
+      year: 'Reference_year'
+    };
 
-    const actualSortOrder = validSortOrders.includes(sortOrder.toLowerCase()) ?
-      sortOrder.toUpperCase() : 'DESC';
+    // 验证并获取安全值
+    const actualSortBy = fieldMap[validSortFields.includes(sortField) ? sortField : 'id'];
+    const actualSortOrder = validSortOrders.includes(sortDirection) ? sortDirection.toUpperCase() : 'ASC';
 
+    // 安全拼接SQL
     const orderClause = `ORDER BY ${actualSortBy} ${actualSortOrder}`;
 
     // 获取总数

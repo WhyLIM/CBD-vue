@@ -85,7 +85,7 @@
             </h4>
             <ul class="footer-links">
               <li>
-                <a href="https://github.com/WhyLIM/CBD" target="_blank" class="footer-link">
+                <a href="https://github.com/WhyLIM/CBD-vue" target="_blank" class="footer-link">
                   <font-awesome-icon :icon="['fab', 'github']" />
                   Source Code
                 </a>
@@ -130,15 +130,15 @@
           </div>
 
           <div class="social-links">
-            <a href="https://github.com/WhyLIM/CBD" target="_blank" class="social-link">
+            <a href="https://github.com/WhyLIM/CBD-vue" target="_blank" class="social-link">
               <font-awesome-icon :icon="['fab', 'github']" />
             </a>
-            <a href="#" class="social-link">
+            <a href="mailto:lm@alu.suda.edu.cn" class="social-link">
               <font-awesome-icon :icon="['fas', 'envelope']" />
             </a>
-            <a href="#" class="social-link">
+            <!-- <a href="#" class="social-link">
               <font-awesome-icon :icon="['fas', 'rss']" />
-            </a>
+            </a> -->
           </div>
         </div>
       </div>

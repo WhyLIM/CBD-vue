@@ -22,7 +22,7 @@ const router = createRouter({
       component: Biomarkers
     },
     {
-      path: '/biomarker/:id',
+      path: '/biomarkers/:id',
       name: 'biomarker-detail',
       component: BiomarkerDetail,
       props: true
@@ -56,13 +56,12 @@ const router = createRouter({
       path: '/about',
       name: 'about',
       component: () => import('../views/About.vue')
-    },
-    {
-      path: '/home-demo',
-      name: 'home-demo',
-      component: () => import('../views/HomeDesignDemo.vue')
     }
-  ]
+  ],
+  scrollBehavior(to, from, savedPosition) {
+    // 始终滚动到顶部
+    return { top: 0 };
+  }
 })
 
 export default router
