@@ -5,8 +5,8 @@
       <div class="hero-background">
         <div class="container">
           <div class="hero-content">
-            <h1 class="hero-title">高级搜索</h1>
-            <p class="hero-subtitle">使用多种条件精确查询生物标志物数据</p>
+            <h1 class="hero-title">Advanced Search</h1>
+            <p class="hero-subtitle">Precisely query biomarker data using multiple search criteria and filters</p>
           </div>
         </div>
       </div>
@@ -15,42 +15,22 @@
     <!-- Search Form Section -->
     <section class="search-form-section">
       <div class="container">
-        <!-- <el-card class="search-form-card"> -->
-        <!-- <template #header>
-            <div class="card-header">
-              <h2 class="form-title">
-                <font-awesome-icon :icon="['fas', 'filter']" class="title-icon" />
-                搜索条件设置
-              </h2>
-              <div class="header-actions">
-                <el-button @click="handleSaveSearch" size="small" type="info">
-                  <font-awesome-icon :icon="['fas', 'bookmark']" />
-                  保存条件
-                </el-button>
-                <el-button type="primary" @click="handleReset" size="small">
-                  <font-awesome-icon :icon="['fas', 'undo']" />
-                  重置
-                </el-button>
-              </div>
-            </div>
-          </template> -->
-
-        <el-form :model="searchForm" ref="searchFormRef" label-width="120px" class="advanced-form">
-          <!-- 基本信息搜索 -->
+        <el-form :model="searchForm" ref="searchFormRef" label-width="140px" class="advanced-form">
+          <!-- Basic Information Search -->
           <div class="form-section">
             <h3 class="section-title">
               <font-awesome-icon :icon="['fas', 'info-circle']" />
-              基本信息
+              Basic Information
             </h3>
             <el-row :gutter="20">
               <el-col :span="12">
-                <el-form-item label="生物标志物">
-                  <el-input v-model="searchForm.biomarker" placeholder="输入生物标志物名称" clearable />
+                <el-form-item label="Biomarker">
+                  <el-input v-model="searchForm.biomarker" placeholder="Enter biomarker name" clearable />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="分类">
-                  <el-select v-model="searchForm.category" placeholder="选择分类" clearable multiple>
+                <el-form-item label="Category">
+                  <el-select v-model="searchForm.category" placeholder="Select category" clearable multiple>
                     <el-option v-for="category in filterOptions.categories" :key="category" :label="category"
                       :value="category" />
                   </el-select>
@@ -60,28 +40,28 @@
 
             <el-row :gutter="20">
               <el-col :span="12">
-                <el-form-item label="String名称">
-                  <el-input v-model="searchForm.string_name" placeholder="输入String名称" clearable />
+                <el-form-item label="String Name">
+                  <el-input v-model="searchForm.string_name" placeholder="Enter String name" clearable />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="描述">
-                  <el-input v-model="searchForm.description" placeholder="输入描述关键词" clearable />
+                <el-form-item label="Description">
+                  <el-input v-model="searchForm.description" placeholder="Enter description keywords" clearable />
                 </el-form-item>
               </el-col>
             </el-row>
 
             <el-row :gutter="20">
               <el-col :span="12">
-                <el-form-item label="区域">
-                  <el-select v-model="searchForm.region" placeholder="选择区域" clearable>
+                <el-form-item label="Region">
+                  <el-select v-model="searchForm.region" placeholder="Select region" clearable>
                     <el-option v-for="region in filterOptions.regions" :key="region" :label="region" :value="region" />
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="种族">
-                  <el-select v-model="searchForm.race" placeholder="选择种族" clearable>
+                <el-form-item label="Race">
+                  <el-select v-model="searchForm.race" placeholder="Select race" clearable>
                     <el-option v-for="race in filterOptions.races" :key="race" :label="race" :value="race" />
                   </el-select>
                 </el-form-item>
@@ -90,13 +70,13 @@
 
             <el-row :gutter="20">
               <el-col :span="12">
-                <el-form-item label="位置">
-                  <el-input v-model="searchForm.location" placeholder="输入位置信息" clearable />
+                <el-form-item label="Location">
+                  <el-input v-model="searchForm.location" placeholder="Enter location information" clearable />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="阶段">
-                  <el-select v-model="searchForm.stage" placeholder="选择阶段" clearable>
+                <el-form-item label="Stage">
+                  <el-select v-model="searchForm.stage" placeholder="Select stage" clearable>
                     <el-option v-for="stage in filterOptions.stages" :key="stage" :label="stage" :value="stage" />
                   </el-select>
                 </el-form-item>
@@ -105,15 +85,15 @@
 
             <el-row :gutter="20">
               <el-col :span="12">
-                <el-form-item label="来源">
-                  <el-select v-model="searchForm.source" placeholder="选择来源" clearable>
+                <el-form-item label="Source">
+                  <el-select v-model="searchForm.source" placeholder="Select source" clearable>
                     <el-option v-for="source in filterOptions.sources" :key="source" :label="source" :value="source" />
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="实验方法">
-                  <el-select v-model="searchForm.experiment" placeholder="选择实验方法" clearable>
+                <el-form-item label="Experiment Method">
+                  <el-select v-model="searchForm.experiment" placeholder="Select experiment method" clearable>
                     <el-option v-for="experiment in filterOptions.experiments" :key="experiment" :label="experiment"
                       :value="experiment" />
                   </el-select>
@@ -123,15 +103,15 @@
 
             <el-row :gutter="20">
               <el-col :span="12">
-                <el-form-item label="应用">
-                  <el-input v-model="searchForm.application" placeholder="输入应用领域" clearable />
+                <el-form-item label="Application">
+                  <el-input v-model="searchForm.application" placeholder="Enter application field" clearable />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="临床使用">
-                  <el-select v-model="searchForm.clinical_use" placeholder="选择临床使用状态" clearable>
-                    <el-option label="是" value="Yes" />
-                    <el-option label="否" value="No" />
+                <el-form-item label="Clinical Use">
+                  <el-select v-model="searchForm.clinical_use" placeholder="Select clinical use status" clearable>
+                    <el-option label="Yes" value="Yes" />
+                    <el-option label="No" value="No" />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -139,64 +119,43 @@
 
             <el-row :gutter="20">
               <el-col :span="12">
-                <el-form-item label="是否为靶点">
-                  <el-select v-model="searchForm.target" placeholder="选择是否为靶点" clearable>
-                    <el-option label="是" :value="1" />
-                    <el-option label="否" :value="0" />
+                <el-form-item label="Is Target">
+                  <el-select v-model="searchForm.target" placeholder="Select if target" clearable>
+                    <el-option label="Yes" :value="1" />
+                    <el-option label="No" :value="0" />
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="药物">
-                  <el-input v-model="searchForm.drugs" placeholder="输入相关药物" clearable />
+                <el-form-item label="Drugs">
+                  <el-input v-model="searchForm.drugs" placeholder="Enter related drugs" clearable />
                 </el-form-item>
               </el-col>
             </el-row>
           </div>
 
-          <!-- 样本信息搜索 -->
+          <!-- Sample Information Search -->
           <div class="form-section">
             <h3 class="section-title">
               <font-awesome-icon :icon="['fas', 'users']" />
-              样本信息
+              Sample Information
             </h3>
             <el-row :gutter="20">
               <el-col :span="12">
-                <el-form-item label="样本总数">
+                <el-form-item label="Total Sample Size">
                   <div class="range-input">
-                    <el-input-number v-model="searchForm.number_min" placeholder="最小值" :min="0" />
-                    <span class="range-separator">至</span>
-                    <el-input-number v-model="searchForm.number_max" placeholder="最大值" :min="0" />
+                    <el-input-number v-model="searchForm.number_min" placeholder="Min value" :min="0" />
+                    <span class="range-separator">to</span>
+                    <el-input-number v-model="searchForm.number_max" placeholder="Max value" :min="0" />
                   </div>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="男性样本数">
+                <el-form-item label="Male Sample Size">
                   <div class="range-input">
-                    <el-input-number v-model="searchForm.male_min" placeholder="最小值" :min="0" />
-                    <span class="range-separator">至</span>
-                    <el-input-number v-model="searchForm.male_max" placeholder="最大值" :min="0" />
-                  </div>
-                </el-form-item>
-              </el-col>
-            </el-row>
-
-            <el-row :gutter="20">
-              <el-col :span="12">
-                <el-form-item label="女性样本数">
-                  <div class="range-input">
-                    <el-input-number v-model="searchForm.female_min" placeholder="最小值" :min="0" />
-                    <span class="range-separator">至</span>
-                    <el-input-number v-model="searchForm.female_max" placeholder="最大值" :min="0" />
-                  </div>
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="平均年龄">
-                  <div class="range-input">
-                    <el-input-number v-model="searchForm.age_mean_min" placeholder="最小值" :min="0" />
-                    <span class="range-separator">至</span>
-                    <el-input-number v-model="searchForm.age_mean_max" placeholder="最大值" :min="0" />
+                    <el-input-number v-model="searchForm.male_min" placeholder="Min value" :min="0" />
+                    <span class="range-separator">to</span>
+                    <el-input-number v-model="searchForm.male_max" placeholder="Max value" :min="0" />
                   </div>
                 </el-form-item>
               </el-col>
@@ -204,115 +163,195 @@
 
             <el-row :gutter="20">
               <el-col :span="12">
-                <el-form-item label="年龄范围">
+                <el-form-item label="Female Sample Size">
                   <div class="range-input">
-                    <el-input-number v-model="searchForm.age_min" placeholder="最小值" :min="0" />
-                    <span class="range-separator">至</span>
-                    <el-input-number v-model="searchForm.age_max" placeholder="最大值" :min="0" />
+                    <el-input-number v-model="searchForm.female_min" placeholder="Min value" :min="0" />
+                    <span class="range-separator">to</span>
+                    <el-input-number v-model="searchForm.female_max" placeholder="Max value" :min="0" />
+                  </div>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="Average Age">
+                  <div class="range-input">
+                    <el-input-number v-model="searchForm.age_mean_min" placeholder="Min value" :min="0" />
+                    <span class="range-separator">to</span>
+                    <el-input-number v-model="searchForm.age_mean_max" placeholder="Max value" :min="0" />
+                  </div>
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="Age Range">
+                  <div class="range-input">
+                    <el-input-number v-model="searchForm.age_min" placeholder="Min value" :min="0" />
+                    <span class="range-separator">to</span>
+                    <el-input-number v-model="searchForm.age_max" placeholder="Max value" :min="0" />
                   </div>
                 </el-form-item>
               </el-col>
             </el-row>
           </div>
 
-          <!-- 文献信息搜索 -->
+          <!-- Literature Information Search -->
           <div class="form-section">
             <h3 class="section-title">
               <font-awesome-icon :icon="['fas', 'book']" />
-              文献信息
+              Literature Information
             </h3>
             <el-row :gutter="20">
               <el-col :span="12">
-                <el-form-item label="第一作者">
-                  <el-input v-model="searchForm.reference_first_author" placeholder="输入第一作者姓名" clearable />
+                <el-form-item label="First Author">
+                  <el-input v-model="searchForm.reference_first_author" placeholder="Enter first author name"
+                    clearable />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="期刊名称">
-                  <el-input v-model="searchForm.reference_journal" placeholder="输入期刊名称" clearable />
+                <el-form-item label="Journal Name">
+                  <el-input v-model="searchForm.reference_journal" placeholder="Enter journal name" clearable />
                 </el-form-item>
               </el-col>
             </el-row>
 
             <el-row :gutter="20">
               <el-col :span="12">
-                <el-form-item label="发表年份">
+                <el-form-item label="Publication Year">
                   <div class="range-input">
-                    <!-- <el-date-picker v-model="searchForm.reference_year_from" type="year" placeholder="Pick a year" style="width: 100%" value-format="YYYY" />
-                    <span class="range-separator">to</span>
-                    <el-date-picker v-model="searchForm.reference_year_to" type="year" placeholder="Pick a year" style="width: 100%" value-format="YYYY" /> -->
-                    <el-date-picker v-model="reference_year_range" type="yearrange" style="width: 100%" start-placeholder="1900" end-placeholder="2025" />
-                    <!-- <el-input-number v-model="searchForm.reference_year_from" placeholder="起始年份" :min="1900"
-                      :max=currentYear />
-                    <span class="range-separator">至</span>
-                    <el-input-number v-model="searchForm.reference_year_to" placeholder="结束年份" :min="1900"
-                      :max=currentYear + 1 /> -->
+                    <el-date-picker v-model="searchForm.reference_year_range" type="yearrange" unlink-panels
+                      range-separator="To" style="width: 100%" start-placeholder="Start Year" end-placeholder="End Year"
+                      :default-value="[new Date(1900, 0, 1), new Date(new Date().getFullYear(), 11, 31)]" />
                   </div>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
                 <el-form-item label="PMID">
-                  <el-input v-model="searchForm.pmid" placeholder="输入PMID" clearable />
+                  <el-input v-model="searchForm.pmid" placeholder="Enter PMID" clearable />
                 </el-form-item>
               </el-col>
             </el-row>
           </div>
 
-          <!-- 关键词搜索 -->
+          <!-- Keyword Search -->
           <div class="form-section">
             <h3 class="section-title">
               <font-awesome-icon :icon="['fas', 'search']" />
-              关键词搜索
+              Keyword Search
             </h3>
             <el-row :gutter="20">
               <el-col :span="24">
-                <el-form-item label="关键词">
-                  <el-input v-model="searchForm.keywords" placeholder="输入关键词，将在多个字段中搜索" clearable type="textarea"
-                    :rows="2" />
+                <el-form-item label="Keywords">
+                  <el-input v-model="searchForm.keywords" placeholder="Enter keywords to search across multiple fields"
+                    clearable type="textarea" :rows="2" />
                 </el-form-item>
               </el-col>
             </el-row>
           </div>
 
-          <!-- 搜索按钮 -->
+          <!-- Search Actions -->
           <div class="form-actions">
             <el-button type="primary" @click="handleSearch" :loading="loading" size="large" class="search-btn">
-              <font-awesome-icon :icon="['fas', 'search']" />&nbsp;开始搜索
+              <font-awesome-icon :icon="['fas', 'search']" />&nbsp;Start Search
             </el-button>
             <el-button @click="handleReset" size="large">
-              <font-awesome-icon :icon="['fas', 'undo']" />&nbsp;重置
+              <font-awesome-icon :icon="['fas', 'undo']" />&nbsp;Reset
+            </el-button>
+            <el-button @click="handleSaveSearch" size="large" type="info">
+              <font-awesome-icon :icon="['fas', 'bookmark']" />&nbsp;Save Conditions
             </el-button>
           </div>
         </el-form>
       </div>
     </section>
 
-    <!-- 搜索结果部分 -->
+    <!-- Search Results Section -->
     <section v-if="searchResults.length > 0" class="results-section">
       <div class="container">
+        <!-- Results Overview Cards -->
+        <div class="results-overview">
+          <el-card class="overview-card" v-for="stat in resultStats" :key="stat.key">
+            <div class="stat-content">
+              <div class="stat-icon">
+                <font-awesome-icon :icon="stat.icon" />
+              </div>
+              <div class="stat-info">
+                <div class="stat-number">{{ stat.value }}</div>
+                <div class="stat-label">{{ stat.label }}</div>
+              </div>
+            </div>
+          </el-card>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section" v-if="showCharts">
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-card class="chart-card">
+                <template #header>
+                  <div class="chart-header">
+                    <h3 class="chart-title">
+                      <font-awesome-icon :icon="['fas', 'chart-pie']" />
+                      Category Distribution
+                    </h3>
+                    <el-button-group size="small">
+                      <el-button :type="categoryViewType === 'pie' ? 'primary' : 'default'"
+                        @click="categoryViewType = 'pie'">
+                        Pie
+                      </el-button>
+                      <el-button :type="categoryViewType === 'bar' ? 'primary' : 'default'"
+                        @click="categoryViewType = 'bar'">
+                        Bar
+                      </el-button>
+                    </el-button-group>
+                  </div>
+                </template>
+                <div class="chart-container" ref="categoryChartRef"></div>
+              </el-card>
+            </el-col>
+            <el-col :span="12">
+              <el-card class="chart-card">
+                <template #header>
+                  <div class="chart-header">
+                    <h3 class="chart-title">
+                      <font-awesome-icon :icon="['fas', 'chart-line']" />
+                      Publication Trends
+                    </h3>
+                  </div>
+                </template>
+                <div class="chart-container" ref="yearTrendChartRef"></div>
+              </el-card>
+            </el-col>
+          </el-row>
+        </div>
+
         <el-card class="results-card">
           <template #header>
             <div class="results-header">
               <h3 class="results-title">
                 <font-awesome-icon :icon="['fas', 'list-ul']" />
-                搜索结果 ({{ totalResults }} 项)
+                Search Results ({{ totalResults }} items)
               </h3>
               <div class="results-actions">
+                <el-button @click="toggleCharts" size="small" :type="showCharts ? 'primary' : 'default'">
+                  <font-awesome-icon :icon="['fas', 'chart-bar']" />
+                  {{ showCharts ? 'Hide Charts' : 'Show Charts' }}
+                </el-button>
                 <el-button-group class="view-toggle">
                   <el-button :type="viewMode === 'table' ? 'primary' : 'default'" @click="viewMode = 'table'"
                     size="small">
                     <font-awesome-icon :icon="['fas', 'list']" />
-                    表格视图
+                    Table View
                   </el-button>
                   <el-button :type="viewMode === 'card' ? 'primary' : 'default'" @click="viewMode = 'card'"
                     size="small">
                     <font-awesome-icon :icon="['fas', 'th-large']" />
-                    卡片视图
+                    Card View
                   </el-button>
                 </el-button-group>
                 <el-button type="success" @click="handleExport" size="small">
                   <font-awesome-icon :icon="['fas', 'download']" />
-                  导出结果
+                  Export Results
                 </el-button>
                 <el-select v-model="sortBy" @change="handleSort" size="small" style="width: 150px;">
                   <el-option v-for="option in sortOptions" :key="option.value" :label="option.label"
@@ -322,43 +361,43 @@
             </div>
           </template>
 
-          <!-- 表格视图 -->
+          <!-- Table View -->
           <div v-if="viewMode === 'table'" class="table-view">
             <el-table :data="searchResults" v-loading="loading" @row-click="handleResultClick" class="biomarkers-table"
               stripe highlight-current-row>
               <el-table-column prop="ID" label="ID" width="80" sortable />
-              <el-table-column prop="Biomarker" label="生物标志物" width="140" sortable />
-              <el-table-column prop="Category" label="分类" width="120">
+              <el-table-column prop="Biomarker" label="Biomarker" width="140" sortable />
+              <el-table-column prop="Category" label="Category" width="120">
                 <template #default="{ row }">
                   <el-tag :type="getCategoryTagType(row.Category)" size="small">
                     {{ row.Category }}
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="Application" label="应用" min-width="200" />
-              <el-table-column prop="Location" label="位置" width="150" />
-              <el-table-column prop="Source" label="来源" width="100" />
-              <el-table-column prop="Reference_first_author" label="作者" width="150" />
-              <el-table-column prop="Reference_journal" label="期刊" width="180" />
-              <el-table-column prop="Reference_year" label="年份" width="80" sortable />
-              <el-table-column prop="Clinical_Use" label="临床使用" width="100">
+              <el-table-column prop="Application" label="Application" min-width="200" />
+              <el-table-column prop="Location" label="Location" width="150" />
+              <el-table-column prop="Source" label="Source" width="100" />
+              <el-table-column prop="Reference_first_author" label="Author" width="150" />
+              <el-table-column prop="Reference_journal" label="Journal" width="180" />
+              <el-table-column prop="Reference_year" label="Year" width="80" sortable />
+              <el-table-column prop="Clinical_Use" label="Clinical Use" width="100">
                 <template #default="{ row }">
                   <el-tag :type="row.Clinical_Use === 'Yes' ? 'success' : 'info'" size="small">
-                    {{ row.Clinical_Use === 'Yes' ? '是' : '否' }}
+                    {{ row.Clinical_Use === 'Yes' ? 'Yes' : 'No' }}
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column label="操作" width="100" fixed="right">
+              <el-table-column label="Actions" width="100" fixed="right">
                 <template #default="{ row }">
                   <el-button type="primary" size="small" @click.stop="handleResultClick(row)">
-                    查看
+                    View
                   </el-button>
                 </template>
               </el-table-column>
             </el-table>
           </div>
 
-          <!-- 卡片视图 -->
+          <!-- Card View -->
           <div v-else class="card-view">
             <div class="cards-grid" v-loading="loading">
               <el-card v-for="result in searchResults" :key="result.ID" class="biomarker-card"
@@ -375,39 +414,39 @@
                 <div class="card-content">
                   <div class="info-row" v-if="result.Discription">
                     <font-awesome-icon :icon="['fas', 'info-circle']" class="info-icon" />
-                    <span class="info-label">描述:</span>
+                    <span class="info-label">Description:</span>
                     <span class="info-value">{{ result.Discription }}</span>
                   </div>
                   <div class="info-row" v-if="result.Application">
                     <font-awesome-icon :icon="['fas', 'flask']" class="info-icon" />
-                    <span class="info-label">应用:</span>
+                    <span class="info-label">Application:</span>
                     <span class="info-value">{{ result.Application }}</span>
                   </div>
                   <div class="info-row" v-if="result.Location">
                     <font-awesome-icon :icon="['fas', 'map-marker-alt']" class="info-icon" />
-                    <span class="info-label">位置:</span>
+                    <span class="info-label">Location:</span>
                     <span class="info-value">{{ result.Location }}</span>
                   </div>
                   <div class="info-row" v-if="result.Source">
                     <font-awesome-icon :icon="['fas', 'dna']" class="info-icon" />
-                    <span class="info-label">来源:</span>
+                    <span class="info-label">Source:</span>
                     <span class="info-value">{{ result.Source }}</span>
                   </div>
                   <div class="info-row" v-if="result.Number">
                     <font-awesome-icon :icon="['fas', 'users']" class="info-icon" />
-                    <span class="info-label">样本数:</span>
+                    <span class="info-label">Sample Size:</span>
                     <span class="info-value">{{ result.Number }}</span>
                   </div>
                   <div class="info-row" v-if="result.Clinical_Use">
                     <font-awesome-icon :icon="['fas', 'hospital']" class="info-icon" />
-                    <span class="info-label">临床使用:</span>
+                    <span class="info-label">Clinical Use:</span>
                     <el-tag :type="result.Clinical_Use === 'Yes' ? 'success' : 'info'" size="small">
-                      {{ result.Clinical_Use === 'Yes' ? '是' : '否' }}
+                      {{ result.Clinical_Use === 'Yes' ? 'Yes' : 'No' }}
                     </el-tag>
                   </div>
                   <div class="info-row reference-row">
                     <font-awesome-icon :icon="['fas', 'book']" class="info-icon" />
-                    <span class="info-label">文献:</span>
+                    <span class="info-label">Reference:</span>
                     <span class="info-value">
                       {{ result.Reference_first_author }} et al.,
                       {{ result.Reference_journal }}
@@ -419,7 +458,7 @@
             </div>
           </div>
 
-          <!-- 分页 -->
+          <!-- Pagination -->
           <div class="pagination-section">
             <div class="pagination-card">
               <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
@@ -431,17 +470,32 @@
       </div>
     </section>
 
-    <!-- 空结果状态 -->
+    <!-- Empty State -->
     <section v-else-if="hasSearched && !loading" class="empty-state">
       <div class="container">
         <el-card class="empty-card">
           <div class="empty-content">
             <font-awesome-icon :icon="['fas', 'search']" class="empty-icon" />
-            <h3 class="empty-title">未找到匹配的结果</h3>
-            <p class="empty-description">请尝试调整搜索条件或使用不同的关键词</p>
+            <h3 class="empty-title">No matching results found</h3>
+            <p class="empty-description">Try adjusting your search criteria or using different keywords</p>
             <el-button type="primary" @click="handleReset">
-              重新搜索
+              Search Again
             </el-button>
+          </div>
+        </el-card>
+      </div>
+    </section>
+
+    <!-- Loading State -->
+    <section v-else-if="loading" class="loading-state">
+      <div class="container">
+        <el-card class="loading-card">
+          <div class="loading-content">
+            <el-icon class="is-loading loading-icon">
+              <font-awesome-icon :icon="['fas', 'spinner']" />
+            </el-icon>
+            <h3 class="loading-title">Searching...</h3>
+            <p class="loading-description">Please wait while we search through the database</p>
           </div>
         </el-card>
       </div>
@@ -450,12 +504,12 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useBiomarkerStore } from '@/stores/biomarker'
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
-import { text } from '@fortawesome/fontawesome-svg-core'
+import * as echarts from 'echarts'
 
 const router = useRouter()
 const route = useRoute()
@@ -471,7 +525,7 @@ const totalResults = ref(0)
 const sortBy = ref('relevance')
 const viewMode = ref('table')
 
-const currentYear = computed(() => new Date().getFullYear())
+// const currentYear = computed(() => new Date().getFullYear())
 // const defaultYear = [
 //   {
 //     text: 'startYear',
@@ -510,9 +564,9 @@ const searchForm = reactive({
   age_max: '',
   reference_first_author: '',
   reference_journal: '',
-  reference_year_from: 1900,
-  reference_year_to: new Date().getFullYear() + 1,
-  reference_year_range: [1900, new Date().getFullYear() + 1],
+  reference_year_from: '',
+  reference_year_to: '',
+  reference_year_range: '',
   pmid: '',
   keywords: ''
 })
@@ -528,20 +582,185 @@ const filterOptions = ref({
 })
 
 const sortOptions = ref([
-  { value: 'relevance', label: '相关性' },
-  { value: 'biomarker_asc', label: '标志物名称 (A-Z)' },
-  { value: 'biomarker_desc', label: '标志物名称 (Z-A)' },
-  { value: 'year_desc', label: '年份 (最新)' },
-  { value: 'year_asc', label: '年份 (最早)' },
-  { value: 'number_desc', label: '样本数 (最多)' },
-  { value: 'number_asc', label: '样本数 (最少)' }
+  { value: 'relevance', label: 'Relevance' },
+  { value: 'biomarker_asc', label: 'Biomarker Name (A-Z)' },
+  { value: 'biomarker_desc', label: 'Biomarker Name (Z-A)' },
+  { value: 'year_desc', label: 'Year (Newest)' },
+  { value: 'year_asc', label: 'Year (Oldest)' },
+  { value: 'number_desc', label: 'Sample Size (Most)' },
+  { value: 'number_asc', label: 'Sample Size (Least)' }
 ])
 
-// 处理快速搜索
-const handleQuickSearch = (query) => {
-  searchForm.biomarker = query
-  currentPage.value = 1
-  handleSearch()
+// Results statistics
+const resultStats = computed(() => [
+  {
+    key: 'total',
+    label: 'Total Results',
+    value: totalResults.value.toLocaleString(),
+    icon: ['fas', 'database']
+  },
+  {
+    key: 'categories',
+    label: 'Categories',
+    value: getUniqueCategories().length,
+    icon: ['fas', 'tags']
+  },
+  {
+    key: 'validated',
+    label: 'Validated',
+    value: getValidatedCount(),
+    icon: ['fas', 'check-circle']
+  },
+  {
+    key: 'recent',
+    label: 'Recent (5 years)',
+    value: getRecentCount(),
+    icon: ['fas', 'clock']
+  }
+])
+
+// Helper functions for statistics
+const getUniqueCategories = () => {
+  const categories = new Set()
+  searchResults.value.forEach(result => {
+    if (result.Category) categories.add(result.Category)
+  })
+  return Array.from(categories)
+}
+
+const getValidatedCount = () => {
+  return searchResults.value.filter(result => result.Clinical_Use === 'Yes').length
+}
+
+const getRecentCount = () => {
+  const currentYear = new Date().getFullYear()
+  return searchResults.value.filter(result =>
+    result.Reference_year && (currentYear - result.Reference_year) <= 5
+  ).length
+}
+
+// Chart initialization functions
+const initCategoryChart = () => {
+  if (!categoryChartRef.value) return
+
+  categoryChart = echarts.init(categoryChartRef.value)
+
+  const updateChart = () => {
+    const categoryData = getUniqueCategories().map(category => ({
+      name: category,
+      value: searchResults.value.filter(result => result.Category === category).length
+    }))
+
+    const option = categoryViewType.value === 'pie' ? {
+      tooltip: {
+        trigger: 'item',
+        formatter: '{a} <br/>{b}: {c} ({d}%)'
+      },
+      legend: {
+        orient: 'vertical',
+        left: 'left'
+      },
+      series: [{
+        name: 'Category Distribution',
+        type: 'pie',
+        radius: '50%',
+        data: categoryData,
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.5)'
+          }
+        }
+      }]
+    } : {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'shadow'
+        }
+      },
+      xAxis: {
+        type: 'category',
+        data: categoryData.map(item => item.name)
+      },
+      yAxis: {
+        type: 'value'
+      },
+      series: [{
+        name: 'Count',
+        type: 'bar',
+        data: categoryData.map(item => item.value),
+        itemStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: '#667eea' },
+            { offset: 1, color: '#764ba2' }
+          ])
+        }
+      }]
+    }
+
+    categoryChart.setOption(option)
+  }
+
+  updateChart()
+  watch(categoryViewType, updateChart)
+}
+
+const initYearTrendChart = () => {
+  if (!yearTrendChartRef.value) return
+
+  yearTrendChart = echarts.init(yearTrendChartRef.value)
+
+  const yearData = {}
+  searchResults.value.forEach(result => {
+    if (result.Reference_year) {
+      yearData[result.Reference_year] = (yearData[result.Reference_year] || 0) + 1
+    }
+  })
+
+  const sortedYears = Object.keys(yearData).sort()
+  const yearCounts = sortedYears.map(year => yearData[year])
+
+  const option = {
+    tooltip: {
+      trigger: 'axis'
+    },
+    xAxis: {
+      type: 'category',
+      data: sortedYears
+    },
+    yAxis: {
+      type: 'value'
+    },
+    series: [{
+      name: 'Publication Count',
+      type: 'line',
+      data: yearCounts,
+      smooth: true,
+      itemStyle: {
+        color: '#667eea'
+      },
+      areaStyle: {
+        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          { offset: 0, color: 'rgba(102, 126, 234, 0.3)' },
+          { offset: 1, color: 'rgba(102, 126, 234, 0.1)' }
+        ])
+      }
+    }]
+  }
+
+  yearTrendChart.setOption(option)
+}
+
+const toggleCharts = () => {
+  showCharts.value = !showCharts.value
+  if (showCharts.value) {
+    nextTick(() => {
+      initCategoryChart()
+      initYearTrendChart()
+    })
+  }
 }
 
 // 搜索方法
@@ -570,13 +789,21 @@ const handleSearch = async () => {
     if (response.data.success) {
       searchResults.value = response.data.data || []
       totalResults.value = response.data.pagination.total || 0
-      ElMessage.success(`找到 ${totalResults.value} 条匹配结果`)
+      ElMessage.success(`Found ${totalResults.value} matching results`)
+
+      // Initialize charts if they are visible
+      if (showCharts.value) {
+        nextTick(() => {
+          initCategoryChart()
+          initYearTrendChart()
+        })
+      }
     } else {
-      throw new Error(response.data.message || '搜索失败')
+      throw new Error(response.data.message || 'Search failed')
     }
   } catch (error) {
-    console.error('搜索失败:', error)
-    ElMessage.error('搜索失败，请稍后重试')
+    console.error('Search failed:', error)
+    ElMessage.error('Search failed, please try again later')
     searchResults.value = []
     totalResults.value = 0
   } finally {
@@ -652,12 +879,20 @@ const handleResultClick = (result) => {
 const handleSaveSearch = () => {
   const searchConditions = { ...searchForm }
   localStorage.setItem('savedSearchConditions', JSON.stringify(searchConditions))
-  ElMessage.success('搜索条件已保存')
+  ElMessage.success('Search conditions saved successfully')
 }
 
 // 导出结果
 const handleExport = () => {
-  ElMessage.info('导出功能开发中...')
+  ElMessage.info('Export function is under development...')
+}
+
+// Resize charts when window size changes
+const handleResize = () => {
+  nextTick(() => {
+    categoryChart?.resize()
+    yearTrendChart?.resize()
+  })
 }
 
 // 获取分类标签类型
@@ -696,7 +931,7 @@ onMounted(() => {
       const conditions = JSON.parse(saved)
       Object.assign(searchForm, conditions)
     } catch (error) {
-      console.error('加载保存的搜索条件失败:', error)
+      console.error('Failed to load saved search conditions:', error)
     }
   }
 
@@ -705,13 +940,23 @@ onMounted(() => {
     searchForm.biomarker = route.query.q
     handleSearch()
   }
+
+  // Add window resize listener
+  window.addEventListener('resize', handleResize)
+})
+
+// Cleanup on unmount
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+  categoryChart?.dispose()
+  yearTrendChart?.dispose()
 })
 </script>
 
 <style scoped>
 .advanced-search {
   min-height: 100vh;
-  background: #fafbfc;
+  background: var(--bg-secondary);
 }
 
 /* Search Form Section */
@@ -719,86 +964,148 @@ onMounted(() => {
   padding: 40px 0;
 }
 
-.search-form-card {
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  margin-bottom: 30px;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.form-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 0;
-  display: flex;
-  align-items: center;
-}
-
-.title-icon {
-  margin-right: 8px;
-  color: var(--el-color-primary);
-}
-
-.header-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.advanced-form {
-  padding: 20px;
-}
-
 .section-title {
-  font-size: 1.1rem;
+  font-size: var(--font-size-xl);
   font-weight: 600;
-  margin-bottom: 20px;
+  margin-bottom: var(--spacing-lg);
   color: var(--text-primary);
   display: flex;
   align-items: center;
-  gap: 8px;
-  border-bottom: 1px solid var(--el-border-color-light);
-  padding-bottom: 10px;
+  gap: var(--spacing-sm);
+  border-bottom: 2px solid var(--border-light);
+  padding-bottom: var(--spacing-sm);
 }
 
 .form-section {
-  margin-bottom: 30px;
+  margin-bottom: var(--spacing-xl);
 }
 
 .range-input {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--spacing-sm);
 }
 
 .range-separator {
-  color: var(--el-text-color-secondary);
+  color: var(--text-secondary);
   font-weight: 500;
+  padding: 0 var(--spacing-xs);
 }
 
 .form-actions {
   display: flex;
   justify-content: center;
-  margin-top: 30px;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-xl);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border-default);
 }
 
 .search-btn {
-  /* min-width: 120px; */
   font-weight: 600;
+  padding: var(--spacing-sm) var(--spacing-xl);
+}
+
+/* Results Overview */
+.results-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.overview-card {
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition-normal);
+}
+
+.overview-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--accent-color);
+}
+
+.stat-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+}
+
+.stat-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-lg);
+  background: var(--accent-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: var(--font-size-xl);
+}
+
+.stat-info {
+  flex: 1;
+}
+
+.stat-number {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.stat-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+/* Charts Section */
+.charts-section {
+  margin-bottom: var(--spacing-xl);
+}
+
+.chart-card {
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--border-default);
+  background: var(--bg-tertiary);
+}
+
+.chart-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.chart-container {
+  height: 300px;
+  padding: var(--spacing-md);
 }
 
 /* Results Section */
 .results-section {
-  padding: 0 0 40px;
+  padding: 0 0 var(--spacing-2xl);
 }
 
 .results-card {
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
 }
 
 .results-header {
@@ -806,162 +1113,193 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 15px;
+  gap: var(--spacing-md);
 }
 
 .results-title {
-  font-size: 1.2rem;
+  font-size: var(--font-size-xl);
   font-weight: 600;
   margin: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--spacing-sm);
 }
 
 .results-actions {
   display: flex;
-  gap: 15px;
+  gap: var(--spacing-md);
   align-items: center;
   flex-wrap: wrap;
 }
 
 /* Table View */
 .table-view {
-  margin: 20px 0;
+  margin: var(--spacing-lg) 0;
 }
 
 .biomarkers-table {
   width: 100%;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
 }
 
 /* Card View */
 .card-view {
-  padding: 20px 0;
+  padding: var(--spacing-lg) 0;
 }
 
 .cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--spacing-lg);
 }
 
 .biomarker-card {
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: all var(--transition-normal);
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius-lg);
 }
 
 .biomarker-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--accent-color);
 }
 
 .biomarker-name {
-  font-size: 1.1rem;
+  font-size: var(--font-size-lg);
   font-weight: 600;
   margin: 0;
   flex: 1;
 }
 
 .category-tag {
-  margin-left: 10px;
+  margin-left: var(--spacing-sm);
 }
 
 .info-row {
   display: flex;
-  margin-bottom: 8px;
+  margin-bottom: var(--spacing-sm);
   align-items: flex-start;
 }
 
 .info-icon {
-  margin-right: 8px;
-  color: var(--el-color-info);
+  margin-right: var(--spacing-sm);
+  color: var(--accent-color);
   width: 16px;
   margin-top: 3px;
 }
 
 .info-label {
   font-weight: 600;
-  margin-right: 5px;
-  color: var(--el-text-color-secondary);
-  min-width: 60px;
+  margin-right: var(--spacing-xs);
+  color: var(--text-secondary);
+  min-width: 80px;
 }
 
 .info-value {
   flex: 1;
-  color: var(--el-text-color-primary);
+  color: var(--text-primary);
   word-break: break-word;
 }
 
 .reference-row {
-  margin-top: 12px;
-  padding-top: 8px;
-  border-top: 1px dashed var(--el-border-color-lighter);
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-sm);
+  border-top: 1px dashed var(--border-default);
 }
 
 /* Pagination */
 .pagination-section {
   display: flex;
   justify-content: center;
-  margin-top: 20px;
-  padding: 10px 0;
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-md) 0;
 }
 
 .pagination-card {
-  padding: 10px;
-  background: #fff;
-  border-radius: 8px;
+  padding: var(--spacing-md);
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
 }
 
 /* Empty State */
-.empty-state {
-  padding: 40px 0;
+.empty-state,
+.loading-state {
+  padding: var(--spacing-2xl) 0;
 }
 
-.empty-card {
+.empty-card,
+.loading-card {
   text-align: center;
-  padding: 40px;
+  padding: var(--spacing-2xl);
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius-lg);
 }
 
-.empty-content {
+.empty-content,
+.loading-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 15px;
+  gap: var(--spacing-md);
 }
 
-.empty-icon {
+.empty-icon,
+.loading-icon {
   font-size: 3rem;
-  color: var(--el-color-info);
-  margin-bottom: 10px;
+  color: var(--accent-color);
+  margin-bottom: var(--spacing-md);
 }
 
-.empty-title {
-  font-size: 1.5rem;
+.empty-title,
+.loading-title {
+  font-size: var(--font-size-2xl);
   font-weight: 600;
   margin: 0;
+  color: var(--text-primary);
 }
 
-.empty-description {
-  color: var(--el-text-color-secondary);
-  margin-bottom: 20px;
+.empty-description,
+.loading-description {
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-lg);
+  max-width: 400px;
 }
 
-/* Responsive Adjustments */
+/* Responsive Design */
 @media (max-width: 768px) {
   .hero-title {
-    font-size: 2rem;
+    font-size: var(--font-size-3xl);
   }
 
-  .hero-section {
-    padding: 60px 0 40px;
+  .results-overview {
+    grid-template-columns: 1fr;
   }
 
-  .form-section {
-    padding: 15px;
+  .charts-section .el-row {
+    flex-direction: column;
   }
 
-  .card-content {
-    padding: 10px;
+  .chart-header {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    align-items: stretch;
+  }
+
+  .results-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .results-actions {
+    justify-content: center;
+  }
+
+  .cards-grid {
+    grid-template-columns: 1fr;
   }
 
   .range-input {
@@ -971,7 +1309,28 @@ onMounted(() => {
 
   .range-separator {
     text-align: center;
-    margin: 5px 0;
+    margin: var(--spacing-xs) 0;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 480px) {
+  .advanced-form {
+    padding: var(--spacing-lg);
+  }
+
+  .stat-content {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--spacing-sm);
+  }
+
+  .chart-container {
+    height: 250px;
   }
 }
 </style>
