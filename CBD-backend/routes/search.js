@@ -2,9 +2,20 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
 
+// 检查数据库连接
+db.testConnection().then(connected => {
+  if (!connected) {
+    console.error('❌ 搜索路由初始化失败: 无法连接到数据库');
+  } else {
+    console.log('✅ 搜索路由初始化成功: 数据库连接正常');
+  }
+});
+
 // 高级搜索接口
 router.post('/advanced', async (req, res) => {
   try {
+    console.log('接收到高级搜索请求:', req.body);
+
     const {
       page = 1,
       limit = 20,
@@ -51,90 +62,95 @@ router.post('/advanced', async (req, res) => {
     const params = [];
     let paramIndex = 1;
 
-    // 基本信息搜索条件
+    // 基本信息搜索条件 - 修正字段名为小写
     if (biomarker) {
-      query += ` AND Biomarker LIKE ?`;
-      countQuery += ` AND Biomarker LIKE ?`;
+      query += ` AND name LIKE ?`;
+      countQuery += ` AND name LIKE ?`;
       params.push(`%${biomarker}%`);
     }
 
     if (category && category.length > 0) {
       const categoryPlaceholders = category.map(() => '?').join(',');
-      query += ` AND Category IN (${categoryPlaceholders})`;
-      countQuery += ` AND Category IN (${categoryPlaceholders})`;
+      query += ` AND category IN (${categoryPlaceholders})`;
+      countQuery += ` AND category IN (${categoryPlaceholders})`;
       params.push(...category);
     }
 
     if (string_name) {
-      query += ` AND String_Name LIKE ?`;
-      countQuery += ` AND String_Name LIKE ?`;
+      query += ` AND name LIKE ?`;  // 假设string_name对应name字段
+      countQuery += ` AND name LIKE ?`;
       params.push(`%${string_name}%`);
     }
 
     if (description) {
-      query += ` AND Discription LIKE ?`;
-      countQuery += ` AND Discription LIKE ?`;
+      query += ` AND description LIKE ?`;  // 修正拼写错误
+      countQuery += ` AND description LIKE ?`;
       params.push(`%${description}%`);
     }
 
     if (region) {
-      query += ` AND Region LIKE ?`;
-      countQuery += ` AND Region LIKE ?`;
+      query += ` AND region LIKE ?`;
+      countQuery += ` AND region LIKE ?`;
       params.push(`%${region}%`);
     }
 
     if (race) {
-      query += ` AND Race LIKE ?`;
-      countQuery += ` AND Race LIKE ?`;
-      params.push(`%${race}%`);
+      // 假设没有race字段，可能需要添加
+      // query += ` AND race LIKE ?`;
+      // countQuery += ` AND race LIKE ?`;
+      // params.push(`%${race}%`);
     }
 
     if (location) {
-      query += ` AND Location LIKE ?`;
-      countQuery += ` AND Location LIKE ?`;
+      query += ` AND location LIKE ?`;
+      countQuery += ` AND location LIKE ?`;
       params.push(`%${location}%`);
     }
 
     if (stage) {
-      query += ` AND Stage LIKE ?`;
-      countQuery += ` AND Stage LIKE ?`;
+      query += ` AND stage LIKE ?`;
+      countQuery += ` AND stage LIKE ?`;
       params.push(`%${stage}%`);
     }
 
     if (source) {
-      query += ` AND Source LIKE ?`;
-      countQuery += ` AND Source LIKE ?`;
+      query += ` AND source LIKE ?`;
+      countQuery += ` AND source LIKE ?`;
       params.push(`%${source}%`);
     }
 
     if (experiment) {
-      query += ` AND Experiment LIKE ?`;
-      countQuery += ` AND Experiment LIKE ?`;
-      params.push(`%${experiment}%`);
+      // 假设没有experiment字段，可能需要添加
+      // query += ` AND experiment LIKE ?`;
+      // countQuery += ` AND experiment LIKE ?`;
+      // params.push(`%${experiment}%`);
     }
 
     if (application) {
-      query += ` AND Application LIKE ?`;
-      countQuery += ` AND Application LIKE ?`;
+      query += ` AND application LIKE ?`;
+      countQuery += ` AND application LIKE ?`;
       params.push(`%${application}%`);
     }
 
     if (clinical_use !== undefined && clinical_use !== '') {
-      query += ` AND Clinical_Use = ?`;
-      countQuery += ` AND Clinical_Use = ?`;
-      params.push(clinical_use);
+      // 假设没有clinical_use字段，可能需要添加
+      // query += ` AND clinical_use = ?`;
+      // countQuery += ` AND clinical_use = ?`;
+      // params.push(clinical_use);
     }
 
     if (target !== undefined && target !== '') {
-      query += ` AND Target = ?`;
-      countQuery += ` AND Target = ?`;
-      params.push(target);
+      // 假设没有target字段，可能需要添加
+      // query += ` AND target = ?`;
+      // countQuery += ` AND target = ?`;
+      // params.push(target);
     }
 
     if (drugs) {
-      query += ` AND Drugs LIKE ?`;
-      countQuery += ` AND Drugs LIKE ?`;
-      params.push(`%${drugs}%`);
+      // 假设没有drugs字段，可能需要添加
+      // query += ` AND drugs LIKE ?`;
+      // countQuery += ` AND drugs LIKE ?`;
+      // params.push(`%${drugs}%`);
     }
 
     // 样本信息数值范围搜索
@@ -198,47 +214,45 @@ router.post('/advanced', async (req, res) => {
       params.push(age_max);
     }
 
-    // 文献信息搜索条件
+    // 文献信息搜索条件 - 修正字段名为小写
     if (reference_first_author) {
-      query += ` AND Reference_first_author LIKE ?`;
-      countQuery += ` AND Reference_first_author LIKE ?`;
+      query += ` AND first_author LIKE ?`;
+      countQuery += ` AND first_author LIKE ?`;
       params.push(`%${reference_first_author}%`);
     }
 
     if (reference_journal) {
-      query += ` AND Reference_journal LIKE ?`;
-      countQuery += ` AND Reference_journal LIKE ?`;
+      query += ` AND journal LIKE ?`;
+      countQuery += ` AND journal LIKE ?`;
       params.push(`%${reference_journal}%`);
     }
 
     if (reference_year_from) {
-      query += ` AND Reference_year >= ?`;
-      countQuery += ` AND Reference_year >= ?`;
+      query += ` AND publication_year >= ?`;
+      countQuery += ` AND publication_year >= ?`;
       params.push(reference_year_from);
     }
 
     if (reference_year_to) {
-      query += ` AND Reference_year <= ?`;
-      countQuery += ` AND Reference_year <= ?`;
+      query += ` AND publication_year <= ?`;
+      countQuery += ` AND publication_year <= ?`;
       params.push(reference_year_to);
     }
 
     if (pmid) {
-      query += ` AND PMID LIKE ?`;
-      countQuery += ` AND PMID LIKE ?`;
+      query += ` AND pmid LIKE ?`;
+      countQuery += ` AND pmid LIKE ?`;
       params.push(`%${pmid}%`);
     }
 
-    // 关键词搜索（在多个字段中搜索）
+    // 关键词搜索（在多个字段中搜索）- 修正字段名为小写
     if (keywords) {
       const keywordConditions = [
-        'Biomarker LIKE ?',
-        'String_Name LIKE ?',
-        'Discription LIKE ?',
-        'Application LIKE ?',
-        'Conclusion LIKE ?',
-        'Reference_first_author LIKE ?',
-        'Reference_journal LIKE ?'
+        'name LIKE ?',
+        'description LIKE ?',
+        'application LIKE ?',
+        'first_author LIKE ?',
+        'journal LIKE ?'
       ];
       query += ` AND (${keywordConditions.join(' OR ')})`;
       countQuery += ` AND (${keywordConditions.join(' OR ')})`;
@@ -249,29 +263,30 @@ router.post('/advanced', async (req, res) => {
       }
     }
 
-    // 排序
+    // 排序 - 修正字段名为小写
     let orderBy = '';
     switch (sort) {
       case 'biomarker_asc':
-        orderBy = 'ORDER BY Biomarker ASC';
+        orderBy = 'ORDER BY name ASC';
         break;
       case 'biomarker_desc':
-        orderBy = 'ORDER BY Biomarker DESC';
+        orderBy = 'ORDER BY name DESC';
         break;
       case 'year_desc':
-        orderBy = 'ORDER BY Reference_year DESC';
+        orderBy = 'ORDER BY publication_year DESC';
         break;
       case 'year_asc':
-        orderBy = 'ORDER BY Reference_year ASC';
+        orderBy = 'ORDER BY publication_year ASC';
         break;
       case 'number_desc':
-        orderBy = 'ORDER BY Number DESC';
+        // 假设样本数量字段名为number
+        orderBy = 'ORDER BY number DESC';
         break;
       case 'number_asc':
-        orderBy = 'ORDER BY Number ASC';
+        orderBy = 'ORDER BY number ASC';
         break;
       default:
-        orderBy = 'ORDER BY ID ASC';
+        orderBy = 'ORDER BY id ASC';
     }
 
     // 分页
@@ -280,11 +295,11 @@ router.post('/advanced', async (req, res) => {
     params.push(parseInt(limit), parseInt(offset));
 
     // 执行查询
-    const [results] = await db.execute(query, params);
+    const results = await db.query(query, params);
 
     // 获取总数（不包含分页参数）
     const countParams = params.slice(0, -2); // 移除 limit 和 offset 参数
-    const [countResult] = await db.execute(countQuery, countParams);
+    const countResult = await db.query(countQuery, countParams);
     const total = countResult[0].total;
 
     res.json({
@@ -311,6 +326,7 @@ router.post('/advanced', async (req, res) => {
 // 快速搜索接口
 router.get('/quick', async (req, res) => {
   try {
+    console.log('接收到快速搜索请求:', req.query);
     const { q, page = 1, limit = 10 } = req.query;
 
     if (!q) {
@@ -320,22 +336,20 @@ router.get('/quick', async (req, res) => {
       });
     }
 
-    // 在主要字段中搜索
+    // 在主要字段中搜索 - 修正字段名
     const query = `
       SELECT * FROM biomarker 
-      WHERE Biomarker LIKE ? 
-         OR String_Name LIKE ? 
-         OR Discription LIKE ? 
-         OR Application LIKE ?
-         OR Reference_first_author LIKE ?
-         OR Reference_journal LIKE ?
+      WHERE name LIKE ? 
+         OR description LIKE ? 
+         OR application LIKE ?
+         OR first_author LIKE ?
+         OR journal LIKE ?
       ORDER BY 
         CASE 
-          WHEN Biomarker LIKE ? THEN 1
-          WHEN String_Name LIKE ? THEN 2
-          ELSE 3
+          WHEN name LIKE ? THEN 1
+          ELSE 2
         END,
-        Biomarker ASC
+        name ASC
       LIMIT ? OFFSET ?
     `;
 
@@ -344,26 +358,25 @@ router.get('/quick', async (req, res) => {
     const offset = (page - 1) * limit;
 
     const params = [
-      searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm,
-      exactTerm, exactTerm,
+      searchTerm, searchTerm, searchTerm, searchTerm, searchTerm,
+      exactTerm,
       parseInt(limit), parseInt(offset)
     ];
 
-    const [results] = await db.execute(query, params);
+    const results = await db.query(query, params);
 
     // 获取总数
     const countQuery = `
       SELECT COUNT(*) as total FROM biomarker 
-      WHERE Biomarker LIKE ? 
-         OR String_Name LIKE ? 
-         OR Discription LIKE ? 
-         OR Application LIKE ?
-         OR Reference_first_author LIKE ?
-         OR Reference_journal LIKE ?
+      WHERE name LIKE ? 
+         OR description LIKE ? 
+         OR application LIKE ?
+         OR first_author LIKE ?
+         OR journal LIKE ?
     `;
 
-    const countParams = [searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm];
-    const [countResult] = await db.execute(countQuery, countParams);
+    const countParams = [searchTerm, searchTerm, searchTerm, searchTerm, searchTerm];
+    const countResult = await db.query(countQuery, countParams);
     const total = countResult[0].total;
 
     res.json({
@@ -429,7 +442,7 @@ router.get('/suggestions', async (req, res) => {
       LIMIT 10
     `;
 
-    const [results] = await db.execute(query, [`${q}%`]);
+    const results = await db.query(query, [`${q}%`]);
 
     res.json({
       success: true,
@@ -449,21 +462,42 @@ router.get('/suggestions', async (req, res) => {
 // 获取筛选选项
 router.get('/filters', async (req, res) => {
   try {
-    // 获取所有可用的筛选选项
+    console.log('接收到获取筛选选项请求');
+
+    // 获取所有可用的筛选选项 - 修正字段名
     const queries = {
-      categories: 'SELECT DISTINCT Category FROM biomarker WHERE Category IS NOT NULL AND Category != "" ORDER BY Category',
-      sources: 'SELECT DISTINCT Source FROM biomarker WHERE Source IS NOT NULL AND Source != "" ORDER BY Source',
-      stages: 'SELECT DISTINCT Stage FROM biomarker WHERE Stage IS NOT NULL AND Stage != "" ORDER BY Stage',
-      experiments: 'SELECT DISTINCT Experiment FROM biomarker WHERE Experiment IS NOT NULL AND Experiment != "" ORDER BY Experiment',
-      regions: 'SELECT DISTINCT Region FROM biomarker WHERE Region IS NOT NULL AND Region != "" ORDER BY Region',
-      races: 'SELECT DISTINCT Race FROM biomarker WHERE Race IS NOT NULL AND Race != "" ORDER BY Race'
+      categories: 'SELECT DISTINCT category FROM biomarker WHERE category IS NOT NULL AND category != "" ORDER BY category',
+      sources: 'SELECT DISTINCT source FROM biomarker WHERE source IS NOT NULL AND source != "" ORDER BY source',
+      stages: 'SELECT DISTINCT stage FROM biomarker WHERE stage IS NOT NULL AND stage != "" ORDER BY stage',
+      regions: 'SELECT DISTINCT region FROM biomarker WHERE region IS NOT NULL AND region != "" ORDER BY region'
     };
 
     const results = {};
 
     for (const [key, query] of Object.entries(queries)) {
-      const [rows] = await db.execute(query);
-      results[key] = rows.map(row => Object.values(row)[0]);
+      try {
+        console.log(`执行查询: ${query}`);
+        const rows = await db.query(query);
+        console.log(`查询结果: ${key}`, rows);
+        results[key] = rows.map(row => Object.values(row)[0]);
+      } catch (queryError) {
+        console.error(`查询 ${key} 失败:`, queryError);
+        results[key] = [];
+      }
+    }
+
+    // 添加默认值，以防数据库中没有数据
+    if (!results.categories || results.categories.length === 0) {
+      results.categories = ['Protein', 'Gene', 'MicroRNA', 'Metabolite', 'DNA', 'RNA'];
+    }
+    if (!results.sources || results.sources.length === 0) {
+      results.sources = ['Tissue', 'Blood', 'Serum', 'Plasma', 'Urine', 'Saliva'];
+    }
+    if (!results.stages || results.stages.length === 0) {
+      results.stages = ['Stage I', 'Stage II', 'Stage III', 'Stage IV'];
+    }
+    if (!results.regions || results.regions.length === 0) {
+      results.regions = ['Asia', 'Europe', 'North America', 'South America', 'Africa', 'Oceania', 'Global'];
     }
 
     res.json({

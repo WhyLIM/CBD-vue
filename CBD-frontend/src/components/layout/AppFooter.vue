@@ -32,13 +32,17 @@
                 <img src="/images/liu-logo.svg" alt="Linköping University" class="partner-logo">
                 <span class="partner-name">Linköping University</span>
               </a>
+              <a href="https://www.siat.ac.cn/" target="_blank" class="partner-link">
+                <img src="/images/siat-logo.svg" alt="Shenzhen Institutes of Advanced Technology" class="partner-logo">
+                <span class="partner-name">SIAT (CAS)</span>
+              </a>
               <a href="http://www.suda.edu.cn/" target="_blank" class="partner-link">
                 <img src="/images/suda-logo.svg" alt="Soochow University" class="partner-logo">
                 <span class="partner-name">Soochow University</span>
               </a>
               <a href="https://www.gdghospital.org.cn/" target="_blank" class="partner-link">
                 <img src="/images/gdph-logo.svg" alt="Guangdong Provincial People's Hospital" class="partner-logo">
-                <span class="partner-name">Guangdong Provincial People's Hospital</span>
+                <span class="partner-name">GDPH</span>
               </a>
             </div>
           </div>

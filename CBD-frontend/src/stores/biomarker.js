@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import api from '@/utils/api'
+import axios from 'axios'
 
 export const useBiomarkerStore = defineStore('biomarker', {
   state: () => ({
@@ -98,10 +99,25 @@ export const useBiomarkerStore = defineStore('biomarker', {
     // 高级搜索
     async advancedSearch(params) {
       try {
+        console.log('Sending advanced search request, params:', params)
+        // 使用配置好的api实例
         const response = await api.post('/search/advanced', params)
-        return response.data
+        console.log('Advanced search response:', response)
+
+        // 返回标准格式的响应
+        return {
+          success: true,
+          data: response.data || [],
+          pagination: response.pagination || {
+            page: 1,
+            limit: 20,
+            total: 0,
+            pages: 0
+          }
+        }
       } catch (error) {
-        console.error('高级搜索失败:', error)
+        console.error('Advanced search failed:', error)
+        console.error('Error details:', error.response?.data || error.message)
         throw error
       }
     },

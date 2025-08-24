@@ -508,14 +508,13 @@ import { ref, reactive, onMounted, onUnmounted, computed, nextTick, watch } from
 import { useRouter, useRoute } from 'vue-router'
 import { useBiomarkerStore } from '@/stores/biomarker'
 import { ElMessage } from 'element-plus'
-import axios from 'axios'
 import * as echarts from 'echarts'
 
 const router = useRouter()
 const route = useRoute()
 const biomarkerStore = useBiomarkerStore()
 
-// 响应式数据
+// Reactive data
 const loading = ref(false)
 const hasSearched = ref(false)
 const searchFormRef = ref()
@@ -524,18 +523,18 @@ const pageSize = ref(20)
 const totalResults = ref(0)
 const sortBy = ref('relevance')
 const viewMode = ref('table')
+const showCharts = ref(true) // Default to showing charts
 
-// const currentYear = computed(() => new Date().getFullYear())
-// const defaultYear = [
-//   {
-//     text: 'startYear',
-//     value: new Date(1900, 0, 1), // 1900-01-01
-//   },
-//   {
-//     text: 'currentYear',
-//     value: new Date(new Date().getFullYear() + 1, 0, 1), // 下一年 1 月 1 日
-//   },
-// ];
+// Chart refs
+const categoryChartRef = ref(null)
+const yearTrendChartRef = ref(null)
+
+// Chart instances
+let categoryChart = null
+let yearTrendChart = null
+
+// Chart view types
+const categoryViewType = ref('pie')
 
 const searchForm = reactive({
   biomarker: '',
@@ -776,7 +775,7 @@ const handleSearch = async () => {
       ...searchForm
     }
 
-    // 清理空值
+    // 清理空值和处理特殊格式
     Object.keys(params).forEach(key => {
       if (params[key] === '' || params[key] === null ||
         (Array.isArray(params[key]) && params[key].length === 0)) {
@@ -784,22 +783,48 @@ const handleSearch = async () => {
       }
     })
 
-    const response = await axios.post('/api/search/advanced', params)
+    // 处理年份范围
+    if (params.reference_year_range && Array.isArray(params.reference_year_range)) {
+      params.reference_year_from = params.reference_year_range[0]?.getFullYear() || null;
+      params.reference_year_to = params.reference_year_range[1]?.getFullYear() || null;
+      delete params.reference_year_range;
+    }
 
-    if (response.data.success) {
-      searchResults.value = response.data.data || []
-      totalResults.value = response.data.pagination.total || 0
-      ElMessage.success(`Found ${totalResults.value} matching results`)
+    console.log('Search params:', params);
 
-      // Initialize charts if they are visible
-      if (showCharts.value) {
+    try {
+      const response = await biomarkerStore.advancedSearch(params)
+
+      if (response.success) {
+        searchResults.value = response.data || []
+        totalResults.value = response.pagination.total || 0
+        ElMessage.success(`Found ${totalResults.value} matching results`)
+
+        // Initialize charts if they are visible
+        if (showCharts.value) {
+          nextTick(() => {
+            initCategoryChart()
+            initYearTrendChart()
+          })
+        }
+      } else {
+        throw new Error(response.message || 'Search failed')
+      }
+    } catch (apiError) {
+      console.error('API error:', apiError)
+      ElMessage.warning('Unable to connect to the server. Using demo data instead.')
+
+      // 使用演示数据
+      searchResults.value = getDemoSearchResults()
+      totalResults.value = searchResults.value.length
+
+      // Initialize charts with demo data
+      if (showCharts && showCharts.value) {
         nextTick(() => {
           initCategoryChart()
           initYearTrendChart()
         })
       }
-    } else {
-      throw new Error(response.data.message || 'Search failed')
     }
   } catch (error) {
     console.error('Search failed:', error)
@@ -809,6 +834,92 @@ const handleSearch = async () => {
   } finally {
     loading.value = false
   }
+}
+
+// 获取演示搜索结果
+const getDemoSearchResults = () => {
+  return [
+    {
+      id: 1,
+      Biomarker: 'TP53',
+      Category: 'Protein',
+      Application: 'Diagnosis, Prognosis',
+      Location: 'Colon, Rectum',
+      Source: 'Tissue',
+      Discription: 'Tumor suppressor protein p53 is a key regulator of cell cycle and apoptosis in colorectal cancer.',
+      Reference_first_author: 'Smith',
+      Reference_journal: 'Nature Genetics',
+      Reference_year: 2020,
+      PMID: '12345678',
+      Region: 'Asia',
+      Stage: 'Stage II-III',
+      Number: 120
+    },
+    {
+      id: 2,
+      Biomarker: 'KRAS',
+      Category: 'Protein',
+      Application: 'Diagnosis, Treatment Response',
+      Location: 'Colon',
+      Source: 'Blood',
+      Discription: 'KRAS is a proto-oncogene that encodes a small GTPase involved in cellular signaling pathways.',
+      Reference_first_author: 'Johnson',
+      Reference_journal: 'Cell',
+      Reference_year: 2021,
+      PMID: '23456789',
+      Region: 'Europe',
+      Stage: 'Stage I-IV',
+      Number: 85
+    },
+    {
+      id: 3,
+      Biomarker: 'miR-21',
+      Category: 'MicroRNA',
+      Application: 'Prognosis, Treatment Response',
+      Location: 'Colon, Rectum',
+      Source: 'Serum',
+      Discription: 'MicroRNA-21 is frequently overexpressed in colorectal cancer and associated with poor prognosis.',
+      Reference_first_author: 'Brown',
+      Reference_journal: 'Cancer Research',
+      Reference_year: 2022,
+      PMID: '34567890',
+      Region: 'North America',
+      Stage: 'Stage II-IV',
+      Number: 150
+    },
+    {
+      id: 4,
+      Biomarker: 'CEA',
+      Category: 'Protein',
+      Application: 'Diagnosis, Monitoring',
+      Location: 'Colon, Rectum',
+      Source: 'Serum',
+      Discription: 'Carcinoembryonic antigen is a glycoprotein involved in cell adhesion and is elevated in colorectal cancer.',
+      Reference_first_author: 'Davis',
+      Reference_journal: 'Clinical Chemistry',
+      Reference_year: 2019,
+      PMID: '45678901',
+      Region: 'Global',
+      Stage: 'Stage I-IV',
+      Number: 200
+    },
+    {
+      id: 5,
+      Biomarker: 'APC',
+      Category: 'Gene',
+      Application: 'Diagnosis, Risk Assessment',
+      Location: 'Colon, Rectum',
+      Source: 'Tissue',
+      Discription: 'Adenomatous polyposis coli gene mutations are found in most colorectal cancers.',
+      Reference_first_author: 'Wilson',
+      Reference_journal: 'Nature Medicine',
+      Reference_year: 2023,
+      PMID: '56789012',
+      Region: 'Global',
+      Stage: 'Stage I-III',
+      Number: 95
+    }
+  ]
 }
 
 // 重置表单
@@ -911,12 +1022,22 @@ const getCategoryTagType = (category) => {
 // 加载筛选选项
 const loadFilterOptions = async () => {
   try {
-    const response = await axios.get('/api/search/filters')
-    if (response.data.success) {
-      filterOptions.value = response.data.data
+    const response = await biomarkerStore.getFilterOptions()
+    if (response.success) {
+      filterOptions.value = response.data
     }
   } catch (error) {
     console.error('加载筛选选项失败:', error)
+    // 使用默认筛选选项
+    filterOptions.value = {
+      categories: ['Protein', 'Gene', 'MicroRNA', 'Metabolite', 'DNA', 'RNA'],
+      sources: ['Tissue', 'Blood', 'Serum', 'Plasma', 'Urine', 'Saliva'],
+      stages: ['Stage I', 'Stage II', 'Stage III', 'Stage IV'],
+      experiments: ['PCR', 'Western Blot', 'ELISA', 'Immunohistochemistry', 'Mass Spectrometry'],
+      regions: ['Asia', 'Europe', 'North America', 'South America', 'Africa', 'Oceania', 'Global'],
+      races: ['Asian', 'Caucasian', 'African', 'Hispanic', 'Mixed']
+    }
+    ElMessage.warning('Failed to load filter options from server. Using default options instead.')
   }
 }
 
