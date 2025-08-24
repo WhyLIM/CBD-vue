@@ -51,11 +51,6 @@ const router = createRouter({
       path: '/about',
       name: 'about',
       component: About
-    },
-    {
-      path: '/about',
-      name: 'about',
-      component: () => import('../views/About.vue')
     }
   ],
   scrollBehavior(to, from, savedPosition) {

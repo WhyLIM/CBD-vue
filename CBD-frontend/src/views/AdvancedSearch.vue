@@ -387,13 +387,6 @@
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column label="Actions" width="100" fixed="right">
-                <template #default="{ row }">
-                  <el-button type="primary" size="small" @click.stop="handleResultClick(row)">
-                    View
-                  </el-button>
-                </template>
-              </el-table-column>
             </el-table>
           </div>
 
@@ -460,11 +453,9 @@
 
           <!-- Pagination -->
           <div class="pagination-section">
-            <div class="pagination-card">
-              <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
-                :page-sizes="[10, 20, 50, 100]" :total="totalResults" layout="total, sizes, prev, pager, next, jumper"
-                @size-change="handlePageSizeChange" @current-change="handlePageChange" />
-            </div>
+            <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
+              :page-sizes="[10, 20, 50, 100]" :total="totalResults" layout="total, sizes, prev, pager, next, jumper"
+              @size-change="handlePageSizeChange" @current-change="handlePageChange" />
           </div>
         </el-card>
       </div>
@@ -1337,13 +1328,6 @@ onUnmounted(() => {
   justify-content: center;
   margin-top: var(--spacing-lg);
   padding: var(--spacing-md) 0;
-}
-
-.pagination-card {
-  padding: var(--spacing-md);
-  background: var(--bg-card);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
 }
 
 /* Empty State */

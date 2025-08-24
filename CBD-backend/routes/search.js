@@ -62,10 +62,10 @@ router.post('/advanced', async (req, res) => {
     const params = [];
     let paramIndex = 1;
 
-    // 基本信息搜索条件 - 修正字段名为小写
+    // 基本信息搜索条件 - 修正字段名
     if (biomarker) {
-      query += ` AND name LIKE ?`;
-      countQuery += ` AND name LIKE ?`;
+      query += ` AND Biomarker LIKE ?`;
+      countQuery += ` AND Biomarker LIKE ?`;
       params.push(`%${biomarker}%`);
     }
 
@@ -77,20 +77,20 @@ router.post('/advanced', async (req, res) => {
     }
 
     if (string_name) {
-      query += ` AND name LIKE ?`;  // 假设string_name对应name字段
-      countQuery += ` AND name LIKE ?`;
+      query += ` AND String_Name LIKE ?`;
+      countQuery += ` AND String_Name LIKE ?`;
       params.push(`%${string_name}%`);
     }
 
     if (description) {
-      query += ` AND description LIKE ?`;  // 修正拼写错误
-      countQuery += ` AND description LIKE ?`;
+      query += ` AND Discription LIKE ?`;
+      countQuery += ` AND Discription LIKE ?`;
       params.push(`%${description}%`);
     }
 
     if (region) {
-      query += ` AND region LIKE ?`;
-      countQuery += ` AND region LIKE ?`;
+      query += ` AND Region LIKE ?`;
+      countQuery += ` AND Region LIKE ?`;
       params.push(`%${region}%`);
     }
 
@@ -102,20 +102,20 @@ router.post('/advanced', async (req, res) => {
     }
 
     if (location) {
-      query += ` AND location LIKE ?`;
-      countQuery += ` AND location LIKE ?`;
+      query += ` AND Location LIKE ?`;
+      countQuery += ` AND Location LIKE ?`;
       params.push(`%${location}%`);
     }
 
     if (stage) {
-      query += ` AND stage LIKE ?`;
-      countQuery += ` AND stage LIKE ?`;
+      query += ` AND Stage LIKE ?`;
+      countQuery += ` AND Stage LIKE ?`;
       params.push(`%${stage}%`);
     }
 
     if (source) {
-      query += ` AND source LIKE ?`;
-      countQuery += ` AND source LIKE ?`;
+      query += ` AND Source LIKE ?`;
+      countQuery += ` AND Source LIKE ?`;
       params.push(`%${source}%`);
     }
 
@@ -127,8 +127,8 @@ router.post('/advanced', async (req, res) => {
     }
 
     if (application) {
-      query += ` AND application LIKE ?`;
-      countQuery += ` AND application LIKE ?`;
+      query += ` AND Application LIKE ?`;
+      countQuery += ` AND Application LIKE ?`;
       params.push(`%${application}%`);
     }
 
@@ -214,45 +214,45 @@ router.post('/advanced', async (req, res) => {
       params.push(age_max);
     }
 
-    // 文献信息搜索条件 - 修正字段名为小写
+    // 文献信息搜索条件 - 修正字段名
     if (reference_first_author) {
-      query += ` AND first_author LIKE ?`;
-      countQuery += ` AND first_author LIKE ?`;
+      query += ` AND Reference_first_author LIKE ?`;
+      countQuery += ` AND Reference_first_author LIKE ?`;
       params.push(`%${reference_first_author}%`);
     }
 
     if (reference_journal) {
-      query += ` AND journal LIKE ?`;
-      countQuery += ` AND journal LIKE ?`;
+      query += ` AND Reference_journal LIKE ?`;
+      countQuery += ` AND Reference_journal LIKE ?`;
       params.push(`%${reference_journal}%`);
     }
 
     if (reference_year_from) {
-      query += ` AND publication_year >= ?`;
-      countQuery += ` AND publication_year >= ?`;
+      query += ` AND Reference_year >= ?`;
+      countQuery += ` AND Reference_year >= ?`;
       params.push(reference_year_from);
     }
 
     if (reference_year_to) {
-      query += ` AND publication_year <= ?`;
-      countQuery += ` AND publication_year <= ?`;
+      query += ` AND Reference_year <= ?`;
+      countQuery += ` AND Reference_year <= ?`;
       params.push(reference_year_to);
     }
 
     if (pmid) {
-      query += ` AND pmid LIKE ?`;
-      countQuery += ` AND pmid LIKE ?`;
+      query += ` AND PMID LIKE ?`;
+      countQuery += ` AND PMID LIKE ?`;
       params.push(`%${pmid}%`);
     }
 
-    // 关键词搜索（在多个字段中搜索）- 修正字段名为小写
+    // 关键词搜索（在多个字段中搜索）- 修正字段名
     if (keywords) {
       const keywordConditions = [
-        'name LIKE ?',
-        'description LIKE ?',
-        'application LIKE ?',
-        'first_author LIKE ?',
-        'journal LIKE ?'
+        'Biomarker LIKE ?',
+        'Discription LIKE ?',
+        'Application LIKE ?',
+        'Reference_first_author LIKE ?',
+        'Reference_journal LIKE ?'
       ];
       query += ` AND (${keywordConditions.join(' OR ')})`;
       countQuery += ` AND (${keywordConditions.join(' OR ')})`;
@@ -263,30 +263,29 @@ router.post('/advanced', async (req, res) => {
       }
     }
 
-    // 排序 - 修正字段名为小写
+    // 排序 - 修正字段名
     let orderBy = '';
     switch (sort) {
       case 'biomarker_asc':
-        orderBy = 'ORDER BY name ASC';
+        orderBy = 'ORDER BY Biomarker ASC';
         break;
       case 'biomarker_desc':
-        orderBy = 'ORDER BY name DESC';
+        orderBy = 'ORDER BY Biomarker DESC';
         break;
       case 'year_desc':
-        orderBy = 'ORDER BY publication_year DESC';
+        orderBy = 'ORDER BY Reference_year DESC';
         break;
       case 'year_asc':
-        orderBy = 'ORDER BY publication_year ASC';
+        orderBy = 'ORDER BY Reference_year ASC';
         break;
       case 'number_desc':
-        // 假设样本数量字段名为number
-        orderBy = 'ORDER BY number DESC';
+        orderBy = 'ORDER BY Number DESC';
         break;
       case 'number_asc':
-        orderBy = 'ORDER BY number ASC';
+        orderBy = 'ORDER BY Number ASC';
         break;
       default:
-        orderBy = 'ORDER BY id ASC';
+        orderBy = 'ORDER BY ID ASC';
     }
 
     // 分页
@@ -339,17 +338,17 @@ router.get('/quick', async (req, res) => {
     // 在主要字段中搜索 - 修正字段名
     const query = `
       SELECT * FROM biomarker 
-      WHERE name LIKE ? 
-         OR description LIKE ? 
-         OR application LIKE ?
-         OR first_author LIKE ?
-         OR journal LIKE ?
+      WHERE Biomarker LIKE ? 
+         OR Discription LIKE ? 
+         OR Application LIKE ?
+         OR Reference_first_author LIKE ?
+         OR Reference_journal LIKE ?
       ORDER BY 
         CASE 
-          WHEN name LIKE ? THEN 1
+          WHEN Biomarker LIKE ? THEN 1
           ELSE 2
         END,
-        name ASC
+        Biomarker ASC
       LIMIT ? OFFSET ?
     `;
 
@@ -368,11 +367,11 @@ router.get('/quick', async (req, res) => {
     // 获取总数
     const countQuery = `
       SELECT COUNT(*) as total FROM biomarker 
-      WHERE name LIKE ? 
-         OR description LIKE ? 
-         OR application LIKE ?
-         OR first_author LIKE ?
-         OR journal LIKE ?
+      WHERE Biomarker LIKE ? 
+         OR Discription LIKE ? 
+         OR Application LIKE ?
+         OR Reference_first_author LIKE ?
+         OR Reference_journal LIKE ?
     `;
 
     const countParams = [searchTerm, searchTerm, searchTerm, searchTerm, searchTerm];
