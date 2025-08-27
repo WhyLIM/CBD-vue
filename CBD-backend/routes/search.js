@@ -463,12 +463,36 @@ router.get('/filters', async (req, res) => {
   try {
     console.log('接收到获取筛选选项请求');
 
+    // 首先检查数据库连接
+    const isConnected = await db.testConnection();
+    if (!isConnected) {
+      console.log('数据库连接失败，返回默认筛选选项');
+      return res.json({
+        success: true,
+        data: {
+          categories: ['Protein', 'Gene', 'MicroRNA', 'Metabolite', 'DNA', 'RNA'],
+          applications: ['Diagnosis', 'Prognosis', 'Treatment', 'Monitoring'],
+          locations: ['Colon', 'Rectum', 'Serum', 'Plasma'],
+          sources: ['Tissue', 'Blood', 'Serum', 'Plasma', 'Urine', 'Saliva'],
+          stages: ['Stage I', 'Stage II', 'Stage III', 'Stage IV'],
+          regions: ['Asia', 'Europe', 'North America', 'South America', 'Africa', 'Oceania', 'Global'],
+          yearRange: {
+            min: 1900,
+            max: new Date().getFullYear()
+          },
+          totalRecords: 100
+        }
+      });
+    }
+
     // 获取所有可用的筛选选项 - 修正字段名
     const queries = {
-      categories: 'SELECT DISTINCT category FROM biomarker WHERE category IS NOT NULL AND category != "" ORDER BY category',
-      sources: 'SELECT DISTINCT source FROM biomarker WHERE source IS NOT NULL AND source != "" ORDER BY source',
-      stages: 'SELECT DISTINCT stage FROM biomarker WHERE stage IS NOT NULL AND stage != "" ORDER BY stage',
-      regions: 'SELECT DISTINCT region FROM biomarker WHERE region IS NOT NULL AND region != "" ORDER BY region'
+      categories: 'SELECT DISTINCT Category FROM biomarker WHERE Category IS NOT NULL AND Category != "" ORDER BY Category',
+      applications: 'SELECT DISTINCT Application FROM biomarker WHERE Application IS NOT NULL AND Application != "" ORDER BY Application',
+      locations: 'SELECT DISTINCT Location FROM biomarker WHERE Location IS NOT NULL AND Location != "" ORDER BY Location',
+      sources: 'SELECT DISTINCT Source FROM biomarker WHERE Source IS NOT NULL AND Source != "" ORDER BY Source',
+      stages: 'SELECT DISTINCT Stage FROM biomarker WHERE Stage IS NOT NULL AND Stage != "" ORDER BY Stage',
+      regions: 'SELECT DISTINCT Region FROM biomarker WHERE Region IS NOT NULL AND Region != "" ORDER BY Region'
     };
 
     const results = {};
@@ -478,16 +502,50 @@ router.get('/filters', async (req, res) => {
         console.log(`执行查询: ${query}`);
         const rows = await db.query(query);
         console.log(`查询结果: ${key}`, rows);
-        results[key] = rows.map(row => Object.values(row)[0]);
+        results[key] = rows.map(row => Object.values(row)[0]).filter(value => value && value.trim() !== '');
       } catch (queryError) {
         console.error(`查询 ${key} 失败:`, queryError);
         results[key] = [];
       }
     }
 
+    // 获取年份范围
+    try {
+      const yearQuery = 'SELECT MIN(Reference_year) as min_year, MAX(Reference_year) as max_year FROM biomarker WHERE Reference_year IS NOT NULL AND Reference_year > 0';
+      const yearResult = await db.query(yearQuery);
+      if (yearResult && yearResult.length > 0) {
+        results.yearRange = {
+          min: yearResult[0].min_year || 1900,
+          max: yearResult[0].max_year || new Date().getFullYear()
+        };
+      }
+    } catch (yearError) {
+      console.error('获取年份范围失败:', yearError);
+      results.yearRange = {
+        min: 1900,
+        max: new Date().getFullYear()
+      };
+    }
+
+    // 获取总记录数
+    try {
+      const countQuery = 'SELECT COUNT(*) as total FROM biomarker';
+      const countResult = await db.query(countQuery);
+      results.totalRecords = countResult[0].total || 0;
+    } catch (countError) {
+      console.error('获取总记录数失败:', countError);
+      results.totalRecords = 0;
+    }
+
     // 添加默认值，以防数据库中没有数据
     if (!results.categories || results.categories.length === 0) {
       results.categories = ['Protein', 'Gene', 'MicroRNA', 'Metabolite', 'DNA', 'RNA'];
+    }
+    if (!results.applications || results.applications.length === 0) {
+      results.applications = ['Diagnosis', 'Prognosis', 'Treatment', 'Monitoring'];
+    }
+    if (!results.locations || results.locations.length === 0) {
+      results.locations = ['Colon', 'Rectum', 'Serum', 'Plasma'];
     }
     if (!results.sources || results.sources.length === 0) {
       results.sources = ['Tissue', 'Blood', 'Serum', 'Plasma', 'Urine', 'Saliva'];
@@ -506,10 +564,22 @@ router.get('/filters', async (req, res) => {
 
   } catch (error) {
     console.error('获取筛选选项错误:', error);
-    res.status(500).json({
-      success: false,
-      message: '获取筛选选项失败',
-      error: error.message
+    // 即使出错也返回默认选项，确保前端能正常工作
+    res.json({
+      success: true,
+      data: {
+        categories: ['Protein', 'Gene', 'MicroRNA', 'Metabolite', 'DNA', 'RNA'],
+        applications: ['Diagnosis', 'Prognosis', 'Treatment', 'Monitoring'],
+        locations: ['Colon', 'Rectum', 'Serum', 'Plasma'],
+        sources: ['Tissue', 'Blood', 'Serum', 'Plasma', 'Urine', 'Saliva'],
+        stages: ['Stage I', 'Stage II', 'Stage III', 'Stage IV'],
+        regions: ['Asia', 'Europe', 'North America', 'South America', 'Africa', 'Oceania', 'Global'],
+        yearRange: {
+          min: 1900,
+          max: new Date().getFullYear()
+        },
+        totalRecords: 100
+      }
     });
   }
 });

@@ -27,7 +27,7 @@
                 <font-awesome-icon :icon="['fas', 'file-alt']" />
               </div>
               <div class="metric-info">
-                <div class="metric-value">{{ stats.totalDownloads }}</div>
+                <div class="metric-value">{{ stats.totalArticles }}</div>
                 <div class="metric-label">Literature Citations</div>
               </div>
             </div>
@@ -36,7 +36,7 @@
                 <font-awesome-icon :icon="['fas', 'university']" />
               </div>
               <div class="metric-info">
-                <div class="metric-value">{{ stats.monthlyDownloads }}</div>
+                <div class="metric-value">{{ stats.researchInstitutions }}</div>
                 <div class="metric-label">Research Institutions</div>
               </div>
             </div>
@@ -148,12 +148,12 @@
             <h2 class="section-title">Latest Research Updates</h2>
             <div class="recent-biomarkers-section">
               <el-table :data="recentBiomarkers" v-loading="loading" class="recent-table" @row-click="handleRowClick">
-                <el-table-column prop="name" label="Biomarker Name" width="150" />
-                <el-table-column prop="category" label="Category" width="120" />
-                <el-table-column prop="application" label="Application" />
-                <el-table-column prop="first_author" label="First Author" width="150" />
-                <el-table-column prop="journal" label="Journal" width="180" />
-                <el-table-column prop="publication_year" label="Year" width="80" />
+                <el-table-column prop="Biomarker" label="Biomarker Name" width="350" />
+                <el-table-column prop="Category" label="Category" />
+                <el-table-column prop="Application" label="Application" />
+                <el-table-column prop="Reference_first_author" label="First Author" width="150" />
+                <el-table-column prop="Reference_journal" label="Journal" width="180" />
+                <el-table-column prop="Reference_year" label="Year" width="80" />
               </el-table>
             </div>
             <el-button type="primary" @click="$router.push('/biomarkers')">
@@ -161,53 +161,36 @@
               <font-awesome-icon :icon="['fas', 'arrow-right']" />
             </el-button>
           </div>
-          <div class="updates-stats">
-            <div class="stats-card">
-              <h3>Database Statistics</h3>
-              <div class="stats-grid">
-                <div class="stat-item" v-for="item in categoryStats.slice(0, 4)" :key="item.category">
-                  <div class="stat-label">{{ item.category }}</div>
-                  <div class="stat-value">{{ item.count }}</div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </section>
 
-    <!-- Academic Collaboration -->
-    <section class="academic-collaboration">
+    <!-- Citation Information -->
+    <section class="citation-section">
       <div class="container">
-        <h2 class="section-title">Academic Collaboration</h2>
-        <div class="collaboration-content">
-          <div class="collaboration-text">
-            <h3>Collaborating with Top Research Institutions Worldwide</h3>
-            <p>
-              We have established extensive partnerships with renowned universities, research institutes, and medical
-              institutions around the world,
-              jointly advancing the development of colorectal cancer biomarker research.
-            </p>
-            <div class="collaboration-benefits">
-              <div class="benefit-item">
-                <font-awesome-icon :icon="['fas', 'handshake']" />
-                <span>Data Sharing</span>
-              </div>
-              <div class="benefit-item">
-                <font-awesome-icon :icon="['fas', 'users']" />
-                <span>Academic Exchange</span>
-              </div>
-              <div class="benefit-item">
-                <font-awesome-icon :icon="['fas', 'lightbulb']" />
-                <span>Innovative Research</span>
-              </div>
-            </div>
-          </div>
-          <div class="partner-logos">
-            <div class="logo-grid">
-              <div class="partner-logo" v-for="i in 6" :key="i">
-                <font-awesome-icon :icon="['fas', 'university']" />
-                <span>Partner Institution {{ i }}</span>
+        <h2 class="section-title">Citation Information</h2>
+        <div class="citation-intro">
+          <p>
+            Please cite the following publications when referencing this database in your research.
+          </p>
+        </div>
+        <div class="citation-list">
+          <div class="citation-card" v-for="c in citations" :key="c.key">
+            <div class="citation-content">
+              <p class="citation-text">{{ c.apa }}</p>
+              <div class="citation-links">
+                <el-button @click="copyText(c.apa)" class="copy-btn">
+                  <font-awesome-icon :icon="['fas', 'copy']" /> Copy
+                </el-button>
+                <a :href="c.doi" target="_blank" class="citation-link doi-link">
+                  <font-awesome-icon :icon="['fas', 'external-link-alt']" /> DOI
+                </a>
+                <a :href="c.pubmed" target="_blank" class="citation-link pubmed-link" v-if="c.pubmed">
+                  <font-awesome-icon :icon="['fas', 'book-medical']" /> PubMed
+                </a>
+                <a :href="c.scholar" target="_blank" class="citation-link scholar-link">
+                  <font-awesome-icon :icon="['fas', 'graduation-cap']" /> Google Scholar
+                </a>
               </div>
             </div>
           </div>
@@ -231,8 +214,8 @@ const loading = ref(false)
 
 const stats = ref({
   totalBiomarkers: 2847,
-  totalDownloads: 1256,
-  monthlyDownloads: 89,
+  totalArticles: 1256,
+  researchInstitutions: 89,
   lastUpdated: ''
 })
 
@@ -245,6 +228,45 @@ const categoryStats = ref([
 ])
 const yearStats = ref([])
 
+const citations = [
+  {
+    key: 'CBD2-2023',
+    apa: 'Zhang, X., Li, M., Ye, S., Shen, K., Yuan, H., Bakhtyar, S., Peng, Q., Liu, Y., Wang, Y., & Li, M. (2023). CBD2: A functional biomarker database for colorectal cancer. iMeta, e155. https://doi.org/10.1002/imt2.155',
+    doi: 'https://doi.org/10.1002/imt2.155',
+    pubmed: 'https://pubmed.ncbi.nlm.nih.gov/38868513/',
+    scholar: 'https://scholar.google.com/scholar?q=CBD2%3A+A+functional+biomarker+database+for+colorectal+cancer'
+  },
+  {
+    key: 'CBD-2018',
+    apa: 'Zhang, X., Sun, X.-F., Cao, Y., Ye, B., Peng, Q., Liu, X., Shen, B., & Zhang, H. (2018). CBD: a biomarker database for colorectal cancer. Database, 2018, bay046. https://doi.org/10.1093/database/bay046',
+    doi: 'https://doi.org/10.1093/database/bay046',
+    pubmed: 'https://pubmed.ncbi.nlm.nih.gov/29846545/',
+    scholar: 'https://scholar.google.com/scholar?q=CBD%3A+a+biomarker+database+for+colorectal+cancer'
+  }
+]
+
+const copyText = async (text) => {
+  try {
+    await navigator.clipboard.writeText(text)
+    ElMessage.success('Copied to clipboard')
+  } catch (e) {
+    const textarea = document.createElement('textarea')
+    textarea.value = text
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.select()
+    try {
+      document.execCommand('copy')
+      ElMessage.success('Copied to clipboard')
+    } catch {
+      ElMessage.error('Copy failed')
+    } finally {
+      document.body.removeChild(textarea)
+    }
+  }
+}
+
 // 获取统计数据
 const fetchStats = async () => {
   try {
@@ -253,8 +275,8 @@ const fetchStats = async () => {
       const data = response.data
       stats.value = {
         totalBiomarkers: data.overview.totalBiomarkers || 2847,
-        totalDownloads: data.overview.totalDownloads || 1256,
-        monthlyDownloads: data.overview.monthlyDownloads || 89,
+        totalArticles: data.overview.totalArticles || 1256,
+        researchInstitutions: data.overview.researchInstitutions || 89,
         lastUpdated: data.overview.lastUpdated ?
           new Date(data.overview.lastUpdated).toLocaleDateString() : 'N/A'
       }
@@ -262,7 +284,7 @@ const fetchStats = async () => {
       yearStats.value = data.yearDistribution || []
     }
   } catch (error) {
-    console.error('获取统计数据失败:', error)
+    console.error('Failed to retrieve statistical data:', error)
   }
 }
 
@@ -278,22 +300,20 @@ const fetchRecentBiomarkers = async () => {
     // 提供默认数据
     recentBiomarkers.value = [
       {
-        id: 1,
-        name: 'CEA',
-        category: '蛋白质',
-        application: '诊断标记物',
-        first_author: 'Zhang L',
-        journal: 'Nature Medicine',
-        publication_year: 2024
+        Biomarker: 'CEA',
+        Category: '蛋白质',
+        Application: '诊断标记物',
+        Reference_first_author: 'Zhang L',
+        Reference_journal: 'Nature Medicine',
+        Reference_year: 2024
       },
       {
-        id: 2,
-        name: 'KRAS',
-        category: '基因',
-        application: '预后标记物',
-        first_author: 'Wang M',
-        journal: 'Cell',
-        publication_year: 2024
+        Biomarker: 'KRAS',
+        Category: '基因',
+        Application: '预后标记物',
+        Reference_first_author: 'Wang M',
+        Reference_journal: 'Cell',
+        Reference_year: 2024
       }
     ]
   }
@@ -359,26 +379,6 @@ onMounted(() => {
   opacity: 0.3;
 }
 
-/* .hero-content {
-  position: relative;
-  z-index: 1;
-  text-align: center;
-  max-width: 800px;
-  margin: 0 auto;
-} */
-
-/* .hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.2);
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  margin-bottom: 2rem;
-  backdrop-filter: blur(10px);
-} */
-
 .hero-title {
   color: white;
   font-size: 3.2rem;
@@ -386,11 +386,6 @@ onMounted(() => {
   line-height: 1.2;
   margin-bottom: 1.5rem;
 }
-
-/* .title-highlight {
-  color: #64b5f6;
-  position: relative;
-} */
 
 .title-highlight::after {
   content: '';
@@ -516,11 +511,6 @@ onMounted(() => {
   border-color: #2a5298;
 }
 
-/* .primary-tool {
-  border-color: #2a5298;
-  background: linear-gradient(135deg, #f8fbff 0%, #e3f2fd 100%);
-} */
-
 .tool-header {
   display: flex;
   align-items: center;
@@ -573,13 +563,6 @@ onMounted(() => {
   background: #f8fbff;
 }
 
-.updates-content {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 4rem;
-  align-items: start;
-}
-
 .recent-biomarkers-section {
   margin-bottom: 2rem;
 }
@@ -596,116 +579,118 @@ onMounted(() => {
   background-color: #f5f7fa;
 }
 
-.stats-card {
-  background: white;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-}
-
-.stats-card h3 {
-  color: #1e3c72;
-  margin-bottom: 1.5rem;
-  text-align: center;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-}
-
-.stat-item {
-  text-align: center;
-}
-
-.stat-label {
-  font-size: 0.8rem;
-  color: #666;
-  margin-bottom: 0.5rem;
-}
-
-.stat-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #2a5298;
-}
-
-.academic-collaboration {
+.citation-section {
   padding: 80px 20px;
   background: white;
 }
 
-.collaboration-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
-  align-items: center;
+.citation-intro {
+  text-align: center;
+  margin-bottom: 1.5rem;
 }
 
-.collaboration-text h3 {
+.citation-intro h3 {
   font-size: 1.8rem;
   color: #1e3c72;
   margin-bottom: 1rem;
 }
 
-.collaboration-text p {
+.citation-intro p {
   color: #666;
   line-height: 1.7;
-  margin-bottom: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
 }
 
-.collaboration-benefits {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+.citation-list {
+  max-width: 900px;
+  margin: 0 auto;
 }
 
-.benefit-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  color: #1e3c72;
-  font-weight: 500;
-}
-
-.benefit-item svg {
-  color: #2a5298;
-}
-
-.logo-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
-}
-
-.partner-logo {
+.citation-card {
   background: #f8fbff;
   border: 2px solid #e3f2fd;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 1.5rem;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
+  margin-bottom: 1.5rem;
   transition: all 0.3s ease;
 }
 
-.partner-logo:hover {
+.citation-card:hover {
   border-color: #2a5298;
   background: white;
   box-shadow: 0 5px 15px rgba(30, 60, 114, 0.1);
 }
 
-.partner-logo svg {
-  font-size: 2rem;
-  color: #2a5298;
+.citation-content {
+  display: flex;
+  flex-direction: column;
 }
 
-.partner-logo span {
-  font-size: 0.8rem;
-  color: #666;
+.citation-text {
+  color: #333;
+  line-height: 1.6;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.citation-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.citation-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.doi-link {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.doi-link:hover {
+  background: #bbdefb;
+}
+
+.pubmed-link {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.pubmed-link:hover {
+  background: #c8e6c9;
+}
+
+.scholar-link {
+  background: #ede7f6;
+  color: #5e35b1;
+}
+
+.scholar-link:hover {
+  background: #d1c4e9;
+}
+
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: white;
+  background: var(--primary-light);
+}
+
+.copy-btn:hover {
+  background: var(--primary-color);
 }
 
 /* 响应式设计 */
@@ -725,18 +710,14 @@ onMounted(() => {
     max-width: 300px;
   }
 
-  .updates-content,
-  .collaboration-content {
-    grid-template-columns: 1fr;
-    gap: 2rem;
+  .citation-links {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .logo-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .citation-link {
+    width: 100%;
+    justify-content: center;
   }
 }
 </style>

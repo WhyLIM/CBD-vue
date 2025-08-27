@@ -7,23 +7,6 @@
           <div class="hero-content">
             <h1 class="hero-title">Biomarker Browse</h1>
             <p class="hero-subtitle">Explore and discover the latest biomarker research findings</p>
-
-            <!-- Search Area -->
-            <!-- <div class="search-container">
-              <div class="search-box">
-                <el-input v-model="searchQuery" placeholder="Search biomarker name, application or author..."
-                  size="large" clearable @keyup.enter="handleSearch" @clear="handleSearch" class="search-input">
-                  <template #prepend>
-                    <font-awesome-icon :icon="['fas', 'search']" />
-                  </template>
-<template #append>
-                    <el-button type="primary" @click="handleSearch" :loading="loading">
-                      Search
-                    </el-button>
-                  </template>
-</el-input>
-</div>
-</div> -->
           </div>
         </div>
       </div>
@@ -36,7 +19,7 @@
     <!-- Filter Control Section -->
     <section class="filter-section">
       <div class="container">
-        <el-card class="filter-card">
+        <div class="filter-header">
           <div class="filter-controls">
             <div class="filter-group">
               <div class="filter-item">
@@ -81,51 +64,63 @@
               </el-button-group>
             </div>
           </div>
-        </el-card>
-      </div>
-    </section>
+        </div>
 
-    <!-- Data Display Section -->
-    <section class="results-section">
-      <div class="container">
         <!-- Table View -->
         <div v-if="viewMode === 'table'" class="table-view">
           <el-card class="table-card">
             <el-table :data="paginatedBiomarkers" v-loading="loading" @row-click="handleRowClick"
               class="biomarkers-table" stripe highlight-current-row>
+              <el-table-column prop="id" label="ID" width="70" sortable />
               <el-table-column prop="biomarker" label="Biomarker" width="140" sortable />
-              <el-table-column prop="category" label="Category" width="120">
+              <el-table-column prop="category" label="Category" width="100">
                 <template #default="{ row }">
-                  <el-tag :type="getCategoryTagType(row.category)" size="small">
+                  <el-tag :color="getCategoryColor(row.category)" size="small"
+                    :class="['category-tag', getTextColorClass(row.category)]" style="border: 1px;">
                     {{ row.category }}
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="application" label="Application" min-width="200" />
-              <el-table-column prop="location" label="Location" width="150" />
-              <el-table-column prop="source" label="Source" width="100" />
-              <el-table-column label="First Author" width="150">
+              <el-table-column prop="application" label="Application" min-width="100" />
+              <el-table-column prop="clinical_use" label="Clinical Use" min-width="100">
                 <template #default="{ row }">
-                  {{ row.reference?.author || 'N/A' }}
+                  <el-tag :type="row.clinical_use === 'Yes' ? 'success' : 'danger'" size="small" effect="dark">
+                    {{ row.clinical_use }}
+                  </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column label="Journal" width="180">
+              <el-table-column prop="location" label="Location" width="120" />
+              <el-table-column prop="source" label="Source" width="80" />
+              <el-table-column label="Author" width="150">
                 <template #default="{ row }">
-                  {{ row.reference?.journal || 'N/A' }}
+                  {{ row.reference.author || 'N/A' }}
+                </template>
+              </el-table-column>
+              <el-table-column label="Journal" width="150">
+                <template #default="{ row }">
+                  {{ row.reference.journal || 'N/A' }}
                 </template>
               </el-table-column>
               <el-table-column label="Year" width="80" sortable>
                 <template #default="{ row }">
-                  {{ row.reference?.year || 'N/A' }}
+                  {{ row.reference.year || 'N/A' }}
                 </template>
               </el-table-column>
-              <el-table-column label="Actions" width="100" fixed="right">
+              <el-table-column prop="target" label="Target" min-width="90">
+                <template #default="{ row }">
+                  <el-tag :type="row.target === '1' ? 'success' : 'danger'" size="small" effect="dark">
+                    {{ row.target === '1' ? 'Yes' : 'No' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="drugs" label="Drugs" width="500" />
+              <!-- <el-table-column label="Actions" width="100" fixed="right">
                 <template #default="{ row }">
                   <el-button type="primary" size="small" @click.stop="handleRowClick(row)">
                     View
                   </el-button>
                 </template>
-              </el-table-column>
+              </el-table-column> -->
             </el-table>
           </el-card>
         </div>
@@ -138,41 +133,51 @@
               <template #header>
                 <div class="card-header">
                   <h3 class="biomarker-name">{{ biomarker.biomarker }}</h3>
-                  <el-tag :type="getCategoryTagType(biomarker.category)" class="category-tag">
-                    {{ biomarker.category }}
-                  </el-tag>
+                  <div>
+                    <el-tag :color="getCategoryColor(biomarker.category)"
+                      :class="['category-tag', getTextColorClass(biomarker.category)]" style="border: 1px; margin-right: 8px;">
+                      {{ biomarker.category }}
+                    </el-tag>
+                    <el-tag :type="biomarker.clinical_use === 'Yes' ? 'success' : 'danger'" effect="dark">
+                      {{ biomarker.clinical_use === 'Yes' ? 'Clinical Use' : 'Unknown Clinical Info' }}
+                    </el-tag>
+                  </div>
                 </div>
               </template>
 
               <div class="card-content">
                 <div class="info-row" v-if="biomarker.description">
                   <font-awesome-icon :icon="['fas', 'info-circle']" class="info-icon" />
-                  <span class="info-label">描述:</span>
+                  <span class="info-label">Description:</span>
                   <span class="info-value">{{ biomarker.description }}</span>
                 </div>
                 <div class="info-row" v-if="biomarker.application">
                   <font-awesome-icon :icon="['fas', 'flask']" class="info-icon" />
-                  <span class="info-label">应用:</span>
+                  <span class="info-label">Application:</span>
                   <span class="info-value">{{ biomarker.application }}</span>
                 </div>
                 <div class="info-row" v-if="biomarker.location">
                   <font-awesome-icon :icon="['fas', 'map-marker-alt']" class="info-icon" />
-                  <span class="info-label">位置:</span>
+                  <span class="info-label">Location:</span>
                   <span class="info-value">{{ biomarker.location }}</span>
                 </div>
                 <div class="info-row" v-if="biomarker.source">
                   <font-awesome-icon :icon="['fas', 'dna']" class="info-icon" />
-                  <span class="info-label">来源:</span>
+                  <span class="info-label">Source:</span>
                   <span class="info-value">{{ biomarker.source }}</span>
                 </div>
                 <div class="info-row" v-if="biomarker.target">
                   <font-awesome-icon :icon="['fas', 'bullseye']" class="info-icon" />
-                  <span class="info-label">靶点:</span>
-                  <span class="info-value">{{ biomarker.target }}</span>
+                  <span class="info-label">Target:</span>
+                  <span class="info-value">
+                    <el-tag :type="biomarker.target === '1' ? 'success' : 'danger'" size="small" effect="dark">
+                      {{ biomarker.target === '1' ? 'Yes' : 'No' }}
+                    </el-tag>
+                  </span>
                 </div>
-                <div class="info-row reference-row" v-if="biomarker.reference?.author">
+                <div class="info-row reference-row" v-if="biomarker.reference.author">
                   <font-awesome-icon :icon="['fas', 'book']" class="info-icon" />
-                  <span class="info-label">参考文献:</span>
+                  <span class="info-label">References:</span>
                   <span class="info-value">
                     {{ biomarker.reference.author }} et al.,
                     {{ biomarker.reference.journal }}
@@ -186,11 +191,11 @@
 
         <!-- Pagination -->
         <div class="pagination-section">
-          <el-card class="pagination-card">
+          <div class="pagination-card">
             <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
               :page-sizes="[10, 20, 50, 100]" :total="totalItems" layout="total, sizes, prev, pager, next, jumper"
               @size-change="handlePageSizeChange" @current-change="handlePageChange" />
-          </el-card>
+          </div>
         </div>
       </div>
     </section>
@@ -212,7 +217,7 @@ const biomarkerStore = useBiomarkerStore()
 const loading = ref(false)
 const searchQuery = ref('')
 const selectedCategory = ref('all')
-const sortBy = ref('name_asc')
+const sortBy = ref('id_asc')
 const currentPage = ref(1)
 const pageSize = ref(20)
 const viewMode = ref('table')
@@ -228,6 +233,8 @@ const categories = ref([
 ])
 
 const sortOptions = ref([
+  { value: 'id_asc', label: 'ID (Ascending)' },
+  { value: 'id_desc', label: 'ID (Descending)' },
   { value: 'name_asc', label: 'Name (A-Z)' },
   { value: 'name_desc', label: 'Name (Z-A)' },
   { value: 'year_desc', label: 'Year (Newest)' },
@@ -235,7 +242,7 @@ const sortOptions = ref([
 ])
 
 // Computed properties
-const totalItems = computed(() => biomarkerStore.pagination.totalItems)
+const totalItems = computed(() => biomarkerStore.pagination.total)
 const paginatedBiomarkers = computed(() => biomarkerStore.biomarkers)
 
 // Methods
@@ -276,14 +283,14 @@ const handleSortChange = async () => {
   await fetchBiomarkers()
 }
 
-const handlePageChange = async (page) => {
-  currentPage.value = page
-  await fetchBiomarkers()
-}
-
 const handlePageSizeChange = async (size) => {
   pageSize.value = size
   currentPage.value = 1
+  await fetchBiomarkers()
+}
+
+const handlePageChange = async (page) => {
+  currentPage.value = page
   await fetchBiomarkers()
 }
 
@@ -295,17 +302,43 @@ const handleAdvancedSearch = () => {
   router.push('/advanced')
 }
 
-const getCategoryTagType = (category) => {
-  const typeMap = {
-    'Protein': 'primary',
-    'MicroRNA': 'success',
-    'Gene': 'warning',
-    'Metabolite': 'info',
-    'DNA': 'danger',
-    'RNA': 'success'
-  }
-  return typeMap[category] || 'default'
-}
+const getCategoryColor = (category) => {
+  // 预定义一组美观的色板
+  const colorPalette = [
+    "#5560AC", "#FCBB44", "#08306B", "#D3F0F2", "#67000d",
+    "#ED6F6E", "#1F4527", "#D2D6F5", "#0D8B43", "#F4EEAC",
+    "#FED98E", "#4758A2", "#C9DCC4", "#37939A", "#F28147",
+    "#619CD9", "#EDADC5", "#F1766D", "#6CBEC3",
+    "#9ECAE1", "#68BD48", "#D8D9DA", "#7A70B5"
+  ];
+
+  // 确定性哈希计算（相同category始终返回相同颜色）
+  const hash = Array.from(category).reduce(
+    (sum, char) => sum + char.charCodeAt(0),
+    0
+  );
+
+  return colorPalette[hash % colorPalette.length];
+};
+
+// 计算背景亮度并返回对应的CSS类名
+const getTextColorClass = (category) => {
+  const bgColor = getCategoryColor(category);
+  const brightness = calculateColorBrightness(bgColor);
+  return brightness > 150 ? 'text-black' : 'text-white';
+};
+
+// 精确的颜色亮度计算（gamma校正）
+const calculateColorBrightness = (hexColor) => {
+  const r = parseInt(hexColor.slice(1, 3), 16) / 255;
+  const g = parseInt(hexColor.slice(3, 5), 16) / 255;
+  const b = parseInt(hexColor.slice(5, 7), 16) / 255;
+  return Math.sqrt(
+    0.299 * r ** 2 +
+    0.587 * g ** 2 +
+    0.114 * b ** 2
+  ) * 255;
+};
 
 // Watch route query parameters
 watch(() => route.query, (newQuery) => {
@@ -362,15 +395,14 @@ onMounted(() => {
 
 /* Filter Section Styles */
 .filter-section {
-  padding: 30px 0;
+  padding-top: 30px;
+  padding-bottom: 60px;
   background: white;
   border-bottom: 1px solid #eee;
 }
 
-.filter-card {
-  border: none;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border-radius: 12px;
+.filter-header {
+  padding: 25px 10px;
 }
 
 .filter-controls {
@@ -432,11 +464,7 @@ onMounted(() => {
   overflow: hidden;
 }
 
-/* Results Display Section */
-.results-section {
-  padding: 30px 0;
-}
-
+/* Results Display */
 .table-card {
   border: none;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
@@ -463,8 +491,8 @@ onMounted(() => {
 }
 
 .biomarkers-table :deep(.el-table__header th) {
-  background: transparent;
-  color: white;
+  /* background: transparent; */
+  color: black;
   font-weight: 600;
 }
 
@@ -505,8 +533,12 @@ onMounted(() => {
   line-height: 1.3;
 }
 
-.category-tag {
-  flex-shrink: 0;
+.category-tag.text-black {
+  --el-tag-text-color: #5a5a5a !important;
+}
+
+.category-tag.text-white {
+  --el-tag-text-color: #ffffff !important;
 }
 
 .card-content {
@@ -525,7 +557,7 @@ onMounted(() => {
 
 .info-icon {
   color: #667eea;
-  margin-top: 2px;
+  margin-top: 4px;
   flex-shrink: 0;
   width: 14px;
 }
@@ -548,17 +580,6 @@ onMounted(() => {
 /* Pagination Styles */
 .pagination-section {
   margin-top: 30px;
-}
-
-.pagination-card {
-  border: none;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border-radius: 12px;
-  text-align: center;
-}
-
-.pagination-card :deep(.el-pagination) {
-  justify-content: center;
 }
 
 /* Responsive Design */

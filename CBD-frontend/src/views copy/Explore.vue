@@ -5,770 +5,659 @@
       <div class="hero-background">
         <div class="container">
           <div class="hero-content">
-            <h1 class="hero-title">Data Exploration</h1>
-            <p class="hero-subtitle">Gain deep insights into biomarker data distribution and trends through interactive
-              visualizations</p>
+            <h1 class="hero-title">Network Exploration</h1>
+            <p class="hero-subtitle">Visualize and analyze protein-protein interaction networks using STRING database
+            </p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Overview Statistics Section -->
-    <section class="overview-section">
+    <!-- Main Content -->
+    <section class="main-content">
       <div class="container">
-        <div class="overview-grid">
-          <el-card class="overview-card" v-for="stat in overviewStats" :key="stat.key">
-            <div class="stat-content">
-              <div class="stat-icon">
-                <font-awesome-icon :icon="stat.icon" />
+        <div class="content-grid">
+          <!-- Control Panel -->
+          <div class="control-panel">
+            <el-card class="control-card">
+              <template #header>
+                <h3 class="panel-title">
+                  <font-awesome-icon :icon="['fas', 'cogs']" />
+                  Network Parameters
+                </h3>
+              </template>
+
+              <!-- Protein Input Methods -->
+              <div class="input-section">
+                <el-tabs v-model="inputMethod" @tab-change="handleInputMethodChange">
+                  <el-tab-pane label="Manual Input" name="manual">
+                    <div class="form-group">
+                      <label class="form-label">Protein Names</label>
+                      <el-input v-model="proteinInput" type="textarea" :rows="6"
+                        placeholder="Enter protein names (one per line)&#10;Example:&#10;TP53&#10;BRCA1&#10;EGFR"
+                        class="protein-textarea" />
+                      <div class="input-hint">
+                        <font-awesome-icon :icon="['fas', 'info-circle']" />
+                        Gene symbols or protein names are accepted.
+                      </div>
+                    </div>
+                  </el-tab-pane>
+
+                  <el-tab-pane label="From Database" name="database">
+                    <div class="form-group">
+                      <label class="form-label">Select Proteins from CBD</label>
+                      <el-select v-model="selectedProteins" multiple filterable placeholder="Search and select proteins"
+                        class="protein-select" :loading="loadingProteins">
+                        <el-option v-for="protein in availableProteins" :key="protein.value" :label="protein.label"
+                          :value="protein.value" />
+                      </el-select>
+                    </div>
+                  </el-tab-pane>
+
+                  <el-tab-pane label="File Upload" name="file">
+                    <div class="form-group">
+                      <label class="form-label">Upload Protein List</label>
+                      <el-upload class="upload-demo" drag :auto-upload="false" :on-change="handleFileUpload"
+                        accept=".txt,.csv" :limit="1">
+                        <font-awesome-icon :icon="['fas', 'upload']" class="upload-icon" />
+                        <div class="el-upload__text">
+                          Drop file here or <em>click to upload</em>
+                        </div>
+                        <template #tip>
+                          <div class="el-upload__tip">
+                            txt/csv files with one protein per line
+                          </div>
+                        </template>
+                      </el-upload>
+                    </div>
+                  </el-tab-pane>
+                </el-tabs>
               </div>
-              <div class="stat-info">
-                <div class="stat-number">{{ stat.value }}</div>
-                <div class="stat-label">{{ stat.label }}</div>
-                <div class="stat-change" :class="stat.changeType">
-                  <font-awesome-icon
-                    :icon="stat.changeType === 'increase' ? ['fas', 'arrow-up'] : ['fas', 'arrow-down']" />
-                  {{ stat.change }}
+
+              <!-- Network Parameters -->
+              <div class="parameters-section">
+                <div class="form-group">
+                  <label class="form-label">
+                    Species
+                    <el-tooltip content="Select the organism species" placement="top">
+                      <font-awesome-icon :icon="['fas', 'question-circle']" class="help-icon" />
+                    </el-tooltip>
+                  </label>
+                  <el-select v-model="networkParams.species" class="param-select">
+                    <el-option label="Human (Homo sapiens)" value="9606" />
+                    <el-option label="Mouse (Mus musculus)" value="10090" />
+                    <el-option label="Rat (Rattus norvegicus)" value="10116" />
+                  </el-select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">
+                    Confidence Score
+                    <el-tooltip content="Minimum interaction confidence score (0-1000)" placement="top">
+                      <font-awesome-icon :icon="['fas', 'question-circle']" class="help-icon" />
+                    </el-tooltip>
+                  </label>
+                  <el-slider v-model="networkParams.requiredScore" :min="0" :max="1000" :step="50" show-input
+                    class="score-slider" />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Network Type</label>
+                  <el-radio-group v-model="networkParams.networkType" class="network-type-group">
+                    <el-radio label="functional">Functional</el-radio>
+                    <el-radio label="physical">Physical</el-radio>
+                  </el-radio-group>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Network Flavor</label>
+                  <el-select v-model="networkParams.networkFlavor" class="param-select">
+                    <el-option label="Confidence" value="confidence" />
+                    <el-option label="Evidence" value="evidence" />
+                    <el-option label="Actions" value="actions" />
+                  </el-select>
+                </div>
+
+                <div class="form-group">
+                  <el-checkbox v-model="networkParams.hideDisconnected">
+                    Hide disconnected nodes
+                  </el-checkbox>
                 </div>
               </div>
-            </div>
-          </el-card>
-        </div>
-      </div>
-    </section>
 
-    <!-- Charts Display Section -->
-    <section class="charts-section">
-      <div class="container">
-        <div class="charts-grid">
-          <!-- Category Distribution Chart -->
-          <el-card class="chart-card">
-            <template #header>
-              <div class="chart-header">
-                <h3 class="chart-title">
-                  <font-awesome-icon :icon="['fas', 'chart-pie']" />
-                  Biomarker Category Distribution
-                </h3>
-                <el-button-group size="small">
-                  <el-button :type="categoryViewType === 'pie' ? 'primary' : 'default'"
-                    @click="categoryViewType = 'pie'">
-                    Pie Chart
-                  </el-button>
-                  <el-button :type="categoryViewType === 'bar' ? 'primary' : 'default'"
-                    @click="categoryViewType = 'bar'">
-                    Bar Chart
-                  </el-button>
-                </el-button-group>
-              </div>
-            </template>
-            <div class="chart-container" ref="categoryChartRef"></div>
-          </el-card>
-
-          <!-- Year Trend Chart -->
-          <el-card class="chart-card">
-            <template #header>
-              <div class="chart-header">
-                <h3 class="chart-title">
-                  <font-awesome-icon :icon="['fas', 'chart-line']" />
-                  Publication Year Trends
-                </h3>
-                <el-select v-model="yearRangeFilter" size="small" style="width: 120px;">
-                  <el-option label="Last 5 Years" value="5" />
-                  <el-option label="Last 10 Years" value="10" />
-                  <el-option label="All" value="all" />
-                </el-select>
-              </div>
-            </template>
-            <div class="chart-container" ref="yearTrendChartRef"></div>
-          </el-card>
-
-          <!-- Journal Distribution Chart -->
-          <el-card class="chart-card">
-            <template #header>
-              <div class="chart-header">
-                <h3 class="chart-title">
-                  <font-awesome-icon :icon="['fas', 'book-open']" />
-                  Top Journal Distribution
-                </h3>
-                <el-button size="small" @click="handleJournalDetail">
-                  View Details
+              <!-- Action Buttons -->
+              <div class="action-buttons">
+                <el-button type="primary" @click="generateNetwork" :loading="loading" class="generate-btn">
+                  <font-awesome-icon :icon="['fas', 'play']" />&nbsp;Generate Network
+                </el-button>
+                <el-button @click="clearInput" class="clear-btn">
+                  <font-awesome-icon :icon="['fas', 'trash']" />&nbsp;Clear
                 </el-button>
               </div>
-            </template>
-            <div class="chart-container" ref="journalChartRef"></div>
-          </el-card>
 
-          <!-- Application Field Distribution -->
-          <el-card class="chart-card">
-            <template #header>
-              <div class="chart-header">
-                <h3 class="chart-title">
-                  <font-awesome-icon :icon="['fas', 'flask']" />
-                  Application Field Distribution
-                </h3>
-                <el-switch v-model="showPercentage" size="small" active-text="Percentage" inactive-text="Count" />
-              </div>
-            </template>
-            <div class="chart-container" ref="applicationChartRef"></div>
-          </el-card>
-
-          <!-- Geographic Distribution Map -->
-          <el-card class="chart-card full-width">
-            <template #header>
-              <div class="chart-header">
-                <h3 class="chart-title">
-                  <font-awesome-icon :icon="['fas', 'globe']" />
-                  Research Institution Geographic Distribution
-                </h3>
-                <div class="chart-controls">
-                  <el-select v-model="geoViewType" size="small" style="width: 100px;">
-                    <el-option label="World" value="world" />
-                    <el-option label="China" value="china" />
-                  </el-select>
-                  <el-button size="small" @click="handleGeoDetail">
-                    Detailed Data
+              <!-- Example Buttons -->
+              <div class="example-section" v-if="!networkGenerated">
+                <label class="form-label">Try Examples:</label>
+                <div class="example-buttons">
+                  <el-button v-for="example in examples" :key="example.key" size="small" @click="loadExample(example)"
+                    class="example-btn">
+                    {{ example.label }}
                   </el-button>
                 </div>
               </div>
-            </template>
-            <div class="chart-container large" ref="geoChartRef"></div>
-          </el-card>
+            </el-card>
 
-          <!-- Quality Assessment Chart -->
-          <el-card class="chart-card">
-            <template #header>
-              <div class="chart-header">
-                <h3 class="chart-title">
-                  <font-awesome-icon :icon="['fas', 'star']" />
-                  Data Quality Assessment
+            <!-- Network Statistics -->
+            <el-card v-if="networkStats" class="stats-card">
+              <template #header>
+                <h3 class="panel-title">
+                  <font-awesome-icon :icon="['fas', 'chart-bar']" />
+                  Network Statistics
                 </h3>
-                <el-tooltip content="Assessment based on sample size, validation status and other factors"
-                  placement="top">
-                  <font-awesome-icon :icon="['fas', 'question-circle']" class="help-icon" />
-                </el-tooltip>
+              </template>
+              <div class="stats-content">
+                <div class="stat-item" v-for="(value, key) in networkStats" :key="key">
+                  <span class="stat-label">{{ formatStatLabel(key) }}:</span>
+                  <span class="stat-value">{{ formatStatValue(key, value) }}</span>
+                </div>
               </div>
-            </template>
-            <div class="chart-container" ref="qualityChartRef"></div>
-          </el-card>
+            </el-card>
+          </div>
 
-          <!-- Heatmap -->
-          <el-card class="chart-card">
-            <template #header>
-              <div class="chart-header">
-                <h3 class="chart-title">
-                  <font-awesome-icon :icon="['fas', 'th']" />
-                  Research Hotspot Heatmap
-                </h3>
-                <el-select v-model="heatmapMetric" size="small" style="width: 120px;">
-                  <el-option label="Publication Count" value="count" />
-                  <el-option label="Citation Count" value="citation" />
-                </el-select>
+          <!-- Network Visualization -->
+          <div class="visualization-panel">
+            <el-card class="network-card">
+              <template #header>
+                <div class="network-header">
+                  <h3 class="panel-title">
+                    <font-awesome-icon :icon="['fas', 'project-diagram']" />
+                    Protein Interaction Network
+                  </h3>
+                  <div class="network-controls" v-if="networkGenerated">
+                    <el-button-group size="small">
+                      <el-button @click="fitNetwork">
+                        <font-awesome-icon :icon="['fas', 'expand']" />
+                        Fit
+                      </el-button>
+                      <el-button @click="resetZoom">
+                        <font-awesome-icon :icon="['fas', 'search-minus']" />
+                        Reset
+                      </el-button>
+                      <el-button @click="exportNetwork">
+                        <font-awesome-icon :icon="['fas', 'download']" />
+                        Export
+                      </el-button>
+                    </el-button-group>
+                  </div>
+                </div>
+              </template>
+
+              <!-- Network Container -->
+              <div class="network-container">
+                <div v-if="!networkGenerated" class="network-placeholder">
+                  <div class="placeholder-content">
+                    <font-awesome-icon :icon="['fas', 'project-diagram']" class="placeholder-icon" />
+                    <h3>Network Visualization</h3>
+                    <p>Enter protein names and click "Generate Network" to visualize protein-protein interactions</p>
+                    <div class="placeholder-features">
+                      <div class="feature-item">
+                        <font-awesome-icon :icon="['fas', 'search']" />
+                        <span>Interactive exploration</span>
+                      </div>
+                      <div class="feature-item">
+                        <font-awesome-icon :icon="['fas', 'mouse-pointer']" />
+                        <span>Click nodes for details</span>
+                      </div>
+                      <div class="feature-item">
+                        <font-awesome-icon :icon="['fas', 'expand-arrows-alt']" />
+                        <span>Zoom and pan</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div v-else ref="cytoscapeContainer" class="cytoscape-container" v-loading="loading" />
               </div>
-            </template>
-            <div class="chart-container" ref="heatmapChartRef"></div>
-          </el-card>
+            </el-card>
+          </div>
         </div>
-      </div>
-    </section>
 
-    <!-- Data Insights Section -->
-    <section class="insights-section">
-      <div class="container">
-        <el-card class="insights-card">
-          <template #header>
-            <h2 class="section-title">
-              <font-awesome-icon :icon="['fas', 'lightbulb']" class="title-icon" />
-              Data Insights
-            </h2>
-          </template>
+        <!-- Analysis Results -->
+        <div v-if="networkGenerated" class="analysis-section">
+          <el-row :gutter="24">
+            <!-- Topological Parameters -->
+            <el-col :span="12">
+              <el-card class="analysis-card">
+                <template #header>
+                  <h3 class="panel-title">
+                    <font-awesome-icon :icon="['fas', 'sitemap']" />
+                    Topological Parameters
+                  </h3>
+                </template>
+                <el-table :data="topologyData" class="topology-table" max-height="300">
+                  <el-table-column prop="protein" label="Protein" width="100" />
+                  <el-table-column prop="degree" label="Degree" width="80" sortable />
+                  <el-table-column prop="betweenness" label="Betweenness" width="120" sortable />
+                  <el-table-column prop="closeness" label="Closeness" width="100" sortable />
+                </el-table>
+              </el-card>
+            </el-col>
 
-          <div class="insights-grid">
-            <div v-for="insight in dataInsights" :key="insight.id" class="insight-item">
-              <div class="insight-icon">
-                <font-awesome-icon :icon="insight.icon" />
+            <!-- Functional Enrichment -->
+            <el-col :span="12">
+              <el-card class="analysis-card">
+                <template #header>
+                  <h3 class="panel-title">
+                    <font-awesome-icon :icon="['fas', 'dna']" />
+                    Functional Enrichment
+                  </h3>
+                </template>
+                <el-table :data="enrichmentData" class="enrichment-table" max-height="300">
+                  <el-table-column prop="category" label="Category" width="120" />
+                  <el-table-column prop="term" label="Term" min-width="200" />
+                  <el-table-column prop="pvalue" label="P-value" width="100" sortable />
+                </el-table>
+              </el-card>
+            </el-col>
+          </el-row>
+
+          <!-- Download Section -->
+          <div class="download-section">
+            <el-card class="download-card">
+              <template #header>
+                <h3 class="panel-title">
+                  <font-awesome-icon :icon="['fas', 'download']" />
+                  Download Analysis Results
+                </h3>
+              </template>
+              <div class="download-content">
+                <p>Download comprehensive analysis results including network data, statistics, and visualizations.</p>
+                <el-button type="primary" @click="downloadResults" :loading="downloading">
+                  <font-awesome-icon :icon="['fas', 'file-archive']" />
+                  Download All Results
+                </el-button>
               </div>
-              <div class="insight-content">
-                <h4 class="insight-title">{{ insight.title }}</h4>
-                <p class="insight-description">{{ insight.description }}</p>
-                <div class="insight-stats">
-                  <span v-for="stat in insight.stats" :key="stat.label" class="insight-stat">
-                    <strong>{{ stat.value }}</strong> {{ stat.label }}
-                  </span>
-                </div>
-              </div>
-            </div>
+            </el-card>
           </div>
-        </el-card>
-      </div>
-    </section>
-
-    <!-- Interactive Filter Section -->
-    <section class="filter-section">
-      <div class="container">
-        <el-card class="filter-card">
-          <template #header>
-            <h2 class="section-title">
-              <font-awesome-icon :icon="['fas', 'sliders-h']" class="title-icon" />
-              Interactive Filters
-            </h2>
-          </template>
-
-          <div class="filter-content">
-            <el-row :gutter="20">
-              <el-col :span="6">
-                <div class="filter-group">
-                  <label class="filter-label">Data Type</label>
-                  <el-checkbox-group v-model="selectedCategories" @change="handleFilterChange">
-                    <el-checkbox v-for="category in categories" :key="category" :label="category">
-                      {{ category }}
-                    </el-checkbox>
-                  </el-checkbox-group>
-                </div>
-              </el-col>
-              <el-col :span="6">
-                <div class="filter-group">
-                  <label class="filter-label">Year Range</label>
-                  <el-slider v-model="yearRange" range :min="2000" :max="2024" @change="handleFilterChange" />
-                  <div class="range-labels">
-                    <span>{{ yearRange[0] }}</span>
-                    <span>{{ yearRange[1] }}</span>
-                  </div>
-                </div>
-              </el-col>
-              <el-col :span="6">
-                <div class="filter-group">
-                  <label class="filter-label">Sample Size</label>
-                  <el-slider v-model="sampleRange" range :min="0" :max="10000" :step="100"
-                    @change="handleFilterChange" />
-                  <div class="range-labels">
-                    <span>{{ sampleRange[0] }}</span>
-                    <span>{{ sampleRange[1] }}</span>
-                  </div>
-                </div>
-              </el-col>
-              <el-col :span="6">
-                <div class="filter-group">
-                  <label class="filter-label">Validation Status</label>
-                  <el-select v-model="validationFilter" multiple @change="handleFilterChange">
-                    <el-option label="Validated" value="validated" />
-                    <el-option label="Pending" value="pending" />
-                    <el-option label="Experimental" value="experimental" />
-                  </el-select>
-                </div>
-              </el-col>
-            </el-row>
-
-            <div class="filter-actions">
-              <el-button type="primary" @click="handleApplyFilters">
-                <font-awesome-icon :icon="['fas', 'search']" />
-                Apply Filters
-              </el-button>
-              <el-button @click="handleResetFilters">
-                <font-awesome-icon :icon="['fas', 'undo']" />
-                Reset
-              </el-button>
-              <el-button @click="handleExportData">
-                <font-awesome-icon :icon="['fas', 'download']" />
-                Export Data
-              </el-button>
-            </div>
-          </div>
-        </el-card>
+        </div>
       </div>
     </section>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, watch } from 'vue'
-import { ElMessage } from 'element-plus'
-import * as echarts from 'echarts'
+import { ref, onMounted, nextTick, onUnmounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import cytoscape from 'cytoscape'
+import api from '@/utils/api'
 
 // Reactive data
-const categoryChartRef = ref()
-const yearTrendChartRef = ref()
-const journalChartRef = ref()
-const applicationChartRef = ref()
-const geoChartRef = ref()
-const qualityChartRef = ref()
-const heatmapChartRef = ref()
+const loading = ref(false)
+const downloading = ref(false)
+const loadingProteins = ref(false)
+const networkGenerated = ref(false)
 
-const categoryViewType = ref('pie')
-const yearRangeFilter = ref('10')
-const showPercentage = ref(false)
-const geoViewType = ref('world')
-const heatmapMetric = ref('count')
+const inputMethod = ref('manual')
+const proteinInput = ref('')
+const selectedProteins = ref([])
+const availableProteins = ref([])
 
-const selectedCategories = ref(['Protein', 'Gene', 'MicroRNA'])
-const yearRange = ref([2015, 2024])
-const sampleRange = ref([0, 5000])
-const validationFilter = ref(['validated', 'pending'])
+const networkParams = ref({
+  species: '9606',
+  requiredScore: 400,
+  networkType: 'functional',
+  networkFlavor: 'confidence',
+  hideDisconnected: false
+})
 
-const categories = ref(['Protein', 'Gene', 'MicroRNA', 'Metabolite', 'DNA', 'RNA'])
+const networkStats = ref(null)
+const topologyData = ref([])
+const enrichmentData = ref([])
 
-// Chart instances
-let categoryChart = null
-let yearTrendChart = null
-let journalChart = null
-let applicationChart = null
-let geoChart = null
-let qualityChart = null
-let heatmapChart = null
+// Cytoscape instance
+const cytoscapeContainer = ref(null)
+let cy = null
 
-// Statistics data
-const overviewStats = ref([
-  {
-    key: 'total',
-    label: 'Total Data',
-    value: '15,420',
-    icon: ['fas', 'database'],
-    change: '+12.5%',
-    changeType: 'increase'
-  },
-  {
-    key: 'monthly',
-    label: 'Monthly New',
-    value: '1,234',
-    icon: ['fas', 'plus-circle'],
-    change: '+8.3%',
-    changeType: 'increase'
-  },
-  {
-    key: 'validated',
-    label: 'Validated Data',
-    value: '12,856',
-    icon: ['fas', 'check-circle'],
-    change: '+5.7%',
-    changeType: 'increase'
-  },
-  {
-    key: 'downloads',
-    label: 'Download Count',
-    value: '89,567',
-    icon: ['fas', 'download'],
-    change: '+15.2%',
-    changeType: 'increase'
-  }
-])
-
-const dataInsights = ref([
-  {
-    id: 1,
-    title: 'Protein Biomarkers Dominate',
-    description: 'Protein biomarkers account for 45% of total data, representing the most active research field',
-    icon: ['fas', 'dna'],
-    stats: [
-      { label: 'Protein Biomarkers', value: '6,939' },
-      { label: 'Growth Rate', value: '18%' }
-    ]
-  },
-  {
-    id: 2,
-    title: 'Cancer Research Continues to Rise',
-    description: 'Cancer-related biomarker research has shown rapid growth trends in the past 5 years',
-    icon: ['fas', 'chart-line'],
-    stats: [
-      { label: 'Cancer Biomarkers', value: '4,567' },
-      { label: 'Annual Growth', value: '22%' }
-    ]
-  },
-  {
-    id: 3,
-    title: 'International Collaboration Strengthening',
-    description: 'Cross-national collaborative research projects have increased significantly, improving data quality',
-    icon: ['fas', 'globe'],
-    stats: [
-      { label: 'Collaborative Projects', value: '2,345' },
-      { label: 'Countries Involved', value: '45' }
-    ]
-  },
-  {
-    id: 4,
-    title: 'Validation Standards Improving',
-    description: 'Standardization of data validation processes has continuously improved high-quality data ratios',
-    icon: ['fas', 'shield-alt'],
-    stats: [
-      { label: 'Validation Rate', value: '83.4%' },
-      { label: 'Quality Score', value: '4.2/5' }
-    ]
-  }
+// Example data
+const examples = ref([
+  { key: 'cancer', label: 'Cancer Biomarkers', proteins: ['TP53', 'BRCA1', 'EGFR', 'MYC', 'RB1'] },
+  { key: 'apoptosis', label: 'Apoptosis Pathway', proteins: ['TP53', 'BCL2', 'BAX', 'CASP3', 'CASP9'] },
+  { key: 'cell_cycle', label: 'Cell Cycle', proteins: ['CDK1', 'CDK2', 'CCNA2', 'CCNB1', 'RB1'] }
 ])
 
 // Methods
-const initCategoryChart = () => {
-  if (!categoryChartRef.value) return
+const handleInputMethodChange = () => {
+  clearInput()
+}
 
-  categoryChart = echarts.init(categoryChartRef.value)
+const handleFileUpload = (file) => {
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    const content = e.target.result
+    const proteins = content.split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
+    proteinInput.value = proteins.join('\n')
+  }
+  reader.readAsText(file.raw)
+}
 
-  const updateChart = () => {
-    const data = [
-      { name: 'Protein', value: 6939 },
-      { name: 'Gene', value: 4256 },
-      { name: 'MicroRNA', value: 2134 },
-      { name: 'Metabolite', value: 1567 },
-      { name: 'DNA', value: 345 },
-      { name: 'RNA', value: 179 }
-    ]
+const loadExample = (example) => {
+  proteinInput.value = example.proteins.join('\n')
+  inputMethod.value = 'manual'
+  ElMessage.success(`Loaded ${example.label} example`)
+}
 
-    const option = categoryViewType.value === 'pie' ? {
-      tooltip: {
-        trigger: 'item',
-        formatter: '{a} <br/>{b}: {c} ({d}%)'
-      },
-      legend: {
-        orient: 'vertical',
-        left: 'left'
-      },
-      series: [{
-        name: 'Biomarker Category',
-        type: 'pie',
-        radius: '50%',
-        data: data,
-        emphasis: {
-          itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)'
+const clearInput = () => {
+  proteinInput.value = ''
+  selectedProteins.value = []
+  networkStats.value = null
+  topologyData.value = []
+  enrichmentData.value = []
+  networkGenerated.value = false
+  if (cy) {
+    cy.destroy()
+    cy = null
+  }
+}
+
+const getProteinList = () => {
+  let proteins = []
+
+  if (inputMethod.value === 'manual') {
+    proteins = proteinInput.value.split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
+  } else if (inputMethod.value === 'database') {
+    proteins = selectedProteins.value
+  }
+
+  return proteins
+}
+
+const generateNetwork = async () => {
+  const proteins = getProteinList()
+
+  if (proteins.length === 0) {
+    ElMessage.warning('Please enter at least one protein name')
+    return
+  }
+
+  loading.value = true
+
+  try {
+    // Simulate API call to STRING database
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
+    // Generate mock network data
+    const networkData = generateMockNetworkData(proteins)
+
+    // Initialize Cytoscape
+    await initializeCytoscape(networkData)
+
+    // Generate mock statistics
+    generateMockStatistics(proteins)
+
+    networkGenerated.value = true
+    ElMessage.success('Network generated successfully')
+
+  } catch (error) {
+    console.error('Error generating network:', error)
+    ElMessage.error('Failed to generate network')
+  } finally {
+    loading.value = false
+  }
+}
+
+const generateMockNetworkData = (proteins) => {
+  const nodes = proteins.map((protein, index) => ({
+    data: {
+      id: protein,
+      label: protein,
+      type: 'protein',
+      score: Math.random() * 1000
+    }
+  }))
+
+  const edges = []
+  for (let i = 0; i < proteins.length; i++) {
+    for (let j = i + 1; j < proteins.length; j++) {
+      if (Math.random() > 0.3) { // 70% chance of connection
+        edges.push({
+          data: {
+            id: `${proteins[i]}-${proteins[j]}`,
+            source: proteins[i],
+            target: proteins[j],
+            confidence: Math.random() * 1000,
+            type: 'interaction'
           }
-        }
-      }]
-    } : {
-      tooltip: {
-        trigger: 'axis',
-        axisPointer: {
-          type: 'shadow'
-        }
-      },
-      xAxis: {
-        type: 'category',
-        data: data.map(item => item.name)
-      },
-      yAxis: {
-        type: 'value'
-      },
-      series: [{
-        name: 'Count',
-        type: 'bar',
-        data: data.map(item => item.value),
-        itemStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: '#667eea' },
-            { offset: 1, color: '#764ba2' }
-          ])
-        }
-      }]
-    }
-
-    categoryChart.setOption(option)
-  }
-
-  updateChart()
-
-  watch(categoryViewType, updateChart)
-}
-
-const initYearTrendChart = () => {
-  if (!yearTrendChartRef.value) return
-
-  yearTrendChart = echarts.init(yearTrendChartRef.value)
-
-  const option = {
-    tooltip: {
-      trigger: 'axis'
-    },
-    xAxis: {
-      type: 'category',
-      data: ['2015', '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023', '2024']
-    },
-    yAxis: {
-      type: 'value'
-    },
-    series: [{
-      name: 'Publication Count',
-      type: 'line',
-      data: [856, 1024, 1256, 1489, 1678, 1834, 2156, 2345, 2567, 2789],
-      smooth: true,
-      itemStyle: {
-        color: '#667eea'
-      },
-      areaStyle: {
-        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-          { offset: 0, color: 'rgba(102, 126, 234, 0.3)' },
-          { offset: 1, color: 'rgba(102, 126, 234, 0.1)' }
-        ])
+        })
       }
-    }]
-  }
-
-  yearTrendChart.setOption(option)
-}
-
-const initJournalChart = () => {
-  if (!journalChartRef.value) return
-
-  journalChart = echarts.init(journalChartRef.value)
-
-  const option = {
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: {
-        type: 'shadow'
-      }
-    },
-    xAxis: {
-      type: 'value'
-    },
-    yAxis: {
-      type: 'category',
-      data: ['Nature', 'Science', 'Cell', 'NEJM', 'Lancet', 'PNAS', 'JCI', 'Cancer Cell']
-    },
-    series: [{
-      name: 'Publication Count',
-      type: 'bar',
-      data: [234, 198, 167, 145, 123, 98, 87, 76],
-      itemStyle: {
-        color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
-          { offset: 0, color: '#667eea' },
-          { offset: 1, color: '#764ba2' }
-        ])
-      }
-    }]
-  }
-
-  journalChart.setOption(option)
-}
-
-const initApplicationChart = () => {
-  if (!applicationChartRef.value) return
-
-  applicationChart = echarts.init(applicationChartRef.value)
-
-  const option = {
-    tooltip: {
-      trigger: 'item'
-    },
-    series: [{
-      name: 'Application Field',
-      type: 'pie',
-      radius: ['40%', '70%'],
-      avoidLabelOverlap: false,
-      label: {
-        show: false,
-        position: 'center'
-      },
-      emphasis: {
-        label: {
-          show: true,
-          fontSize: '18',
-          fontWeight: 'bold'
-        }
-      },
-      labelLine: {
-        show: false
-      },
-      data: [
-        { value: 4567, name: 'Cancer Diagnosis' },
-        { value: 2345, name: 'Cardiovascular Disease' },
-        { value: 1567, name: 'Neurological Disease' },
-        { value: 1234, name: 'Immune System Disease' },
-        { value: 987, name: 'Metabolic Disease' },
-        { value: 567, name: 'Others' }
-      ]
-    }]
-  }
-
-  applicationChart.setOption(option)
-}
-
-const initGeoChart = () => {
-  if (!geoChartRef.value) return
-
-  geoChart = echarts.init(geoChartRef.value)
-
-  const option = {
-    tooltip: {
-      trigger: 'item'
-    },
-    visualMap: {
-      min: 0,
-      max: 1000,
-      left: 'left',
-      top: 'bottom',
-      text: ['High', 'Low'],
-      calculable: true
-    },
-    series: [{
-      name: 'Research Count',
-      type: 'map',
-      mapType: 'world',
-      roam: false,
-      label: {
-        show: true
-      },
-      data: [
-        { name: 'China', value: 2345 },
-        { name: 'United States', value: 1876 },
-        { name: 'Germany', value: 567 },
-        { name: 'Japan', value: 456 },
-        { name: 'United Kingdom', value: 345 }
-      ]
-    }]
-  }
-
-  geoChart.setOption(option)
-}
-
-const initQualityChart = () => {
-  if (!qualityChartRef.value) return
-
-  qualityChart = echarts.init(qualityChartRef.value)
-
-  const option = {
-    tooltip: {
-      trigger: 'axis'
-    },
-    radar: {
-      indicator: [
-        { name: 'Sample Size', max: 100 },
-        { name: 'Validation Status', max: 100 },
-        { name: 'Data Completeness', max: 100 },
-        { name: 'Citation Count', max: 100 },
-        { name: 'Journal Impact Factor', max: 100 },
-        { name: 'Experimental Reproducibility', max: 100 }
-      ]
-    },
-    series: [{
-      name: 'Data Quality',
-      type: 'radar',
-      data: [{
-        value: [85, 92, 78, 88, 95, 82],
-        name: 'Overall Quality Assessment'
-      }]
-    }]
-  }
-
-  qualityChart.setOption(option)
-}
-
-const initHeatmapChart = () => {
-  if (!heatmapChartRef.value) return
-
-  heatmapChart = echarts.init(heatmapChartRef.value)
-
-  const hours = ['Cancer', 'Cardiovascular', 'Neurological', 'Immune', 'Metabolic', 'Genetic']
-  const days = ['Protein', 'Gene', 'MicroRNA', 'Metabolite', 'DNA', 'RNA']
-
-  const data = []
-  for (let i = 0; i < hours.length; i++) {
-    for (let j = 0; j < days.length; j++) {
-      data.push([j, i, Math.floor(Math.random() * 100)])
     }
   }
 
-  const option = {
-    tooltip: {
-      position: 'top'
-    },
-    grid: {
-      height: '50%',
-      top: '10%'
-    },
-    xAxis: {
-      type: 'category',
-      data: days,
-      splitArea: {
-        show: true
-      }
-    },
-    yAxis: {
-      type: 'category',
-      data: hours,
-      splitArea: {
-        show: true
-      }
-    },
-    visualMap: {
-      min: 0,
-      max: 100,
-      calculable: true,
-      orient: 'horizontal',
-      left: 'center',
-      bottom: '15%'
-    },
-    series: [{
-      name: 'Research Intensity',
-      type: 'heatmap',
-      data: data,
-      label: {
-        show: true
-      },
-      emphasis: {
-        itemStyle: {
-          shadowBlur: 10,
-          shadowColor: 'rgba(0, 0, 0, 0.5)'
-        }
-      }
-    }]
+  return { nodes, edges }
+}
+
+const initializeCytoscape = async (networkData) => {
+  await nextTick()
+
+  if (!cytoscapeContainer.value) return
+
+  // Destroy existing instance
+  if (cy) {
+    cy.destroy()
   }
 
-  heatmapChart.setOption(option)
-}
-
-const handleFilterChange = () => {
-  // Update charts when filters change
-  console.log('Filter conditions changed')
-}
-
-const handleApplyFilters = () => {
-  ElMessage.success('Filter conditions applied')
-  // Reload chart data
-}
-
-const handleResetFilters = () => {
-  selectedCategories.value = ['Protein', 'Gene', 'MicroRNA']
-  yearRange.value = [2015, 2024]
-  sampleRange.value = [0, 5000]
-  validationFilter.value = ['validated', 'pending']
-  ElMessage.info('Filter conditions reset')
-}
-
-const handleExportData = () => {
-  ElMessage.info('Data export function under development...')
-}
-
-const handleJournalDetail = () => {
-  ElMessage.info('Journal details function under development...')
-}
-
-const handleGeoDetail = () => {
-  ElMessage.info('Geographic distribution details function under development...')
-}
-
-// Resize charts when window size changes
-const handleResize = () => {
-  nextTick(() => {
-    categoryChart?.resize()
-    yearTrendChart?.resize()
-    journalChart?.resize()
-    applicationChart?.resize()
-    geoChart?.resize()
-    qualityChart?.resize()
-    heatmapChart?.resize()
+  // Create new Cytoscape instance
+  cy = cytoscape({
+    container: cytoscapeContainer.value,
+    elements: [...networkData.nodes, ...networkData.edges],
+    style: [
+      {
+        selector: 'node',
+        style: {
+          'background-color': '#667eea',
+          'label': 'data(label)',
+          'color': '#fff',
+          'text-valign': 'center',
+          'text-halign': 'center',
+          'font-size': '12px',
+          'font-weight': 'bold',
+          'width': 'mapData(score, 0, 1000, 20, 60)',
+          'height': 'mapData(score, 0, 1000, 20, 60)',
+          'border-width': 2,
+          'border-color': '#2a5298',
+          'text-outline-width': 2,
+          'text-outline-color': '#667eea'
+        }
+      },
+      {
+        selector: 'node:selected',
+        style: {
+          'background-color': '#ff6b6b',
+          'border-color': '#ff5252'
+        }
+      },
+      {
+        selector: 'edge',
+        style: {
+          'width': 'mapData(confidence, 0, 1000, 1, 8)',
+          'line-color': '#ccc',
+          'target-arrow-color': '#ccc',
+          'target-arrow-shape': 'triangle',
+          'curve-style': 'bezier',
+          'opacity': 0.7
+        }
+      },
+      {
+        selector: 'edge:selected',
+        style: {
+          'line-color': '#667eea',
+          'target-arrow-color': '#667eea',
+          'opacity': 1
+        }
+      }
+    ],
+    layout: {
+      name: 'cose',
+      animate: true,
+      animationDuration: 1000,
+      nodeRepulsion: 400000,
+      nodeOverlap: 10,
+      idealEdgeLength: 100,
+      edgeElasticity: 100,
+      nestingFactor: 5,
+      gravity: 80,
+      numIter: 1000,
+      initialTemp: 200,
+      coolingFactor: 0.95,
+      minTemp: 1.0
+    }
   })
+
+  // Add event listeners
+  cy.on('tap', 'node', (evt) => {
+    const node = evt.target
+    const nodeData = node.data()
+
+    ElMessageBox.alert(
+      `Protein: ${nodeData.label}\nScore: ${nodeData.score.toFixed(2)}\nDegree: ${node.degree()}`,
+      'Node Information',
+      { confirmButtonText: 'OK' }
+    )
+  })
+
+  cy.on('tap', 'edge', (evt) => {
+    const edge = evt.target
+    const edgeData = edge.data()
+
+    ElMessageBox.alert(
+      `Interaction: ${edgeData.source} - ${edgeData.target}\nConfidence: ${edgeData.confidence.toFixed(2)}`,
+      'Edge Information',
+      { confirmButtonText: 'OK' }
+    )
+  })
+}
+
+const generateMockStatistics = (proteins) => {
+  // Network statistics
+  networkStats.value = {
+    number_of_nodes: proteins.length,
+    number_of_edges: Math.floor(proteins.length * 1.5),
+    average_node_degree: (proteins.length * 3 / proteins.length).toFixed(2),
+    local_clustering_coefficient: (Math.random() * 0.5 + 0.3).toFixed(3),
+    expected_number_of_edges: Math.floor(proteins.length * 1.2),
+    ppi_enrichment_p_value: (Math.random() * 0.01).toExponential(2)
+  }
+
+  // Topology data
+  topologyData.value = proteins.map(protein => ({
+    protein,
+    degree: Math.floor(Math.random() * 10) + 1,
+    betweenness: (Math.random() * 100).toFixed(3),
+    closeness: (Math.random() * 0.5 + 0.3).toFixed(3)
+  }))
+
+  // Enrichment data
+  const categories = ['GO:Process', 'GO:Function', 'GO:Component', 'KEGG', 'Reactome']
+  const terms = [
+    'Cell cycle regulation', 'Apoptotic process', 'DNA repair',
+    'Protein binding', 'Kinase activity', 'Transcription factor',
+    'Nucleus', 'Cytoplasm', 'Membrane',
+    'Cancer pathways', 'Cell cycle', 'Apoptosis',
+    'DNA damage response', 'Cell division'
+  ]
+
+  enrichmentData.value = Array.from({ length: 10 }, (_, i) => ({
+    category: categories[Math.floor(Math.random() * categories.length)],
+    term: terms[Math.floor(Math.random() * terms.length)],
+    pvalue: (Math.random() * 0.05).toExponential(2)
+  }))
+}
+
+const fitNetwork = () => {
+  if (cy) {
+    cy.fit()
+  }
+}
+
+const resetZoom = () => {
+  if (cy) {
+    cy.zoom(1)
+    cy.center()
+  }
+}
+
+const exportNetwork = () => {
+  if (cy) {
+    const png = cy.png({ scale: 2, full: true })
+    const link = document.createElement('a')
+    link.download = 'protein_network.png'
+    link.href = png
+    link.click()
+    ElMessage.success('Network image exported')
+  }
+}
+
+const downloadResults = async () => {
+  downloading.value = true
+  try {
+    // Simulate download preparation
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    ElMessage.success('Analysis results downloaded')
+  } catch (error) {
+    ElMessage.error('Download failed')
+  } finally {
+    downloading.value = false
+  }
+}
+
+const formatStatLabel = (key) => {
+  const labels = {
+    number_of_nodes: 'Nodes',
+    number_of_edges: 'Edges',
+    average_node_degree: 'Avg Degree',
+    local_clustering_coefficient: 'Clustering Coeff',
+    expected_number_of_edges: 'Expected Edges',
+    ppi_enrichment_p_value: 'P-value'
+  }
+  return labels[key] || key
+}
+
+const formatStatValue = (key, value) => {
+  if (key === 'ppi_enrichment_p_value') {
+    return value
+  }
+  return typeof value === 'number' ? value.toString() : value
+}
+
+const fetchAvailableProteins = async () => {
+  loadingProteins.value = true
+  try {
+    // Mock API call
+    await new Promise(resolve => setTimeout(resolve, 500))
+    availableProteins.value = [
+      { label: 'TP53: Tumor protein p53', value: 'TP53' },
+      { label: 'BRCA1: Breast cancer 1', value: 'BRCA1' },
+      { label: 'EGFR: Epidermal growth factor receptor', value: 'EGFR' },
+      { label: 'MYC: MYC proto-oncogene', value: 'MYC' },
+      { label: 'RB1: Retinoblastoma 1', value: 'RB1' }
+    ]
+  } catch (error) {
+    console.error('Failed to fetch proteins:', error)
+  } finally {
+    loadingProteins.value = false
+  }
 }
 
 onMounted(() => {
-  nextTick(() => {
-    initCategoryChart()
-    initYearTrendChart()
-    initJournalChart()
-    initApplicationChart()
-    initGeoChart()
-    initQualityChart()
-    initHeatmapChart()
-  })
+  fetchAvailableProteins()
+})
 
-  window.addEventListener('resize', handleResize)
+onUnmounted(() => {
+  if (cy) {
+    cy.destroy()
+  }
 })
 </script>
 
@@ -779,340 +668,486 @@ onMounted(() => {
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 20px;
 }
 
-/* Overview Statistics Section */
-.overview-section {
-  padding: 40px 0;
-  background: white;
-  border-bottom: 1px solid #eee;
-}
-
-.overview-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 24px;
-}
-
-.overview-card {
-  border: none;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border-radius: 12px;
-  transition: all 0.3s ease;
-}
-
-.overview-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-}
-
-.stat-content {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.stat-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 1.5rem;
-}
-
-.stat-info {
-  flex: 1;
-}
-
-.stat-number {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #2c3e50;
-  margin-bottom: 5px;
-}
-
-.stat-label {
-  font-size: 0.9rem;
-  color: #666;
-  margin-bottom: 5px;
-}
-
-.stat-change {
-  font-size: 0.8rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.stat-change.increase {
-  color: #27ae60;
-}
-
-.stat-change.decrease {
-  color: #e74c3c;
-}
-
-/* Charts Section Styles */
-.charts-section {
+.main-content {
   padding: 40px 0;
 }
 
-.charts-grid {
+.content-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 24px;
+  grid-template-columns: 350px 1fr;
+  gap: 30px;
+  align-items: start;
 }
 
-.chart-card {
+/* Control Panel Styles */
+.control-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.control-card,
+.stats-card {
   border: none;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   border-radius: 12px;
 }
 
-.chart-card.full-width {
-  grid-column: 1 / -1;
-}
-
-.chart-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.chart-title {
+.panel-title {
   display: flex;
   align-items: center;
   gap: 10px;
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 600;
   color: #2c3e50;
 }
 
-.chart-controls {
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 5px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
 }
 
 .help-icon {
   color: #999;
   cursor: help;
+  font-size: 0.8rem;
 }
 
-.chart-container {
-  height: 300px;
-  margin-top: 20px;
+.protein-textarea {
+  font-family: 'Consolas', 'Monaco', monospace;
 }
 
-.chart-container.large {
-  height: 400px;
+.protein-select {
+  width: 100%;
 }
 
-/* Data Insights Section */
-.insights-section {
-  padding: 40px 0;
-}
-
-.insights-card {
-  border: none;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border-radius: 16px;
-}
-
-.insights-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 24px;
-  margin-top: 20px;
-}
-
-.insight-item {
-  display: flex;
-  gap: 15px;
-  padding: 20px;
-  background: #f8f9ff;
-  border-radius: 12px;
-  border-left: 4px solid #667eea;
-}
-
-.insight-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.input-hint {
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 1.2rem;
-  flex-shrink: 0;
+  gap: 5px;
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 5px;
 }
 
-.insight-content {
+.upload-demo {
+  width: 100%;
+}
+
+.upload-icon {
+  font-size: 2rem;
+  color: #667eea;
+  margin-bottom: 10px;
+}
+
+.parameters-section {
+  border-top: 1px solid #eee;
+  padding-top: 20px;
+}
+
+.param-select {
+  width: 100%;
+}
+
+.score-slider {
+  margin: 10px 0;
+}
+
+.network-type-group {
+  display: flex;
+  gap: 8px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 25px;
+}
+
+.generate-btn {
   flex: 1;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: white;
 }
 
-.insight-title {
-  font-size: 1.1rem;
-  font-weight: 600;
+.clear-btn {
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+}
+
+.example-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.example-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.example-btn {
+  width: 100%;
+  text-align: left;
+  background: #f8fbff;
+  border: 1px solid #e3f2fd;
+  color: #1e3c72;
+  margin-left: 0;
+}
+
+.example-btn:hover {
+  background: #e3f2fd;
+}
+
+/* Statistics Card */
+.stats-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.stat-item:last-child {
+  border-bottom: none;
+}
+
+.stat-label {
+  font-weight: 500;
   color: #2c3e50;
-  margin: 0 0 8px 0;
-}
-
-.insight-description {
-  color: #5a6c7d;
-  line-height: 1.5;
-  margin: 0 0 12px 0;
   font-size: 0.9rem;
 }
 
-.insight-stats {
-  display: flex;
-  gap: 15px;
-  flex-wrap: wrap;
+.stat-value {
+  font-weight: 600;
+  color: #667eea;
+  font-size: 0.9rem;
 }
 
-.insight-stat {
-  font-size: 0.8rem;
+/* Visualization Panel */
+.visualization-panel {
+  min-height: 600px;
+}
+
+.network-card {
+  border: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  height: 100%;
+}
+
+.network-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.network-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.network-container {
+  height: 500px;
+  position: relative;
+}
+
+.network-placeholder {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fbff;
+  border-radius: 8px;
+  border: 2px dashed #e3f2fd;
+}
+
+.placeholder-content {
+  text-align: center;
   color: #666;
 }
 
-.insight-stat strong {
+.placeholder-icon {
+  font-size: 4rem;
   color: #667eea;
-  font-weight: 700;
-}
-
-/* Filter Section */
-.filter-section {
-  padding: 40px 0;
-}
-
-.filter-card {
-  border: none;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border-radius: 16px;
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-.title-icon {
-  color: #667eea;
-}
-
-.filter-content {
-  margin-top: 20px;
-}
-
-.filter-group {
   margin-bottom: 20px;
 }
 
-.filter-label {
-  display: block;
-  font-weight: 600;
+.placeholder-content h3 {
+  font-size: 1.5rem;
   color: #2c3e50;
   margin-bottom: 10px;
-  font-size: 0.9rem;
 }
 
-.range-labels {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 5px;
-  font-size: 0.8rem;
-  color: #666;
+.placeholder-content p {
+  font-size: 1rem;
+  margin-bottom: 30px;
+  max-width: 400px;
 }
 
-.filter-actions {
-  margin-top: 30px;
-  padding-top: 20px;
-  border-top: 1px solid #eee;
+.placeholder-features {
   display: flex;
-  gap: 15px;
   justify-content: center;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+
+.feature-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #5a6c7d;
+}
+
+.feature-item svg {
+  font-size: 1.5rem;
+  color: #667eea;
+}
+
+.cytoscape-container {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  background: white;
+}
+
+/* Analysis Section */
+.analysis-section {
+  margin-top: 40px;
+}
+
+.analysis-card {
+  border: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+}
+
+.topology-table,
+.enrichment-table {
+  border-radius: 8px;
+}
+
+.topology-table :deep(.el-table__row:hover),
+.enrichment-table :deep(.el-table__row:hover) {
+  background-color: #f8f9ff;
+}
+
+/* Download Section */
+.download-section {
+  margin-top: 30px;
+}
+
+.download-card {
+  border: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+}
+
+.download-content {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.download-content p {
+  color: #666;
+  margin-bottom: 20px;
+  line-height: 1.6;
 }
 
 /* Responsive Design */
-@media (max-width: 768px) {
-  .hero-title {
-    font-size: 2.2rem;
-  }
-
-  .overview-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .charts-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .chart-header {
-    flex-direction: column;
-    gap: 10px;
-    align-items: stretch;
-  }
-
-  .chart-controls {
-    justify-content: center;
-  }
-
-  .insights-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .insight-item {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .filter-actions {
-    flex-direction: column;
-    align-items: stretch;
+@media (max-width: 1200px) {
+  .content-grid {
+    grid-template-columns: 320px 1fr;
+    gap: 20px;
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 992px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .control-panel {
+    order: 2;
+  }
+
+  .visualization-panel {
+    order: 1;
+  }
+}
+
+@media (max-width: 768px) {
   .container {
     padding: 0 15px;
   }
 
-  .hero-section {
-    padding: 60px 0 40px;
+  .main-content {
+    padding: 20px 0;
   }
 
-  .stat-content {
+  .network-container {
+    height: 400px;
+  }
+
+  .placeholder-features {
     flex-direction: column;
-    text-align: center;
-    gap: 10px;
+    gap: 15px;
   }
 
-  .chart-container {
-    height: 250px;
+  .feature-item {
+    flex-direction: row;
+    justify-content: center;
   }
 
-  .chart-container.large {
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .generate-btn,
+  .clear-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-title {
+    font-size: 2rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1rem;
+  }
+
+  .network-container {
     height: 300px;
   }
 
-  .insight-stats {
-    justify-content: center;
+  .placeholder-content h3 {
+    font-size: 1.2rem;
   }
+
+  .placeholder-content p {
+    font-size: 0.9rem;
+  }
+
+  .analysis-section {
+    margin-top: 20px;
+  }
+}
+
+/* Element Plus 组件样式覆盖 */
+.el-tabs__nav-wrap::after {
+  display: none;
+}
+
+.el-tabs__active-bar {
+  background-color: #667eea;
+}
+
+.el-tabs__item.is-active {
+  color: #667eea;
+}
+
+.el-tabs__item:hover {
+  color: #667eea;
+}
+
+.el-slider__runway {
+  background-color: #e3f2fd;
+}
+
+.el-slider__bar {
+  background-color: #667eea;
+}
+
+.el-slider__button {
+  border-color: #667eea;
+}
+
+.el-radio__input.is-checked .el-radio__inner {
+  background-color: #667eea;
+  border-color: #667eea;
+}
+
+.el-checkbox__input.is-checked .el-checkbox__inner {
+  background-color: #667eea;
+  border-color: #667eea;
+}
+
+.el-upload-dragger:hover {
+  border-color: #667eea;
+}
+
+.el-upload-dragger.is-dragover {
+  background-color: rgba(102, 126, 234, 0.1);
+  border-color: #667eea;
+}
+
+/* 加载状态样式 */
+.el-loading-mask {
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+.el-loading-spinner .circular {
+  stroke: #667eea;
+}
+
+/* 表格样式增强 */
+.topology-table :deep(.el-table__header),
+.enrichment-table :deep(.el-table__header) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.topology-table :deep(.el-table__header th),
+.enrichment-table :deep(.el-table__header th) {
+  color: white;
+  font-weight: 600;
+}
+
+/* 按钮组样式 */
+.el-button-group .el-button {
+  border-color: #e3f2fd;
+}
+
+.el-button-group .el-button:hover {
+  background-color: #e3f2fd;
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.el-button-group .el-button--primary {
+  background-color: #667eea;
+  border-color: #667eea;
+}
+
+.el-button-group .el-button--primary:hover {
+  background-color: #5a6fd8;
+  border-color: #5a6fd8;
 }
 </style>

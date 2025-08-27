@@ -152,7 +152,11 @@ export const useBiomarkerStore = defineStore('biomarker', {
     async getFilterOptions() {
       try {
         const response = await api.get('/search/filters')
-        return response.data
+        console.log('API response:', response.data)
+        return {
+          success: true,
+          data: response.data
+        }
       } catch (error) {
         console.error('获取筛选选项失败:', error)
         throw error
