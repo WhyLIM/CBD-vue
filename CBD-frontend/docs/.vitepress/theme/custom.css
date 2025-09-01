@@ -1,0 +1,19 @@
+/* .vitepress/theme/custom.css */
+/* 隐藏滚动条但保持滚动功能 - 兼容所有现代浏览器 */
+html {
+  scrollbar-color: transparent transparent; /* Firefox - 滑块和轨道都透明 */
+  scrollbar-width: none; /* Firefox - 完全隐藏滚动条 */
+}
+
+/* Webkit浏览器(Chrome/Safari/Edge) */
+html::-webkit-scrollbar {
+  display: none; /* 完全隐藏滚动条 */
+  width: 0;      /* 双重保障 */
+  height: 0;
+}
+
+/* 确保滚动功能不受影响 */
+body {
+  -ms-overflow-style: none;  /* IE/Edge */
+  overflow: auto;            /* 保持滚动功能 */
+}
