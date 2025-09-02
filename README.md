@@ -37,6 +37,15 @@ CBD3 (Colorectal Cancer Biomarker Database 3) 是一个专为结直肠癌生物�
 - **ESLint**: 代码规范检查
 - **Prettier**: 代码格式化
 - **Nodemon**: 后端开发环境热重载
+- **VitePress**: 用于生成静态文档网站
+
+## 📖 文档系统
+
+项目包含一个基于 **VitePress** 的静态文档网站，位于 `CBD-frontend/docs` 目录下。该文档系统用于提供详细的用户指南、开发文档和项目介绍。
+
+- **内容源**: 所有文档页面均为 Markdown 文件。
+- **配置**: 导航栏、侧边栏和站点信息在 `CBD-frontend/docs/.vitepress/config.js` 文件中配置。
+- **构建输出**: 文档会被构建为静态 HTML 文件，并输出到 `CBD-frontend/public/docs` 目录，以便与主应用一同部署。
 
 ## 🚀 快速开始
 
@@ -65,8 +74,8 @@ CBD3 (Colorectal Cancer Biomarker Database 3) 是一个专为结直肠癌生物�
     ```
 
 3.  **配置数据库**
-    - 请参考 `CBD-backend/DATABASE_SETUP.md` 文件中的指引来设置您的 MySQL 数据库。
-    - 创建 `.env` 文件在 `CBD-backend` 目录下，并填入您的数据库连接信息：
+    - 请参考 `CBD-backend/DATABASE_SETUP.md` 文件中的指引来设置 MySQL 数据库。
+    - 在 `CBD-backend` 目录下创建 `.env` 文件，并填入数据库连接信息：
       ```env
       DB_HOST=localhost
       DB_PORT=3306
@@ -86,9 +95,17 @@ CBD3 (Colorectal Cancer Biomarker Database 3) 是一个专为结直肠癌生物�
     pnpm dev
     ```
 
-5.  **访问应用**
+5.  **启动文档开发服务器 (可选)**
+    ```bash
+    # 在新终端中，进入前端目录
+    cd CBD-frontend
+    pnpm docs:dev
+    ```
+
+6.  **访问应用与文档**
     - 前端应用: `http://localhost:5173`
     - 后端 API: `http://localhost:3000`
+    - 文档网站: `http://localhost:5174`
 
 ## 🔌 API 核心接口
 
@@ -115,9 +132,130 @@ CBD3 (Colorectal Cancer Biomarker Database 3) 是一个专为结直肠癌生物�
 - `GET /api/stats`: 获取数据库的概览统计数据。
 - `GET /api/stats/recent`: 获取最新添加的生物标记物。
 
+## 🚀 部署说明
+
+本项目采用前后端分离的部署策略。
+
+### 1. 构建前端应用与文档
+
+构建过程分为两步，**顺序非常重要**。必须先构建文档，再构建主应用，这样文档才能被正确地打包到最终的发布产物中。
+
+```bash
+# 进入前端项目目录
+cd CBD-frontend
+
+# 第一步：构建文档网站
+# 该命令会将文档静态文件生成到 public/docs 目录下。
+pnpm docs:build
+
+# 第二步：构建主应用
+# 该命令会打包整个应用，并自动将 public/docs 目录包含进去。
+pnpm build
+```
+构建完成后，会在 `CBD-frontend/dist` 目录下生成所有静态文件，其中 `dist/docs` 路径下就包含了完整的文档网站。
+
+### 2. 部署前端
+
+将 `CBD-frontend/dist` 目录下的所有文件上传到您的 Web 服务器（如 Nginx, Apache, 或静态网站托管服务如 Vercel, Netlify）。
+
+**Nginx 配置示例:**
+
+您需要配置 Nginx 来托管前端文件，并将所有 API 请求反向代理到后端服务。
+
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com; # 替换为您的域名
+    root /path/to/your/CBD-frontend/dist; # 替换为前端构建产物的路径
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /api {
+        proxy_pass http://localhost:3000; # 假设后端服务在本机的 3000 端口
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+### 3. 部署后端服务
+
+在您的服务器上，运行后端 Node.js 应用。建议使用进程管理工具（如 PM2）来确保服务的稳定运行。
+
+**a. 配置生产环境变量**
+
+在 `CBD-backend` 目录下创建一个 `.env` 文件，并配置生产环境所需变量：
+
+```env
+NODE_ENV=production
+PORT=3000
+CORS_ORIGIN=https://your-domain.com # 替换为您的前端域名
+DB_HOST=your_db_host
+DB_PORT=3306
+DB_USER=your_db_user
+DB_PASSWORD=your_db_password
+DB_NAME=cbd_database
+```
+
+**b. 使用 PM2 启动服务**
+
+```bash
+# 全局安装 PM2 (如果尚未安装)
+pnpm add -g pm2
+
+# 进入后端项目目录
+cd CBD-backend
+
+# 使用 PM2 启动服务
+pm2 start server.js --name "cbd-backend"
+```
+
+### 附：宝塔面板部署示例
+
+对于使用宝塔面板（BT Panel）的用户，可以参考以下步骤进行快速部署：
+
+**前提条件:**
+- 服务器已安装宝塔面板。
+- 在宝塔面板的“软件商店”中安装 **PM2管理器** 和 **Nginx**。
+- 确保服务器已安装 pnpm。
+
+**1. 上传并准备项目**
+   - 将整个项目代码上传到服务器，例如上传至 `/www/wwwroot/cbd-project` 目录。
+   - 通过宝塔面板的“文件”功能或SSH终端，进入 `CBD-backend` 和 `CBD-frontend` 目录，分别执行 `pnpm install` 安装依赖。
+   - 根据上面的指引，在 `CBD-backend` 目录下创建并配置好 `.env` 文件。
+   - 进入 `CBD-frontend` 目录，**依次执行** `pnpm docs:build` 和 `pnpm build` 来构建前端文件。
+
+**2. 部署后端服务**
+   - 打开宝塔面板的 **PM2管理器**。
+   - 点击“添加项目”，并按如下配置：
+     - **项目根目录**: 选择后端项目路径，如 `/www/wwwroot/cbd-project/CBD-backend`。
+     - **启动文件**: `server.js`。
+     - **项目名称**: `cbd-backend`。
+   - 点击“确定”，PM2管理器会自动启动并守护后端进程。服务默认运行在 `3000` 端口。
+
+**3. 创建网站并配置反向代理**
+   - 进入宝塔面板的“网站” -> “添加站点”。
+   - **域名**: 填入您的域名。
+   - **根目录**: 选择前端构建产物的目录，即 `/www/wwwroot/cbd-project/CBD-frontend/dist`。
+   - **数据库**: 无需创建。
+   - 提交后，点击新创建站点的“设置”。
+   - 在设置页面中，找到“反向代理” -> “添加反向代理”。
+   - **代理名称**: 自定义，如 `API`。
+   - **目标URL**: `http://127.0.0.1:3000`。
+   - **发送域名**: `$host`。
+   - **代理目录**: `/api`。
+   - 提交保存。
+
+完成以上步骤后，您的网站即可通过域名访问，所有对 `/api` 的请求都会被 Nginx 自动转发到后端 Node.js 服务处理。
+
 ## 🤝 贡献指南
 
-我们欢迎任何形式的贡献！
+欢迎任何形式的贡献。
 
 1.  Fork 本项目。
 2.  创建您的功能分支 (`git checkout -b feature/AmazingFeature`)。

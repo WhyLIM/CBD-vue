@@ -64,10 +64,10 @@ router.get('/', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('获取统计信息失败:', error);
+    console.error('Failed to retrieve statistical information:', error);
     res.status(500).json({
-      error: '服务器内部错误',
-      message: '获取统计信息失败'
+      error: 'Internal server error',
+      message: 'Failed to retrieve statistics'
     });
   }
 });
@@ -99,10 +99,10 @@ router.get('/trends', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('获取趋势数据失败:', error);
+    console.error('Failed to retrieve trend data:', error);
     res.status(500).json({
-      error: '服务器内部错误',
-      message: '获取趋势数据失败'
+      error: 'Internal server error',
+      message: 'Failed to retrieve trend data'
     });
   }
 });
@@ -126,10 +126,10 @@ router.get('/popular', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('获取热门生物标记物失败:', error);
+    console.error('Failed to obtain popular biomarkers:', error);
     res.status(500).json({
-      error: '服务器内部错误',
-      message: '获取热门生物标记物失败'
+      error: 'Internal server error',
+      message: 'Failed to retrieve popular biomarkers'
     });
   }
 });
@@ -152,10 +152,10 @@ router.get('/recent', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('获取最新生物标记物失败:', error);
+    console.error('Failed to obtain the latest biomarkers:', error);
     res.status(500).json({
-      error: '服务器内部错误',
-      message: '获取最新生物标记物失败'
+      error: 'Internal server error',
+      message: 'Failed to obtain the latest biomarker'
     });
   }
 });

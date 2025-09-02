@@ -5,27 +5,27 @@ const router = express.Router();
 
 // 提交新的生物标记物数据
 router.post('/', [
-  body('name').notEmpty().withMessage('生物标记物名称不能为空')
-    .isLength({ max: 255 }).withMessage('生物标记物名称不能超过255个字符'),
+  body('name').notEmpty().withMessage('Biomarker name cannot be empty')
+    .isLength({ max: 255 }).withMessage('Biomarker name cannot exceed 255 characters'),
   body('category').isIn(['Protein', 'RNA', 'CircRNA', 'LncRNA', 'MicroRNA', 'OtherRNA', 'DNA', 'Other'])
-    .withMessage('生物分类无效'),
-  body('application').notEmpty().withMessage('生物标记物类型不能为空')
-    .isLength({ max: 500 }).withMessage('应用类型不能超过500个字符'),
-  body('location').notEmpty().withMessage('位置不能为空')
-    .isLength({ max: 255 }).withMessage('位置不能超过255个字符'),
-  body('contributor').notEmpty().withMessage('贡献者姓名不能为空')
-    .isLength({ max: 255 }).withMessage('贡献者姓名不能超过255个字符'),
-  body('pmid').isInt({ min: 1, max: 99999999 }).withMessage('PubMed ID必须是1-99999999之间的整数'),
-  body('email').isEmail().withMessage('邮箱格式无效')
-    .isLength({ max: 255 }).withMessage('邮箱不能超过255个字符'),
-  body('description').notEmpty().withMessage('描述不能为空')
-    .isLength({ min: 10, max: 1000 }).withMessage('描述长度必须在10-1000个字符之间')
+    .withMessage('Invalid biological category'),
+  body('application').notEmpty().withMessage('Biomarker type cannot be empty')
+    .isLength({ max: 500 }).withMessage('Application type cannot exceed 500 characters'),
+  body('location').notEmpty().withMessage('Location cannot be empty')
+    .isLength({ max: 255 }).withMessage('Location cannot exceed 255 characters'),
+  body('contributor').notEmpty().withMessage('Contributor name cannot be empty')
+    .isLength({ max: 255 }).withMessage('Contributor name cannot exceed 255 characters'),
+  body('pmid').isInt({ min: 1, max: 99999999 }).withMessage('PubMed ID must be an integer between 1-99999999'),
+  body('email').isEmail().withMessage('Invalid email format')
+    .isLength({ max: 255 }).withMessage('Email cannot exceed 255 characters'),
+  body('description').notEmpty().withMessage('Description cannot be empty')
+    .isLength({ min: 10, max: 1000 }).withMessage('Description length must be between 10-1000 characters')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
-        error: '数据验证失败',
+        error: 'Data validation failed',
         details: errors.array()
       });
     }
@@ -43,8 +43,8 @@ router.post('/', [
 
     if (existingBiomarker) {
       return res.status(409).json({
-        error: '数据重复',
-        message: '该生物标记物已存在于数据库中'
+        error: 'Duplicate data',
+        message: 'This biomarker already exists in the database'
       });
     }
 
@@ -68,7 +68,7 @@ router.post('/', [
 
     res.status(201).json({
       success: true,
-      message: '生物标记物数据提交成功',
+      message: 'Biomarker data submitted successfully',
       data: {
         id: result.lastID,
         name,
@@ -79,18 +79,18 @@ router.post('/', [
 
   } catch (error) {
     console.error('提交生物标记物数据失败:', error);
-    
+
     // 处理数据库约束错误
     if (error.code === 'SQLITE_CONSTRAINT') {
       return res.status(409).json({
-        error: '数据重复',
-        message: '该生物标记物已存在于数据库中'
+        error: 'Duplicate data',
+        message: 'This biomarker already exists in the database'
       });
     }
 
     res.status(500).json({
-      error: '服务器内部错误',
-      message: '提交生物标记物数据失败'
+      error: 'Internal server error',
+      message: 'Failed to submit biomarker data'
     });
   }
 });
@@ -133,8 +133,8 @@ router.get('/history', async (req, res) => {
   } catch (error) {
     console.error('获取提交历史失败:', error);
     res.status(500).json({
-      error: '服务器内部错误',
-      message: '获取提交历史失败'
+      error: 'Internal server error',
+      message: 'Failed to get submission history'
     });
   }
 });
@@ -143,10 +143,10 @@ router.get('/history', async (req, res) => {
 router.get('/validate-pmid/:pmid', async (req, res) => {
   try {
     const pmid = parseInt(req.params.pmid);
-    
+
     if (!pmid || pmid <= 0) {
       return res.status(400).json({
-        error: '无效的PubMed ID'
+        error: 'Invalid PubMed ID'
       });
     }
 
@@ -160,7 +160,7 @@ router.get('/validate-pmid/:pmid', async (req, res) => {
       return res.json({
         success: true,
         exists: true,
-        message: '该PubMed ID已存在于数据库中',
+        message: 'This PubMed ID already exists in the database',
         existingBiomarker: {
           id: existingBiomarker.id,
           name: existingBiomarker.name
@@ -173,14 +173,14 @@ router.get('/validate-pmid/:pmid', async (req, res) => {
     res.json({
       success: true,
       exists: false,
-      message: 'PubMed ID可用'
+      message: 'PubMed ID is available'
     });
 
   } catch (error) {
     console.error('验证PubMed ID失败:', error);
     res.status(500).json({
-      error: '服务器内部错误',
-      message: '验证PubMed ID失败'
+      error: 'Internal server error',
+      message: 'Failed to validate PubMed ID'
     });
   }
 });
@@ -233,8 +233,8 @@ router.get('/form-options', async (req, res) => {
   } catch (error) {
     console.error('获取表单选项失败:', error);
     res.status(500).json({
-      error: '服务器内部错误',
-      message: '获取表单选项失败'
+      error: 'Internal server error',
+      message: 'Failed to get form options'
     });
   }
 });

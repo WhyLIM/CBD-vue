@@ -5,15 +5,15 @@ const router = express.Router();
 
 // 网络分析
 router.post('/network', [
-  body('proteins').isArray().withMessage('蛋白质列表必须是数组'),
-  body('species').optional().isString().withMessage('物种必须是字符串'),
-  body('confidence').optional().isFloat({ min: 0, max: 1 }).withMessage('置信度必须在0-1之间')
+  body('proteins').isArray().withMessage('Protein list must be an array'),
+  body('species').optional().isString().withMessage('Species must be a string'),
+  body('confidence').optional().isFloat({ min: 0, max: 1 }).withMessage('Confidence must be between 0-1')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
-        error: '参数验证失败',
+        error: 'Parameter validation failed',
         details: errors.array()
       });
     }
@@ -22,7 +22,7 @@ router.post('/network', [
 
     if (!proteins || proteins.length === 0) {
       return res.status(400).json({
-        error: '蛋白质列表不能为空'
+        error: 'Protein list cannot be empty'
       });
     }
 
@@ -80,17 +80,17 @@ router.post('/network', [
   } catch (error) {
     console.error('网络分析失败:', error);
     res.status(500).json({
-      error: '服务器内部错误',
-      message: '网络分析失败'
+      error: 'Internal server error',
+      message: 'Network analysis failed'
     });
   }
 });
 
 // 富集分析
 router.post('/enrichment', [
-  body('genes').isArray().withMessage('基因列表必须是数组'),
-  body('analysisType').optional().isIn(['GO', 'KEGG', 'Reactome']).withMessage('分析类型无效'),
-  body('pValue').optional().isFloat({ min: 0, max: 1 }).withMessage('P值必须在0-1之间')
+  body('genes').isArray().withMessage('Gene list must be an array'),
+  body('analysisType').optional().isIn(['GO', 'KEGG', 'Reactome']).withMessage('Invalid analysis type'),
+  body('pValue').optional().isFloat({ min: 0, max: 1 }).withMessage('P-value must be between 0-1')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -105,7 +105,7 @@ router.post('/enrichment', [
 
     if (!genes || genes.length === 0) {
       return res.status(400).json({
-        error: '基因列表不能为空'
+        error: 'Gene list cannot be empty'
       });
     }
 
@@ -172,8 +172,8 @@ router.post('/enrichment', [
   } catch (error) {
     console.error('富集分析失败:', error);
     res.status(500).json({
-      error: '服务器内部错误',
-      message: '富集分析失败'
+      error: 'Internal server error',
+      message: 'Enrichment analysis failed'
     });
   }
 });
@@ -214,8 +214,8 @@ router.get('/history', async (req, res) => {
   } catch (error) {
     console.error('获取分析历史失败:', error);
     res.status(500).json({
-      error: '服务器内部错误',
-      message: '获取分析历史失败'
+      error: 'Internal server error',
+      message: 'Failed to get analysis history'
     });
   }
 });
@@ -256,8 +256,8 @@ router.get('/tools', async (req, res) => {
   } catch (error) {
     console.error('获取分析工具信息失败:', error);
     res.status(500).json({
-      error: '服务器内部错误',
-      message: '获取分析工具信息失败'
+      error: 'Internal server error',
+      message: 'Failed to get analysis tool information'
     });
   }
 });

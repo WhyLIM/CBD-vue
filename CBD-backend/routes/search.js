@@ -5,16 +5,16 @@ const db = require('../config/database');
 // 检查数据库连接
 db.testConnection().then(connected => {
   if (!connected) {
-    console.error('❌ 搜索路由初始化失败: 无法连接到数据库');
+    console.error('❌ Route search initialization failed: Unable to connect to the database');
   } else {
-    console.log('✅ 搜索路由初始化成功: 数据库连接正常');
+    console.log('✅ Route search initialized successfully: Database connection normal');
   }
 });
 
 // 高级搜索接口
 router.post('/advanced', async (req, res) => {
   try {
-    console.log('接收到高级搜索请求:', req.body);
+    console.log('Received advanced search request:', req.body);
 
     const {
       page = 1,
@@ -95,10 +95,9 @@ router.post('/advanced', async (req, res) => {
     }
 
     if (race) {
-      // 假设没有race字段，可能需要添加
-      // query += ` AND race LIKE ?`;
-      // countQuery += ` AND race LIKE ?`;
-      // params.push(`%${race}%`);
+      query += ` AND Race LIKE ?`;
+      countQuery += ` AND Race LIKE ?`;
+      params.push(`%${race}%`);
     }
 
     if (location) {
@@ -120,10 +119,9 @@ router.post('/advanced', async (req, res) => {
     }
 
     if (experiment) {
-      // 假设没有experiment字段，可能需要添加
-      // query += ` AND experiment LIKE ?`;
-      // countQuery += ` AND experiment LIKE ?`;
-      // params.push(`%${experiment}%`);
+      query += ` AND Experiment LIKE ?`;
+      countQuery += ` AND Experiment LIKE ?`;
+      params.push(`%${experiment}%`);
     }
 
     if (application) {
@@ -133,24 +131,21 @@ router.post('/advanced', async (req, res) => {
     }
 
     if (clinical_use !== undefined && clinical_use !== '') {
-      // 假设没有clinical_use字段，可能需要添加
-      // query += ` AND clinical_use = ?`;
-      // countQuery += ` AND clinical_use = ?`;
-      // params.push(clinical_use);
+      query += ` AND Clinical_Use = ?`;
+      countQuery += ` AND Clinical_Use = ?`;
+      params.push(clinical_use);
     }
 
     if (target !== undefined && target !== '') {
-      // 假设没有target字段，可能需要添加
-      // query += ` AND target = ?`;
-      // countQuery += ` AND target = ?`;
-      // params.push(target);
+      query += ` AND Target = ?`;
+      countQuery += ` AND Target = ?`;
+      params.push(target);
     }
 
     if (drugs) {
-      // 假设没有drugs字段，可能需要添加
-      // query += ` AND drugs LIKE ?`;
-      // countQuery += ` AND drugs LIKE ?`;
-      // params.push(`%${drugs}%`);
+      query += ` AND Drugs LIKE ?`;
+      countQuery += ` AND Drugs LIKE ?`;
+      params.push(`%${drugs}%`);
     }
 
     // 样本信息数值范围搜索
@@ -316,7 +311,7 @@ router.post('/advanced', async (req, res) => {
     console.error('高级搜索错误:', error);
     res.status(500).json({
       success: false,
-      message: '搜索失败',
+      message: 'Search failed',
       error: error.message
     });
   }
@@ -325,13 +320,13 @@ router.post('/advanced', async (req, res) => {
 // 快速搜索接口
 router.get('/quick', async (req, res) => {
   try {
-    console.log('接收到快速搜索请求:', req.query);
+    console.log('Received a quick search request:', req.query);
     const { q, page = 1, limit = 10 } = req.query;
 
     if (!q) {
       return res.status(400).json({
         success: false,
-        message: '搜索关键词不能为空'
+        message: 'Search keywords cannot be empty'
       });
     }
 
@@ -390,10 +385,10 @@ router.get('/quick', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('快速搜索错误:', error);
+    console.error('Quick search error:', error);
     res.status(500).json({
       success: false,
-      message: '搜索失败',
+      message: 'Search failed',
       error: error.message
     });
   }
@@ -449,10 +444,10 @@ router.get('/suggestions', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('获取搜索建议错误:', error);
+    console.error('Failed to retrieve search suggestions:', error);
     res.status(500).json({
       success: false,
-      message: '获取建议失败',
+      message: 'Failed to get suggestions',
       error: error.message
     });
   }
@@ -461,12 +456,12 @@ router.get('/suggestions', async (req, res) => {
 // 获取筛选选项
 router.get('/filters', async (req, res) => {
   try {
-    console.log('接收到获取筛选选项请求');
+    console.log('Received request to retrieve filter options');
 
     // 首先检查数据库连接
     const isConnected = await db.testConnection();
     if (!isConnected) {
-      console.log('数据库连接失败，返回默认筛选选项');
+      console.log('Database connection failed, returning default filter options');
       return res.json({
         success: true,
         data: {
@@ -499,12 +494,12 @@ router.get('/filters', async (req, res) => {
 
     for (const [key, query] of Object.entries(queries)) {
       try {
-        console.log(`执行查询: ${query}`);
+        console.log(`Execute query: ${query}`);
         const rows = await db.query(query);
-        console.log(`查询结果: ${key}`, rows);
+        console.log(`Query results: ${key}`, rows);
         results[key] = rows.map(row => Object.values(row)[0]).filter(value => value && value.trim() !== '');
       } catch (queryError) {
-        console.error(`查询 ${key} 失败:`, queryError);
+        console.error(`Query ${key} failed:`, queryError);
         results[key] = [];
       }
     }
@@ -520,7 +515,7 @@ router.get('/filters', async (req, res) => {
         };
       }
     } catch (yearError) {
-      console.error('获取年份范围失败:', yearError);
+      console.error('Failed to retrieve the year range:', yearError);
       results.yearRange = {
         min: 1900,
         max: new Date().getFullYear()
@@ -533,7 +528,7 @@ router.get('/filters', async (req, res) => {
       const countResult = await db.query(countQuery);
       results.totalRecords = countResult[0].total || 0;
     } catch (countError) {
-      console.error('获取总记录数失败:', countError);
+      console.error('Failed to get the total number of records:', countError);
       results.totalRecords = 0;
     }
 
@@ -563,7 +558,7 @@ router.get('/filters', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('获取筛选选项错误:', error);
+    console.error('Failed to retrieve filter options:', error);
     // 即使出错也返回默认选项，确保前端能正常工作
     res.json({
       success: true,

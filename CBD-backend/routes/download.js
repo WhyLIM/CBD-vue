@@ -10,12 +10,12 @@ const logDownload = async (filename, downloadType, filters, fileSize, req) => {
   try {
     const ipAddress = req.ip || req.connection.remoteAddress;
     const userAgent = req.get('User-Agent');
-    
+
     await run(`
       INSERT INTO download_logs (filename, download_type, filters, file_size, ip_address, user_agent)
       VALUES (?, ?, ?, ?, ?, ?)
     `, [filename, downloadType, JSON.stringify(filters || {}), fileSize, ipAddress, userAgent]);
-    
+
     // 更新统计数据
     await run(`
       UPDATE statistics 
@@ -35,7 +35,7 @@ const generateCSV = (data) => {
   }
 
   const headers = [
-    'ID', 'Name', 'Category', 'Application', 'Location', 'Source', 
+    'ID', 'Name', 'Category', 'Application', 'Location', 'Source',
     'Description', 'PMID', 'First Author', 'Journal', 'Publication Year',
     'Region', 'Stage', 'Contributor', 'Contributor Email', 'Created At'
   ];
@@ -77,7 +77,7 @@ router.get('/complete', async (req, res) => {
 
     const csvData = generateCSV(rows);
     const filename = `CBD2_Complete_Dataset_${new Date().toISOString().split('T')[0]}.csv`;
-    
+
     // 记录下载日志
     await logDownload(filename, 'complete', null, Buffer.byteLength(csvData, 'utf8'), req);
 
@@ -88,69 +88,69 @@ router.get('/complete', async (req, res) => {
   } catch (error) {
     console.error('下载完整数据集失败:', error);
     res.status(500).json({
-      error: '服务器内部错误',
-      message: '下载完整数据集失败'
+      error: 'Internal server error',
+      message: 'Failed to download complete dataset'
     });
   }
 });
 
 // 自定义下载（根据筛选条件）
 router.post('/custom', [
-  body('filters').optional().isObject().withMessage('筛选条件必须是对象'),
-  body('format').optional().isIn(['csv', 'json']).withMessage('格式必须是csv或json')
+  body('filters').optional().isObject().withMessage('Filters must be an object'),
+  body('format').optional().isIn(['csv', 'json']).withMessage('Format must be csv or json')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
-        error: '参数验证失败',
+        error: 'Parameter validation failed',
         details: errors.array()
       });
     }
 
     const { filters = {}, format = 'csv' } = req.body;
-    
+
     let whereClause = '';
     let queryParams = [];
 
     // 构建WHERE条件
     const conditions = [];
-    
+
     if (filters.category && filters.category !== 'all') {
       conditions.push('category = ?');
       queryParams.push(filters.category);
     }
-    
+
     if (filters.application) {
       conditions.push('application LIKE ?');
       queryParams.push(`%${filters.application}%`);
     }
-    
+
     if (filters.location) {
       conditions.push('location LIKE ?');
       queryParams.push(`%${filters.location}%`);
     }
-    
+
     if (filters.source) {
       conditions.push('source LIKE ?');
       queryParams.push(`%${filters.source}%`);
     }
-    
+
     if (filters.yearFrom) {
       conditions.push('publication_year >= ?');
       queryParams.push(parseInt(filters.yearFrom));
     }
-    
+
     if (filters.yearTo) {
       conditions.push('publication_year <= ?');
       queryParams.push(parseInt(filters.yearTo));
     }
-    
+
     if (filters.region) {
       conditions.push('region LIKE ?');
       queryParams.push(`%${filters.region}%`);
     }
-    
+
     if (filters.stage) {
       conditions.push('stage LIKE ?');
       queryParams.push(`%${filters.stage}%`);
@@ -167,8 +167,8 @@ router.post('/custom', [
 
     if (rows.length === 0) {
       return res.status(404).json({
-        error: '未找到符合条件的数据',
-        message: '请调整筛选条件后重试'
+        error: 'No data found matching the criteria',
+        message: 'Please adjust the filter conditions and try again'
       });
     }
 
@@ -195,8 +195,8 @@ router.post('/custom', [
   } catch (error) {
     console.error('自定义下载失败:', error);
     res.status(500).json({
-      error: '服务器内部错误',
-      message: '自定义下载失败'
+      error: 'Internal server error',
+      message: 'Custom download failed'
     });
   }
 });
@@ -237,8 +237,8 @@ router.get('/stats', async (req, res) => {
   } catch (error) {
     console.error('获取下载统计失败:', error);
     res.status(500).json({
-      error: '服务器内部错误',
-      message: '获取下载统计失败'
+      error: 'Internal server error',
+      message: 'Failed to get download statistics'
     });
   }
 });
