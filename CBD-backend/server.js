@@ -4,6 +4,8 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
+const jwt = require('jsonwebtoken');
+const { initializeTables } = require('./config/database');
 
 const app = express();
 
@@ -42,6 +44,18 @@ app.use('/api/download', require('./routes/download'));
 app.use('/api/explore', require('./routes/explore'));
 app.use('/api/stats', require('./routes/stats'));
 
+// 简单登录颁发令牌
+app.post('/api/auth/login', (req, res) => {
+  const { username, password } = req.body || {};
+  const adminUser = process.env.ADMIN_USER || 'admin';
+  const adminPass = process.env.ADMIN_PASSWORD || '';
+  if (username !== adminUser || password !== adminPass) {
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
+  const token = jwt.sign({ sub: username }, process.env.JWT_SECRET || 'dev-secret', { expiresIn: '2h' });
+  res.json({ success: true, data: { token } });
+});
+
 // 健康检查端点
 app.get('/api/health', (req, res) => {
   res.json({
@@ -63,7 +77,7 @@ app.use((req, res) => {
 // 全局错误处理
 app.use((err, req, res, next) => {
   console.error('Error:', err);
-  
+
   // 数据库错误
   if (err.code === 'ER_DUP_ENTRY') {
     return res.status(409).json({
@@ -71,7 +85,7 @@ app.use((err, req, res, next) => {
       message: 'This record already exists'
     });
   }
-  
+
   // 验证错误
   if (err.name === 'ValidationError') {
     return res.status(400).json({
@@ -79,14 +93,14 @@ app.use((err, req, res, next) => {
       details: err.details
     });
   }
-  
+
   // JWT错误
   if (err.name === 'JsonWebTokenError') {
     return res.status(401).json({
       error: 'Invalid token'
     });
   }
-  
+
   // 默认错误
   res.status(err.status || 500).json({
     error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message,
@@ -104,3 +118,6 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
+initializeTables().catch(err => {
+  console.error('Database init failed', err);
+});

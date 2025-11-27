@@ -1,6 +1,20 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { query, get, run } = require('../config/database');
+const jwt = require('jsonwebtoken');
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
+
+const authenticate = (req, res, next) => {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    jwt.verify(token, JWT_SECRET);
+    next();
+  } catch (e) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+};
 const router = express.Router();
 
 // 提交新的生物标记物数据
@@ -35,9 +49,8 @@ router.post('/', [
       pmid, email, description
     } = req.body;
 
-    // 检查是否已存在相同的生物标记物
     const existingBiomarker = await get(
-      'SELECT id FROM biomarkers WHERE name = ? AND pmid = ?',
+      'SELECT id FROM submissions WHERE biomarker_name = ? AND pmid = ?',
       [name, pmid]
     );
 
@@ -48,29 +61,22 @@ router.post('/', [
       });
     }
 
-    // 插入新的生物标记物数据
     const result = await run(`
-      INSERT INTO biomarkers (
-        name, category, application, location, description,
-        pmid, contributor, contributor_email, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      INSERT INTO submissions (
+        biomarker_name, category, application, location, description,
+        pmid, submitter_name, submitter_email, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')
     `, [
       name, category, application, location, description,
       pmid, contributor, email
     ]);
 
-    // 更新统计数据
-    await run(`
-      UPDATE statistics 
-      SET total_biomarkers = (SELECT COUNT(*) FROM biomarkers)
-      WHERE id = 1
-    `);
 
     res.status(201).json({
       success: true,
       message: 'Biomarker data submitted successfully',
       data: {
-        id: result.lastID,
+        id: result.insertId,
         name,
         category,
         submittedAt: new Date().toISOString()
@@ -80,14 +86,6 @@ router.post('/', [
   } catch (error) {
     console.error('提交生物标记物数据失败:', error);
 
-    // 处理数据库约束错误
-    if (error.code === 'SQLITE_CONSTRAINT') {
-      return res.status(409).json({
-        error: 'Duplicate data',
-        message: 'This biomarker already exists in the database'
-      });
-    }
-
     res.status(500).json({
       error: 'Internal server error',
       message: 'Failed to submit biomarker data'
@@ -96,7 +94,7 @@ router.post('/', [
 });
 
 // 获取提交历史（可选功能，用于管理员查看）
-router.get('/history', async (req, res) => {
+router.get('/history', authenticate, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
@@ -104,17 +102,16 @@ router.get('/history', async (req, res) => {
 
     // 获取总数
     const countResult = await get(
-      'SELECT COUNT(*) as total FROM biomarkers WHERE contributor IS NOT NULL'
+      'SELECT COUNT(*) as total FROM submissions'
     );
     const total = countResult.total;
 
     // 获取提交历史
     const rows = await query(`
       SELECT 
-        id, name, category, contributor, contributor_email,
+        id, biomarker_name as name, category, submitter_name as contributor, submitter_email as contributor_email,
         created_at, pmid
-      FROM biomarkers 
-      WHERE contributor IS NOT NULL
+      FROM submissions 
       ORDER BY created_at DESC
       LIMIT ? OFFSET ?
     `, [limit, offset]);
@@ -152,7 +149,7 @@ router.get('/validate-pmid/:pmid', async (req, res) => {
 
     // 检查数据库中是否已存在该PMID
     const existingBiomarker = await get(
-      'SELECT id, name FROM biomarkers WHERE pmid = ?',
+      'SELECT ID as id, Biomarker as name FROM biomarker WHERE PMID = ?',
       [pmid]
     );
 
@@ -188,36 +185,35 @@ router.get('/validate-pmid/:pmid', async (req, res) => {
 // 获取提交表单的选项数据
 router.get('/form-options', async (req, res) => {
   try {
-    // 获取现有的分类选项
     const categories = await query(`
-      SELECT DISTINCT category 
-      FROM biomarkers 
-      WHERE category IS NOT NULL 
-      ORDER BY category
+      SELECT DISTINCT Category as category 
+      FROM biomarker 
+      WHERE Category IS NOT NULL AND Category != ''
+      ORDER BY Category
     `);
 
     // 获取现有的应用类型选项
     const applications = await query(`
-      SELECT DISTINCT application 
-      FROM biomarkers 
-      WHERE application IS NOT NULL AND application != ''
-      ORDER BY application
+      SELECT DISTINCT Application as application 
+      FROM biomarker 
+      WHERE Application IS NOT NULL AND Application != ''
+      ORDER BY Application
     `);
 
     // 获取现有的位置选项
     const locations = await query(`
-      SELECT DISTINCT location 
-      FROM biomarkers 
-      WHERE location IS NOT NULL AND location != ''
-      ORDER BY location
+      SELECT DISTINCT Location as location 
+      FROM biomarker 
+      WHERE Location IS NOT NULL AND Location != ''
+      ORDER BY Location
     `);
 
     // 获取现有的来源选项
     const sources = await query(`
-      SELECT DISTINCT source 
-      FROM biomarkers 
-      WHERE source IS NOT NULL AND source != ''
-      ORDER BY source
+      SELECT DISTINCT Source as source 
+      FROM biomarker 
+      WHERE Source IS NOT NULL AND Source != ''
+      ORDER BY Source
     `);
 
     res.json({

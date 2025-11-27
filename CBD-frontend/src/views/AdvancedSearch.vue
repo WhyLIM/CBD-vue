@@ -810,7 +810,7 @@ const handleSearch = async () => {
       totalResults.value = searchResults.value.length
 
       // Initialize charts with demo data
-      if (showCharts && showCharts.value) {
+      if (showCharts.value && showCharts.value) {
         nextTick(() => {
           initCategoryChart()
           initYearTrendChart()

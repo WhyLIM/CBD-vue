@@ -12,17 +12,9 @@ const logDownload = async (filename, downloadType, filters, fileSize, req) => {
     const userAgent = req.get('User-Agent');
 
     await run(`
-      INSERT INTO download_logs (filename, download_type, filters, file_size, ip_address, user_agent)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `, [filename, downloadType, JSON.stringify(filters || {}), fileSize, ipAddress, userAgent]);
-
-    // 更新统计数据
-    await run(`
-      UPDATE statistics 
-      SET total_downloads = total_downloads + 1,
-          monthly_downloads = monthly_downloads + 1
-      WHERE id = 1
-    `);
+      INSERT INTO download_logs (file_name, download_type, file_size, ip_address, user_agent)
+      VALUES (?, ?, ?, ?, ?)
+    `, [filename, downloadType, fileSize, ipAddress, userAgent]);
   } catch (error) {
     console.error('记录下载日志失败:', error);
   }
@@ -72,7 +64,21 @@ router.get('/complete', async (req, res) => {
   try {
     // 获取所有生物标记物数据
     const rows = await query(`
-      SELECT * FROM biomarkers ORDER BY name ASC
+      SELECT 
+        ID as id,
+        Biomarker as name,
+        Category as category,
+        Application as application,
+        Location as location,
+        Source as source,
+        Discription as description,
+        PMID as pmid,
+        Reference_first_author as first_author,
+        Reference_journal as journal,
+        Reference_year as publication_year,
+        Region as region,
+        Stage as stage
+      FROM biomarker ORDER BY Biomarker ASC
     `);
 
     const csvData = generateCSV(rows);
@@ -162,7 +168,21 @@ router.post('/custom', [
 
     // 执行查询
     const rows = await query(`
-      SELECT * FROM biomarkers ${whereClause} ORDER BY name ASC
+      SELECT 
+        ID as id,
+        Biomarker as name,
+        Category as category,
+        Application as application,
+        Location as location,
+        Source as source,
+        Discription as description,
+        PMID as pmid,
+        Reference_first_author as first_author,
+        Reference_journal as journal,
+        Reference_year as publication_year,
+        Region as region,
+        Stage as stage
+      FROM biomarker ${whereClause} ORDER BY Biomarker ASC
     `, queryParams);
 
     if (rows.length === 0) {
@@ -204,19 +224,19 @@ router.post('/custom', [
 // 获取下载统计信息
 router.get('/stats', async (req, res) => {
   try {
-    const stats = await get(`
-      SELECT 
-        total_downloads,
-        monthly_downloads,
-        last_updated
-      FROM statistics 
-      WHERE id = 1
+    const totalDownloadsRow = await get(`
+      SELECT COUNT(*) as total FROM download_logs
+    `);
+    const monthlyDownloadsRow = await get(`
+      SELECT COUNT(*) as total FROM download_logs WHERE MONTH(created_at) = MONTH(CURRENT_DATE()) AND YEAR(created_at) = YEAR(CURRENT_DATE())
+    `);
+    const lastUpdatedRow = await get(`
+      SELECT MAX(created_at) as last_updated FROM download_logs
     `);
 
-    // 获取最近的下载记录
     const recentDownloads = await query(`
       SELECT 
-        filename,
+        file_name as filename,
         download_type,
         created_at
       FROM download_logs 
@@ -227,9 +247,9 @@ router.get('/stats', async (req, res) => {
     res.json({
       success: true,
       data: {
-        totalDownloads: stats?.total_downloads || 0,
-        monthlyDownloads: stats?.monthly_downloads || 0,
-        lastUpdated: stats?.last_updated,
+        totalDownloads: totalDownloadsRow?.total || 0,
+        monthlyDownloads: monthlyDownloadsRow?.total || 0,
+        lastUpdated: lastUpdatedRow?.last_updated,
         recentDownloads: recentDownloads || []
       }
     });

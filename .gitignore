@@ -148,3 +148,6 @@ cbd_upload/
 # Exclude codebuddy config
 .codebuddy
 Codebuddy*
+.claude
+CLAUDE.md
+.spec-workflow

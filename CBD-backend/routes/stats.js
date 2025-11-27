@@ -113,10 +113,10 @@ router.get('/popular', async (req, res) => {
     // 模拟热门数据（实际应该基于访问量或下载量）
     const popularBiomarkers = await query(`
       SELECT 
-        id, name, category, application, 
-        first_author, journal, publication_year
+        ID as id, Biomarker as name, Category as category, Application as application,
+        Reference_first_author as first_author, Reference_journal as journal, Reference_year as publication_year
       FROM biomarker 
-      ORDER BY name ASC 
+      ORDER BY Biomarker ASC 
       LIMIT 10
     `);
 

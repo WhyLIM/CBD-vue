@@ -1,438 +1,334 @@
 <template>
-  <div class="biomarker-detail">
-    <!-- 加载状态 -->
-    <div v-if="loading" class="loading-container">
-      <el-skeleton :rows="8" animated />
+  <div class="biomarker-page">
+    <div v-if="loading" class="loading-wrapper container">
+      <el-skeleton :rows="2" animated class="mb-4" />
+      <el-row :gutter="24">
+        <el-col :span="16"><el-skeleton :rows="10" animated /></el-col>
+        <el-col :span="8"><el-skeleton :rows="6" animated /></el-col>
+      </el-row>
     </div>
 
-    <!-- 错误状态 -->
-    <div v-else-if="error" class="error-container">
-      <el-result
-        icon="error"
-        title="Error Loading Biomarker"
-        :sub-title="error"
-      >
-        <template #extra>
-          <el-button type="primary" @click="$router.go(-1)">
-            Go Back
-          </el-button>
-          <el-button @click="fetchBiomarkerDetail">
-            Retry
-          </el-button>
-        </template>
-      </el-result>
+    <div v-else-if="error" class="error-wrapper">
+      <el-empty :description="error">
+        <el-button type="primary" @click="fetchBiomarkerDetail">Retry</el-button>
+        <el-button @click="$router.go(-1)">Go Back</el-button>
+      </el-empty>
     </div>
 
-    <!-- 详情内容 -->
-    <div v-else-if="biomarker" class="detail-content">
-      <!-- 面包屑导航 -->
-      <div class="breadcrumb-section">
-        <div class="container">
-          <el-breadcrumb separator="/">
-            <el-breadcrumb-item :to="{ path: '/' }">Home</el-breadcrumb-item>
-            <el-breadcrumb-item :to="{ path: '/biomarkers' }">Biomarkers</el-breadcrumb-item>
-            <el-breadcrumb-item>{{ biomarker.name }}</el-breadcrumb-item>
-          </el-breadcrumb>
-        </div>
-      </div>
+    <div v-else-if="bio" class="content-wrapper">
 
-      <!-- 标题区域 -->
-      <div class="header-section">
-        <div class="container">
-          <div class="biomarker-header">
-            <div class="title-group">
-              <h1 class="biomarker-name">{{ biomarker.name }}</h1>
-              <el-tag 
-                :type="getCategoryTagType(biomarker.category)" 
-                size="large"
-                class="category-tag"
-              >
-                {{ biomarker.category }}
-              </el-tag>
-            </div>
-            <div class="action-buttons">
-              <el-button type="primary" @click="handleDownload">
-                <i class="fas fa-download"></i>
-                Download Data
-              </el-button>
-              <el-button @click="handleShare">
-                <i class="fas fa-share"></i>
-                Share
-              </el-button>
-              <el-button @click="$router.go(-1)">
-                <i class="fas fa-arrow-left"></i>
-                Back
-              </el-button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 详细信息 -->
-      <div class="content-section">
-        <div class="container">
-          <div class="content-grid">
-            <!-- 基本信息 -->
-            <div class="info-panel">
-              <el-card class="info-card">
-                <template #header>
-                  <h3><i class="fas fa-info-circle"></i> Basic Information</h3>
-                </template>
-                
-                <div class="info-grid">
-                  <div class="info-item">
-                    <label>Name:</label>
-                    <span>{{ biomarker.name }}</span>
-                  </div>
-                  <div class="info-item">
-                    <label>Category:</label>
-                    <el-tag :type="getCategoryTagType(biomarker.category)">
-                      {{ biomarker.category }}
+      <section class="hero-section">
+        <div class="hero-background">
+          <div class="container">
+            <div class="hero-content">
+              <div class="hero-row">
+                <div class="hero-left">
+                  <h1 class="hero-title">{{ display.name }}</h1>
+                </div>
+                <div class="hero-right">
+                  <div class="hero-badges">
+                    <span class="hero-id-pill">
+                      <font-awesome-icon :icon="['fas', 'id-badge']" class="hero-id-icon" />
+                      #{{ display.id }}
+                    </span>
+                    <el-tag :color="getCategoryColor(display.category)" size="large"
+                      :class="['category-tag', getTextColorClass(display.category)]" style="border:1px">
+                      {{ display.category }}
+                    </el-tag>
+                    <el-tag v-if="display.application" class="hero-app-tag" size="large" effect="plain">
+                      <font-awesome-icon :icon="['fas', 'flask']" class="mr-2" />
+                      {{ display.application }}
                     </el-tag>
                   </div>
-                  <div class="info-item">
-                    <label>Application:</label>
-                    <span>{{ biomarker.application }}</span>
-                  </div>
-                  <div class="info-item">
-                    <label>Location:</label>
-                    <span>{{ biomarker.location }}</span>
-                  </div>
-                  <div class="info-item">
-                    <label>Source:</label>
-                    <span>{{ biomarker.source }}</span>
-                  </div>
-                  <div class="info-item" v-if="biomarker.gene_symbol">
-                    <label>Gene Symbol:</label>
-                    <span>{{ biomarker.gene_symbol }}</span>
-                  </div>
-                  <div class="info-item" v-if="biomarker.protein_name">
-                    <label>Protein Name:</label>
-                    <span>{{ biomarker.protein_name }}</span>
-                  </div>
-                  <div class="info-item" v-if="biomarker.pathway">
-                    <label>Pathway:</label>
-                    <span>{{ biomarker.pathway }}</span>
-                  </div>
                 </div>
-              </el-card>
-
-              <!-- 描述信息 -->
-              <el-card class="info-card">
-                <template #header>
-                  <h3><i class="fas fa-file-text"></i> Description</h3>
-                </template>
-                <div class="description-content">
-                  <p>{{ biomarker.description || 'No description available.' }}</p>
-                </div>
-              </el-card>
-
-              <!-- 临床意义 -->
-              <el-card class="info-card" v-if="biomarker.clinical_significance">
-                <template #header>
-                  <h3><i class="fas fa-stethoscope"></i> Clinical Significance</h3>
-                </template>
-                <div class="clinical-content">
-                  <p>{{ biomarker.clinical_significance }}</p>
-                </div>
-              </el-card>
-            </div>
-
-            <!-- 参考文献和数据 -->
-            <div class="reference-panel">
-              <!-- 参考文献 -->
-              <el-card class="reference-card">
-                <template #header>
-                  <h3><i class="fas fa-book"></i> Reference</h3>
-                </template>
-                
-                <div class="reference-info">
-                  <div class="reference-item">
-                    <label>First Author:</label>
-                    <span>{{ biomarker.first_author }}</span>
-                  </div>
-                  <div class="reference-item">
-                    <label>Journal:</label>
-                    <span>{{ biomarker.journal }}</span>
-                  </div>
-                  <div class="reference-item">
-                    <label>Publication Year:</label>
-                    <span>{{ biomarker.publication_year }}</span>
-                  </div>
-                  <div class="reference-item" v-if="biomarker.pmid">
-                    <label>PMID:</label>
-                    <el-link 
-                      :href="`https://pubmed.ncbi.nlm.nih.gov/${biomarker.pmid}/`" 
-                      target="_blank"
-                      type="primary"
-                    >
-                      {{ biomarker.pmid }}
-                    </el-link>
-                  </div>
-                  <div class="reference-item" v-if="biomarker.doi">
-                    <label>DOI:</label>
-                    <el-link 
-                      :href="`https://doi.org/${biomarker.doi}`" 
-                      target="_blank"
-                      type="primary"
-                    >
-                      {{ biomarker.doi }}
-                    </el-link>
-                  </div>
-                </div>
-              </el-card>
-
-              <!-- 统计数据 -->
-              <el-card class="stats-card">
-                <template #header>
-                  <h3><i class="fas fa-chart-bar"></i> Statistics</h3>
-                </template>
-                
-                <div class="stats-grid">
-                  <div class="stat-item">
-                    <div class="stat-value">{{ biomarker.view_count || 0 }}</div>
-                    <div class="stat-label">Views</div>
-                  </div>
-                  <div class="stat-item">
-                    <div class="stat-value">{{ biomarker.download_count || 0 }}</div>
-                    <div class="stat-label">Downloads</div>
-                  </div>
-                  <div class="stat-item">
-                    <div class="stat-value">{{ biomarker.citation_count || 0 }}</div>
-                    <div class="stat-label">Citations</div>
-                  </div>
-                </div>
-              </el-card>
-
-              <!-- 相关链接 -->
-              <el-card class="links-card">
-                <template #header>
-                  <h3><i class="fas fa-link"></i> External Links</h3>
-                </template>
-                
-                <div class="links-list">
-                  <el-button 
-                    v-if="biomarker.gene_symbol"
-                    type="info" 
-                    size="small" 
-                    @click="openExternalLink('ncbi', biomarker.gene_symbol)"
-                  >
-                    <i class="fas fa-external-link-alt"></i>
-                    NCBI Gene
-                  </el-button>
-                  <el-button 
-                    v-if="biomarker.protein_name"
-                    type="info" 
-                    size="small" 
-                    @click="openExternalLink('uniprot', biomarker.protein_name)"
-                  >
-                    <i class="fas fa-external-link-alt"></i>
-                    UniProt
-                  </el-button>
-                  <el-button 
-                    v-if="biomarker.pathway"
-                    type="info" 
-                    size="small" 
-                    @click="openExternalLink('kegg', biomarker.pathway)"
-                  >
-                    <i class="fas fa-external-link-alt"></i>
-                    KEGG Pathway
-                  </el-button>
-                </div>
-              </el-card>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- 相关生物标记物 -->
-      <div class="related-section" v-if="relatedBiomarkers.length > 0">
-        <div class="container">
-          <h2 class="section-title">Related Biomarkers</h2>
-          <div class="related-grid">
-            <el-card 
-              v-for="related in relatedBiomarkers" 
-              :key="related.id"
-              class="related-card"
-              @click="$router.push(`/biomarkers/${related.id}`)"
-            >
-              <div class="related-header">
-                <span class="related-name">{{ related.name }}</span>
-                <el-tag :type="getCategoryTagType(related.category)" size="small">
-                  {{ related.category }}
-                </el-tag>
+      <div class="container main-body">
+        <el-row :gutter="32">
+
+          <el-col :xs="24" :lg="16">
+
+            <div class="status-cards" v-if="display.clinical_use === 'Yes' || display.target === '1'">
+              <div v-if="display.clinical_use === 'Yes'" class="status-item">
+                <el-alert title="Clinical Relevance" type="success" :closable="false" show-icon
+                  description="This biomarker has confirmed clinical utility." />
               </div>
-              <div class="related-info">
-                <p>{{ related.application }}</p>
+              <div v-if="display.target === '1'" class="status-item">
+                <el-alert title="Therapeutic Target" type="warning" :closable="false" show-icon
+                  description="Identified as a potential drug target." />
               </div>
-            </el-card>
-          </div>
-        </div>
+            </div>
+
+            <div class="content-card">
+              <el-tabs v-model="activeTab" class="custom-tabs">
+
+                <el-tab-pane label="Overview" name="overview">
+                  <div class="tab-inner">
+                    <h3 class="section-heading">Description</h3>
+                    <p class="text-body">{{ display.description || 'No description available for this biomarker.' }}</p>
+
+                    <div class="mt-6">
+                      <h3 class="section-heading">Associated Drugs</h3>
+                      <div v-if="drugList.length > 0" class="drug-grid">
+                        <a v-for="(drug, idx) in drugList" :key="idx" :href="drug.url" target="_blank"
+                          class="drug-item">
+                          <font-awesome-icon :icon="['fas', 'capsules']" class="mr-2" />
+                          {{ drug.label }}
+                        </a>
+                      </div>
+                      <el-alert v-else title="No Associated Drugs" type="info" :closable="false" show-icon
+                        description="No data available for associated drugs." />
+                    </div>
+                  </div>
+                </el-tab-pane>
+
+                <el-tab-pane label="Properties" name="properties">
+                  <div class="tab-inner">
+                    <dl class="property-list">
+                      <div class="property-item">
+                        <dt>Location</dt>
+                        <dd>{{ display.location || 'N/A' }}</dd>
+                      </div>
+                      <div class="property-item">
+                        <dt>Source</dt>
+                        <dd>{{ display.source || 'N/A' }}</dd>
+                      </div>
+                      <div class="property-item">
+                        <dt>Application</dt>
+                        <dd>{{ display.application || 'N/A' }}</dd>
+                      </div>
+                      <div class="property-item" v-if="display.string_name">
+                        <dt>String DB ID</dt>
+                        <dd>
+                          <a @click="openExternalLink('string', display.string_name)" class="link-text">
+                            {{ display.string_name }} <font-awesome-icon :icon="['fas', 'external-link-alt']" />
+                          </a>
+                        </dd>
+                      </div>
+                    </dl>
+                  </div>
+                </el-tab-pane>
+
+                <el-tab-pane label="References" name="references">
+                  <div class="tab-inner">
+                    <div class="reference-card" v-if="display.reference">
+                      <div class="ref-year">{{ display.reference.year || 'N/A' }}</div>
+                      <div class="ref-content">
+                        <h4 class="ref-journal">{{ display.reference.journal || 'Unknown Journal' }}</h4>
+                        <p class="ref-author">By {{ display.reference.author || 'Unknown Author' }}</p>
+                        <el-button v-if="display.pmid" size="small" type="primary" plain
+                          @click="openExternalLink('pmid', display.pmid)">
+                          View PubMed ({{ display.pmid }})
+                        </el-button>
+                      </div>
+                    </div>
+                    <el-empty v-else description="No citation data available" />
+                  </div>
+                </el-tab-pane>
+              </el-tabs>
+            </div>
+
+            <div class="related-section" v-if="related.length">
+              <div class="section-header-row">
+                <h3>Related Biomarkers</h3>
+              </div>
+              <div class="related-grid">
+                <div v-for="r in related" :key="r.id" class="related-card" @click="$router.push(`/biomarkers/${r.id}`)">
+                  <div class="rc-top">
+                    <span class="rc-category" :class="r.category.toLowerCase()">{{ r.category }}</span>
+                  </div>
+                  <div class="rc-main">
+                    <h4>{{ r.name || r.biomarker }}</h4>
+                    <p>{{ r.application }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </el-col>
+
+          <el-col :xs="24" :lg="8">
+            <div class="sidebar-wrapper">
+
+              <div class="sidebar-widget" v-if="hasComposition">
+                <div class="widget-header">
+                  <h4>Sample Composition</h4>
+                </div>
+                <div class="widget-body">
+                  <div ref="chartRef" class="chart-box"></div>
+                  <div class="chart-legend">
+                    <span v-if="Number(display.male) > 0"><i class="fas fa-circle" style="color:#409EFF"></i>
+                      Male</span>
+                    <span v-if="Number(display.female) > 0"><i class="fas fa-circle" style="color:#F56C6C"></i>
+                      Female</span>
+                  </div>
+                </div>
+              </div>
+
+
+
+              <div class="sidebar-widget">
+                <div class="widget-header">
+                  <h4>External Resources</h4>
+                </div>
+                <div class="widget-body resource-links">
+                  <a v-if="display.pmid" @click.prevent="openExternalLink('pmid', display.pmid)" class="res-link">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/f/fb/PubMed_logo.svg" alt="PubMed"
+                      class="res-icon" style="filter: grayscale(1); opacity:0.7">
+                    <span>PubMed Database</span>
+                    <i class="fas fa-chevron-right"></i>
+                  </a>
+                  <a v-if="display.string_name" @click.prevent="openExternalLink('string', display.string_name)"
+                    class="res-link">
+                    <span class="res-icon-circle"><i class="fas fa-project-diagram"></i></span>
+                    <span>STRING Interaction</span>
+                    <i class="fas fa-chevron-right"></i>
+                  </a>
+                </div>
+              </div>
+
+            </div>
+          </el-col>
+        </el-row>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useBiomarkerStore } from '@/stores/biomarker'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
+// removed ElMessage (share feature deprecated)
+import { getCategoryColor, getTextColorClass } from '@/utils/categoryColors'
 import api from '@/utils/api'
+import * as echarts from 'echarts'
 
 const route = useRoute()
-const router = useRouter()
-const biomarkerStore = useBiomarkerStore()
-
-// 响应式数据
 const loading = ref(false)
 const error = ref(null)
-const biomarker = ref(null)
-const relatedBiomarkers = ref([])
+const bio = ref(null)
+const related = ref([])
+const chartRef = ref(null)
+const activeTab = ref('overview')
+let chartInstance = null
 
-// 获取生物标记物详情
+// --- Data Computed Properties ---
+const display = computed(() => {
+  const b = bio.value || {}
+  return {
+    ...b,
+    name: b.name || b.biomarker,
+    view_count: b.view_count || 0,
+    download_count: b.download_count || 0,
+    citation_count: b.citation_count || 0
+  }
+})
+
+const drugList = computed(() => {
+  const raw = (display.value?.drugs || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean)
+    .filter(label => !/^(no\s*data|n\/?a|none|null|\-)$/i.test(label))
+
+  return raw.map(label => {
+    const match = label.match(/DB\d+/i)
+    const id = match ? match[0].toUpperCase() : ''
+    const url = id ? `https://go.drugbank.com/drugs/${id}` : `https://go.drugbank.com/search?query=${encodeURIComponent(label)}`
+    return { label, url }
+  })
+})
+
+const hasComposition = computed(() => Number(display.value?.male) > 0 || Number(display.value?.female) > 0)
+
+// --- Helper Functions ---
+const getCategoryTagType = (category) => {
+  const m = { Protein: 'primary', MicroRNA: 'success', Gene: 'warning', Metabolite: 'info', DNA: 'danger', RNA: 'success' }
+  return m[category] || 'info'
+}
+
+// --- Chart Logic ---
+const initChart = () => {
+  if (!chartRef.value || !hasComposition.value) return
+  if (chartInstance) chartInstance.dispose()
+
+  chartInstance = echarts.init(chartRef.value)
+  const data = []
+  if (Number(display.value.male) > 0) data.push({ value: Number(display.value.male), name: 'Male', itemStyle: { color: '#409EFF' } })
+  if (Number(display.value.female) > 0) data.push({ value: Number(display.value.female), name: 'Female', itemStyle: { color: '#F56C6C' } })
+
+  const option = {
+    tooltip: { trigger: 'item' },
+    series: [{
+      name: 'Sample Composition',
+      type: 'pie',
+      radius: ['50%', '70%'],
+      center: ['50%', '50%'],
+      avoidLabelOverlap: false,
+      itemStyle: { borderRadius: 5, borderColor: '#fff', borderWidth: 2 },
+      label: { show: false },
+      data: data
+    }]
+  }
+  chartInstance.setOption(option)
+}
+
+// --- API Calls ---
 const fetchBiomarkerDetail = async () => {
   const id = route.params.id
-  if (!id) {
-    error.value = 'Invalid biomarker ID'
-    return
-  }
-
-  loading.value = true
-  error.value = null
+  if (!id) { error.value = 'Invalid ID'; return }
+  loading.value = true; error.value = null
 
   try {
     const response = await api.get(`/biomarkers/${id}`)
     if (response.success) {
-      biomarker.value = response.data
-      // 增加浏览次数
-      await incrementViewCount(id)
-      // 获取相关生物标记物
+      bio.value = response.data
+      activeTab.value = 'overview'
       await fetchRelatedBiomarkers(id)
+      nextTick(() => { initChart() })
     } else {
-      error.value = response.message || 'Failed to load biomarker details'
+      error.value = response.message || 'Failed to load'
     }
   } catch (err) {
-    console.error('获取生物标记物详情失败:', err)
-    error.value = 'Failed to load biomarker details'
+    error.value = 'Network error'
   } finally {
     loading.value = false
   }
 }
 
-// 增加浏览次数
-const incrementViewCount = async (id) => {
-  try {
-    await api.post(`/biomarkers/${id}/view`)
-  } catch (error) {
-    console.error('增加浏览次数失败:', error)
-  }
-}
-
-// 获取相关生物标记物
 const fetchRelatedBiomarkers = async (id) => {
   try {
     const response = await api.get(`/biomarkers/${id}/related`)
-    if (response.success) {
-      relatedBiomarkers.value = response.data
-    }
-  } catch (error) {
-    console.error('获取相关生物标记物失败:', error)
-  }
+    if (response.success) related.value = response.data || []
+  } catch (e) { console.error(e) }
 }
 
-// 获取分类标签类型
-const getCategoryTagType = (category) => {
-  const typeMap = {
-    'Protein': 'primary',
-    'MicroRNA': 'success',
-    'Gene': 'warning',
-    'Metabolite': 'info',
-    'DNA': 'danger',
-    'RNA': 'success'
-  }
-  return typeMap[category] || 'default'
-}
 
-// 下载数据
-const handleDownload = async () => {
-  try {
-    const response = await api.get(`/biomarkers/${biomarker.value.id}/download`, {
-      responseType: 'blob'
-    })
-    
-    // 创建下载链接
-    const url = window.URL.createObjectURL(new Blob([response]))
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', `${biomarker.value.name}_data.json`)
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    window.URL.revokeObjectURL(url)
-    
-    ElMessage.success('Data downloaded successfully')
-  } catch (error) {
-    console.error('下载失败:', error)
-    ElMessage.error('Download failed')
-  }
-}
+// share feature removed
 
-// 分享功能
-const handleShare = async () => {
-  const url = window.location.href
-  
-  try {
-    if (navigator.share) {
-      await navigator.share({
-        title: `${biomarker.value.name} - CBD2 Database`,
-        text: `Check out this biomarker: ${biomarker.value.name}`,
-        url: url
-      })
-    } else {
-      // 复制到剪贴板
-      await navigator.clipboard.writeText(url)
-      ElMessage.success('Link copied to clipboard')
-    }
-  } catch (error) {
-    console.error('分享失败:', error)
-    ElMessage.error('Share failed')
-  }
-}
-
-// 打开外部链接
 const openExternalLink = (type, query) => {
   const urls = {
-    ncbi: `https://www.ncbi.nlm.nih.gov/gene/?term=${encodeURIComponent(query)}`,
-    uniprot: `https://www.uniprot.org/uniprot/?query=${encodeURIComponent(query)}`,
-    kegg: `https://www.genome.jp/kegg-bin/search_pathway_text?map=map&keyword=${encodeURIComponent(query)}`
+    string: `https://string-db.org/search?search=${encodeURIComponent(query)}`,
+    pmid: `https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(query)}/`
   }
-  
-  if (urls[type]) {
-    window.open(urls[type], '_blank')
-  }
+  if (urls[type]) window.open(urls[type], '_blank')
 }
 
-// 监听路由参数变化
-watch(() => route.params.id, (newId) => {
-  if (newId) {
-    fetchBiomarkerDetail()
-  }
-})
-
-onMounted(() => {
-  fetchBiomarkerDetail()
-})
+// --- Lifecycle ---
+const handleResize = () => chartInstance && chartInstance.resize()
+onMounted(() => { fetchBiomarkerDetail(); window.addEventListener('resize', handleResize) })
+onUnmounted(() => { window.removeEventListener('resize', handleResize); if (chartInstance) chartInstance.dispose() })
+watch(() => route.params.id, (n) => { if (n) fetchBiomarkerDetail() })
 </script>
 
 <style scoped>
-.biomarker-detail {
+/* --- 1. Global Page Styles --- */
+.biomarker-page {
   min-height: 100vh;
-  background: #f8f9fa;
-}
-
-.loading-container, .error-container {
-  padding: 60px 20px;
+  background-color: var(--bg-secondary);
 }
 
 .container {
@@ -441,251 +337,595 @@ onMounted(() => {
   padding: 0 20px;
 }
 
-.breadcrumb-section {
+/* --- 2. Hero Header (Matches Advanced Search Header) --- */
+.hero-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-xl) 0;
+}
+
+.hero-row {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: var(--spacing-lg);
+}
+
+.hero-left {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.hero-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.hero-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+
+.hero-id {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: monospace;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: var(--font-size-sm);
+}
+
+.hero-id-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 5px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.hero-id-icon {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* Consistent pill heights for ID and tags */
+.hero-id-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  line-height: 32px;
+  padding: 0 5px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.hero-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+}
+
+.hero-pill :deep(.el-tag__content) {
+  display: inline-flex;
+  align-items: center;
+}
+
+.hero-title {
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-4xl);
+  margin: 0 0 var(--spacing-xs) 0;
+  font-weight: 700;
+  padding: 50px 0;
+}
+
+.hero-subtitle {
+  font-size: var(--font-size-base);
+  color: var(--text-light);
+  margin-bottom: var(--spacing-md);
+  max-width: 600px;
+}
+
+.hero-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+}
+
+.hero-btn {
+  background-color: white;
+  color: #1a365d;
+  border: none;
+  font-weight: 600;
+  padding: 12px 24px;
+  height: auto;
+}
+
+.hero-btn:hover {
+  background-color: #f0f0f0;
+  transform: translateY(-2px);
+}
+
+.hero-btn-outline {
+  background: transparent;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  font-weight: 600;
+  padding: 12px 24px;
+  height: auto;
+}
+
+.hero-btn-outline:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Hero application pill */
+.hero-app-tag :deep(.el-tag__content) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* --- 3. Main Content Layout --- */
+.main-body {
+  position: relative;
+  z-index: 3;
+  padding-bottom: 60px;
+}
+
+/* --- 4. Content Cards --- */
+.content-card,
+.sidebar-widget {
   background: white;
-  padding: 20px 0;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  border: 1px solid #edf2f7;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+/* --- Status Boxes --- */
+.status-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.status-box {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border-left: 4px solid #ddd;
+}
+
+.status-box.success {
+  border-left-color: #67C23A;
+}
+
+.status-box.success i {
+  color: #67C23A;
+  font-size: 24px;
+}
+
+.status-box.warning {
+  border-left-color: #E6A23C;
+}
+
+.status-box.warning i {
+  color: #E6A23C;
+  font-size: 24px;
+}
+
+.status-box .label {
+  display: block;
+  font-weight: 700;
+  font-size: 14px;
+  color: #2c3e50;
+}
+
+.status-box .desc {
+  font-size: 13px;
+  color: #7f8c8d;
+}
+
+/* --- Tabs Styling --- */
+.custom-tabs :deep(.el-tabs__header) {
+  margin: 0;
+  padding: 0 20px;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.custom-tabs :deep(.el-tabs__item) {
+  font-size: 16px;
+  height: 60px;
+  line-height: 60px;
+  color: #606266;
+}
+
+.custom-tabs :deep(.el-tabs__item.is-active) {
+  color: #1a365d;
+  /* Dark blue active state */
+  font-weight: 700;
+}
+
+.custom-tabs :deep(.el-tabs__active-bar) {
+  background-color: #1a365d;
+}
+
+.tab-inner {
+  padding: 32px;
+}
+
+.section-heading {
+  font-size: 18px;
+  color: #2c3e50;
+  margin-top: 0;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
   border-bottom: 1px solid #eee;
 }
 
-.header-section {
-  background: linear-gradient(135deg, #002e45 0%, #014371 100%);
-  color: white;
-  padding: 40px 0;
+.text-body {
+  line-height: 1.8;
+  color: #4a5568;
+  font-size: 15px;
 }
 
-.biomarker-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 20px;
-}
-
-.title-group {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  flex-wrap: wrap;
-}
-
-.biomarker-name {
-  font-size: 2.5rem;
-  font-weight: bold;
-  margin: 0;
-}
-
-.category-tag {
-  font-size: 14px;
-  padding: 8px 16px;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.action-buttons .el-button {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.3);
-  color: white;
-}
-
-.action-buttons .el-button:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.5);
-}
-
-.action-buttons .el-button--primary {
-  background: #27ae60;
-  border-color: #27ae60;
-}
-
-.action-buttons .el-button--primary:hover {
-  background: #219a52;
-  border-color: #219a52;
-}
-
-.content-section {
-  padding: 40px 0;
-}
-
-.content-grid {
+/* Properties List (Description List) */
+.property-list {
   display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 30px;
-}
-
-.info-card, .reference-card, .stats-card, .links-card {
-  margin-bottom: 20px;
-}
-
-.info-card :deep(.el-card__header),
-.reference-card :deep(.el-card__header),
-.stats-card :deep(.el-card__header),
-.links-card :deep(.el-card__header) {
-  background: #f8f9fa;
-  border-bottom: 2px solid #27ae60;
-}
-
-.info-card h3, .reference-card h3, .stats-card h3, .links-card h3 {
-  margin: 0;
-  color: #002e45;
-  font-size: 1.2rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 15px;
-}
-
-.info-item {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.info-item label {
-  font-weight: bold;
-  color: #333;
-  font-size: 14px;
-}
-
-.info-item span {
-  color: #666;
-}
-
-.description-content, .clinical-content {
-  line-height: 1.6;
-  color: #333;
-}
-
-.reference-info {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.reference-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.reference-item label {
-  font-weight: bold;
-  color: #333;
-  min-width: 120px;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  text-align: center;
-}
-
-.stat-item {
-  padding: 15px;
-  background: #f8f9fa;
+  grid-template-columns: 1fr;
+  gap: 1px;
+  background: #edf2f7;
+  /* borders */
+  border: 1px solid #edf2f7;
   border-radius: 8px;
+  overflow: hidden;
 }
 
-.stat-value {
-  font-size: 2rem;
-  font-weight: bold;
-  color: #27ae60;
-  margin-bottom: 5px;
-}
-
-.stat-label {
-  color: #666;
-  font-size: 14px;
-}
-
-.links-list {
+.property-item {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.related-section {
-  padding: 40px 0;
   background: white;
 }
 
-.section-title {
-  text-align: center;
-  font-size: 2rem;
-  color: #002e45;
-  margin-bottom: 30px;
+.property-item dt {
+  width: 30%;
+  background: #f8fafc;
+  padding: 16px;
+  font-weight: 600;
+  color: #4a5568;
+  display: flex;
+  align-items: center;
 }
 
+.property-item dd {
+  width: 70%;
+  padding: 16px;
+  margin: 0;
+  color: #2d3748;
+}
+
+/* Drug Tags */
+.drug-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.drug-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-tertiary);
+  color: var(--primary-color);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  transition: all 0.2s;
+  border: 1px solid var(--border-default);
+}
+
+.drug-item:hover {
+  border-color: var(--accent-color);
+  background: var(--bg-primary);
+}
+
+/* Reference Card */
+.reference-card {
+  display: flex;
+  background: #f8fafc;
+  border: 1px solid #edf2f7;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.ref-year {
+  font-size: 24px;
+  font-weight: 700;
+  color: #cbd5e0;
+  margin-right: 20px;
+  line-height: 1;
+}
+
+.ref-journal {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  color: #2d3748;
+}
+
+.ref-author {
+  font-size: 14px;
+  color: #718096;
+  margin-bottom: 12px;
+}
+
+/* --- 5. Sidebar Styling --- */
+.widget-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f2f5;
+  background: #fcfcfc;
+}
+
+.widget-header h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a365d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.widget-body {
+  padding: 20px;
+}
+
+/* Stats */
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px dashed #eee;
+}
+
+.stat-row:last-child {
+  border-bottom: none;
+}
+
+.stat-row .label {
+  color: #718096;
+}
+
+.stat-row .value {
+  font-weight: 700;
+  color: #2d3748;
+}
+
+/* Chart */
+.chart-box {
+  height: 220px;
+  width: 100%;
+}
+
+.chart-legend {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  font-size: 12px;
+  color: #718096;
+  margin-top: 10px;
+}
+
+/* Resources */
+.res-link {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  text-decoration: none;
+  color: #2d3748;
+  transition: all 0.2s;
+}
+
+.res-link:hover {
+  background: #f7fafc;
+  border-color: #cbd5e0;
+}
+
+.res-icon,
+.res-icon-circle {
+  width: 24px;
+  margin-right: 12px;
+}
+
+.res-icon-circle {
+  width: 28px;
+  height: 28px;
+  background: #edf2f7;
+  color: #4a5568;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+.res-link i.fa-chevron-right {
+  margin-left: auto;
+  font-size: 12px;
+  color: #cbd5e0;
+}
+
+/* Related Grid */
 .related-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 20px;
+  margin-top: 20px;
 }
 
 .related-card {
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   cursor: pointer;
-  transition: all 0.3s ease;
-  border: 2px solid transparent;
+  transition: transform 0.2s;
+  border: 1px solid transparent;
 }
 
 .related-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 46, 69, 0.15);
-  border-color: #27ae60;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+  border-color: #e2e8f0;
 }
 
-.related-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
+.rc-category {
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #edf2f7;
+  color: #718096;
 }
 
-.related-name {
-  font-weight: bold;
-  color: #002e45;
+.rc-category.protein {
+  color: #409EFF;
+  background: #ecf5ff;
 }
 
-.related-info {
-  color: #666;
-  font-size: 14px;
+.rc-category.microrna {
+  color: #67C23A;
+  background: #f0f9eb;
 }
 
-/* 响应式设计 */
+.rc-main h4 {
+  margin: 10px 0 4px;
+  font-size: 15px;
+  color: #2d3748;
+}
+
+.rc-main p {
+  margin: 0;
+  font-size: 13px;
+  color: #a0aec0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Mobile Adjustments */
 @media (max-width: 768px) {
-  .biomarker-name {
-    font-size: 2rem;
+  .hero-title {
+    font-size: 2.2rem;
   }
-  
-  .biomarker-header {
+
+  .hero-row {
     flex-direction: column;
-    align-items: stretch;
-    text-align: center;
+    align-items: flex-start;
+    gap: var(--spacing-md);
   }
-  
-  .content-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .info-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .related-grid {
-    grid-template-columns: 1fr;
-  }
+}
+
+.status-grid {
+  grid-template-columns: 1fr;
+}
+
+.property-item {
+  flex-direction: column;
+}
+
+.property-item dt,
+.property-item dd {
+  width: 100%;
+}
+
+
+.mt-6 {
+  margin-top: 24px;
+}
+
+.mb-4 {
+  margin-bottom: 16px;
+}
+
+/* Layout and spacing overrides for consistency */
+.main-body {
+  padding: var(--spacing-2xl) 0;
+}
+
+.tab-inner {
+  padding: var(--spacing-xl);
+}
+
+/* Status cards consistent with other cards */
+.status-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+}
+
+.status-item {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-sm);
+}
+
+.status-item :deep(.el-alert) {
+  margin: 0;
+}
+
+/* Uniform gaps */
+.drug-grid {
+  gap: var(--spacing-sm);
+}
+
+.related-grid {
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+}
+
+/* Category tag text color overrides (match list page behavior) */
+.category-tag.text-black {
+  --el-tag-text-color: #5a5a5a !important;
+}
+
+.category-tag.text-white {
+  --el-tag-text-color: #ffffff !important;
+}
+
+.category-tag.text-black :deep(.el-tag__content) {
+  color: #5a5a5a !important;
+}
+
+.category-tag.text-white :deep(.el-tag__content) {
+  color: #ffffff !important;
 }
 </style>

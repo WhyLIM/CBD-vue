@@ -4,6 +4,17 @@
 
 CBD3 (Colorectal Cancer Biomarker Database 3) 是一个专为结直肠癌生物标记物数据设计的现代化全栈应用。它提供了数据管理、搜索、统计和下载功能，由原有的 PHP 项目重构为基于 Vue3 和 Node.js 的技术栈。
 
+## ⚡ 简明关键点（TL;DR）
+
+- 前端：Vue 3 + Vite + Vue Router + Pinia + Element Plus + ECharts；入口 `CBD-frontend/src/main.js`，路由 `CBD-frontend/src/router/index.js`，状态 `CBD-frontend/src/stores/biomarker.js`，HTTP 封装 `CBD-frontend/src/utils/api.js`（统一返回 `{success,data,pagination}`）。
+- 后端：Express + MySQL2；入口 `CBD-backend/server.js`，数据库封装 `CBD-backend/config/database.js`，业务路由位于 `CBD-backend/routes/*`（biomarkers/search/download/submission/stats）。
+- 端口与跨域：后端默认 `3000`；前端开发端口 `5173`。请在前端 `.env` 配置 `VITE_API_BASE_URL=http://localhost:3000/api`，后端 `.env` 配置 `CORS_ORIGIN=http://localhost:5173`（你当前已设置）。
+- 文档站：位于 `CBD-frontend/docs`，使用 VitePress；构建顺序必须“先文档后主应用”（`pnpm docs:build` → `pnpm build`），产物输出到 `CBD-frontend/public/docs` 并随前端打包。
+- 目录速览：
+  - 前端：`src/views` 页面、`src/components` 组件、`src/stores` 状态、`src/router` 路由、`src/utils` 工具；`services/stringApi.js` 集成 STRING-DB。
+  - 后端：`server.js` 中间件与路由挂载、`routes/*` 接口实现、`config/database.js` 连接池与通用查询。
+- 建议优化：前端路由懒加载与按需资源、后端鉴权闭环（JWT）、统一数据表命名（`biomarker`/`biomarkers`）、增加前后端测试覆盖。
+
 ## ✨ 主要功能
 
 - 🔍 **生物标记物搜索与浏览**: 支持关键词快速搜索、多条件高级搜索以及分页浏览。
@@ -82,6 +93,11 @@ CBD3 (Colorectal Cancer Biomarker Database 3) 是一个专为结直肠癌生物�
       DB_USER=your_db_user
       DB_PASSWORD=your_db_password
       DB_NAME=cbd_database
+
+    前端 `.env`（开发）请设置：
+    ```env
+    VITE_API_BASE_URL=http://localhost:3000/api
+    ```
       ```
 
 4.  **启动开发服务器**
@@ -106,6 +122,15 @@ CBD3 (Colorectal Cancer Biomarker Database 3) 是一个专为结直肠癌生物�
     - 前端应用: `http://localhost:5173`
     - 后端 API: `http://localhost:3000`
     - 文档网站: `http://localhost:5174`
+
+### 环境变量速查
+
+- 后端 `.env`（开发）：
+  - `PORT=3000`
+  - `CORS_ORIGIN=http://localhost:5173`
+  - `DB_HOST/DB_PORT/DB_USER/DB_PASSWORD/DB_NAME`
+- 前端 `.env`：
+  - `VITE_API_BASE_URL=http://localhost:3000/api`
 
 ## 🔌 API 核心接口
 
@@ -201,6 +226,8 @@ DB_USER=your_db_user
 DB_PASSWORD=your_db_password
 DB_NAME=cbd_database
 ```
+
+> 生产环境请确保前端 `VITE_API_BASE_URL` 指向后端实际域名与 `/api` 路径，并在反向代理（如 Nginx）将 `/api` 转发到后端服务。
 
 **b. 使用 PM2 启动服务**
 

@@ -135,7 +135,8 @@
                   <h3 class="biomarker-name">{{ biomarker.biomarker }}</h3>
                   <div>
                     <el-tag :color="getCategoryColor(biomarker.category)"
-                      :class="['category-tag', getTextColorClass(biomarker.category)]" style="border: 1px; margin-right: 8px;">
+                      :class="['category-tag', getTextColorClass(biomarker.category)]"
+                      style="border: 1px; margin-right: 8px;">
                       {{ biomarker.category }}
                     </el-tag>
                     <el-tag :type="biomarker.clinical_use === 'Yes' ? 'success' : 'danger'" effect="dark">
@@ -208,6 +209,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useBiomarkerStore } from '@/stores/biomarker'
 import { ElMessage } from 'element-plus'
 import QuickSearch from '@/components/common/QuickSearch.vue'
+import { getCategoryColor, getTextColorClass } from '@/utils/categoryColors'
 
 const router = useRouter()
 const route = useRoute()
@@ -302,43 +304,7 @@ const handleAdvancedSearch = () => {
   router.push('/advanced')
 }
 
-const getCategoryColor = (category) => {
-  // 预定义一组美观的色板
-  const colorPalette = [
-    "#5560AC", "#FCBB44", "#08306B", "#D3F0F2", "#67000d",
-    "#ED6F6E", "#1F4527", "#D2D6F5", "#0D8B43", "#F4EEAC",
-    "#FED98E", "#4758A2", "#C9DCC4", "#37939A", "#F28147",
-    "#619CD9", "#EDADC5", "#F1766D", "#6CBEC3",
-    "#9ECAE1", "#68BD48", "#D8D9DA", "#7A70B5"
-  ];
 
-  // 确定性哈希计算（相同category始终返回相同颜色）
-  const hash = Array.from(category).reduce(
-    (sum, char) => sum + char.charCodeAt(0),
-    0
-  );
-
-  return colorPalette[hash % colorPalette.length];
-};
-
-// 计算背景亮度并返回对应的CSS类名
-const getTextColorClass = (category) => {
-  const bgColor = getCategoryColor(category);
-  const brightness = calculateColorBrightness(bgColor);
-  return brightness > 150 ? 'text-black' : 'text-white';
-};
-
-// 精确的颜色亮度计算（gamma校正）
-const calculateColorBrightness = (hexColor) => {
-  const r = parseInt(hexColor.slice(1, 3), 16) / 255;
-  const g = parseInt(hexColor.slice(3, 5), 16) / 255;
-  const b = parseInt(hexColor.slice(5, 7), 16) / 255;
-  return Math.sqrt(
-    0.299 * r ** 2 +
-    0.587 * g ** 2 +
-    0.114 * b ** 2
-  ) * 255;
-};
 
 // Watch route query parameters
 watch(() => route.query, (newQuery) => {

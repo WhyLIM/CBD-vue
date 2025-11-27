@@ -1,3 +1,11 @@
+/*
+ * @Author: Mli-TB mli.bio@outlook.com
+ * @Date: 2025-08-29 09:18:07
+ * @LastEditors: Mli-TB mli.bio@outlook.com
+ * @LastEditTime: 2025-11-26 16:23:51
+ * @FilePath: \CBD3-vue\CBD-frontend\docs\.vitepress\config.js
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 export default {
   title: 'CBD docs',
   description: 'CBD docs',
@@ -8,6 +16,13 @@ export default {
 
   vite: {
     assetsInclude: ['**/*.jpg', '**/*.png', '**/*.gif', '**/*.svg']
+  },
+
+  markdown: {
+    config: async (md) => {
+      const taskLists = await import('markdown-it-task-lists')
+      md.use(taskLists.default)
+    }
   },
 
   themeConfig: {

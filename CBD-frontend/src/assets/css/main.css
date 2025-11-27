@@ -55,7 +55,7 @@ body {
 
 h1 {
     margin: 0;
-    padding: 75px 0 25px 5px;
+    padding: 75px 0 25px 0;
     color: #000;
     /* font: bold 48px/1.2em Times New Roman, Times, serif; */
     letter-spacing: -3px;

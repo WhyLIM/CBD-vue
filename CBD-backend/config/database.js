@@ -76,27 +76,40 @@ const initializeTables = async () => {
 
     // 创建生物标记物表
     await run(`
-      CREATE TABLE IF NOT EXISTS biomarkers (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(255) NOT NULL COMMENT '生物标记物名称',
-        category VARCHAR(100) NOT NULL COMMENT '分类',
-        application TEXT COMMENT '应用',
-        location VARCHAR(255) COMMENT '位置',
-        source VARCHAR(100) COMMENT '来源',
-        description TEXT COMMENT '描述',
-        first_author VARCHAR(255) COMMENT '第一作者',
-        journal VARCHAR(255) COMMENT '期刊',
-        publication_year INT COMMENT '发表年份',
-        pmid VARCHAR(50) COMMENT 'PubMed ID',
-        region VARCHAR(100) COMMENT '区域',
-        stage VARCHAR(100) COMMENT '阶段',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-        INDEX idx_name (name),
-        INDEX idx_category (category),
-        INDEX idx_year (publication_year),
-        INDEX idx_created (created_at)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='生物标记物表'
+      CREATE TABLE IF NOT EXISTS biomarker (
+        ID INT AUTO_INCREMENT PRIMARY KEY,
+        Biomarker VARCHAR(255) NOT NULL,
+        Category VARCHAR(100) NOT NULL,
+        Application TEXT,
+        Location VARCHAR(255),
+        Source VARCHAR(100),
+        Discription TEXT,
+        Reference_first_author VARCHAR(255),
+        Reference_journal VARCHAR(255),
+        Reference_year INT,
+        PMID VARCHAR(50),
+        Region VARCHAR(100),
+        Stage VARCHAR(100),
+        String_Name VARCHAR(255),
+        STRING_ID VARCHAR(255),
+        Number INT,
+        Male INT,
+        Female INT,
+        Age_Mean FLOAT,
+        Age VARCHAR(50),
+        Experiment VARCHAR(255),
+        Statictics VARCHAR(255),
+        Clinical_Use VARCHAR(50),
+        Conclusion TEXT,
+        Target VARCHAR(10),
+        Drugs TEXT,
+        Addition TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_biomarker (Biomarker),
+        INDEX idx_category (Category),
+        INDEX idx_year (Reference_year)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
     // 创建数据提交表
@@ -187,7 +200,7 @@ const insertSampleData = async () => {
     console.log('📊 开始插入示例数据...');
 
     // 检查是否已有数据
-    const existingData = await get('SELECT COUNT(*) as count FROM biomarkers');
+    const existingData = await get('SELECT COUNT(*) as count FROM biomarker');
     if (existingData && existingData.count > 0) {
       console.log('📋 数据库中已存在数据，跳过示例数据插入');
       return true;
@@ -267,17 +280,17 @@ const insertSampleData = async () => {
       }
     ];
 
-    for (const biomarker of sampleBiomarkers) {
+    for (const b of sampleBiomarkers) {
       await run(`
-        INSERT INTO biomarkers (
-          name, category, application, location, source, description,
-          first_author, journal, publication_year, pmid, region, stage
+        INSERT INTO biomarker (
+          Biomarker, Category, Application, Location, Source, Discription,
+          Reference_first_author, Reference_journal, Reference_year, PMID, Region, Stage
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
-        biomarker.name, biomarker.category, biomarker.application,
-        biomarker.location, biomarker.source, biomarker.description,
-        biomarker.first_author, biomarker.journal, biomarker.publication_year,
-        biomarker.pmid, biomarker.region, biomarker.stage
+        b.name, b.category, b.application,
+        b.location, b.source, b.description,
+        b.first_author, b.journal, b.publication_year,
+        b.pmid, b.region, b.stage
       ]);
     }
 

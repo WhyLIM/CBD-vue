@@ -1,12 +1,20 @@
+/*
+ * @Author: Mli-TB mli.bio@outlook.com
+ * @Date: 2025-08-04 11:59:27
+ * @LastEditors: Mli-TB mli.bio@outlook.com
+ * @LastEditTime: 2025-11-26 16:25:58
+ * @FilePath: \CBD3-vue\CBD-frontend\src\router\index.js
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 import { createRouter, createWebHistory } from 'vue-router'
-import Home from '../views/Home.vue'
-import Biomarkers from '../views/Biomarkers.vue'
-import BiomarkerDetail from '../views/BiomarkerDetail.vue'
-import AdvancedSearch from '../views/AdvancedSearch.vue'
-import Submission from '../views/Submission.vue'
-import Download from '../views/Download.vue'
-import Explore from '../views/Explore.vue'
-import About from '../views/About.vue'
+const Home = () => import('../views/Home.vue')
+const Biomarkers = () => import('../views/Biomarkers.vue')
+const BiomarkerDetail = () => import('../views/BiomarkerDetail.vue')
+const AdvancedSearch = () => import('../views/AdvancedSearch.vue')
+const Submission = () => import('../views/Submission.vue')
+const Download = () => import('../views/Download.vue')
+const Explore = () => import('../views/Explore.vue')
+const About = () => import('../views/About.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -53,7 +61,7 @@ const router = createRouter({
       component: About
     }
   ],
-  scrollBehavior(to, from, savedPosition) {
+  scrollBehavior() {
     // 始终滚动到顶部
     return { top: 0 };
   }
