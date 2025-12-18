@@ -1,0 +1,1 @@
+import{_ as e,c as n,o as a,a3 as t}from"./chunks/framework.BurWKwwG.js";const h=JSON.parse('{"title":"For Developers","description":"","frontmatter":{},"headers":[],"relativePath":"4_dev.md","filePath":"4_dev.md"}'),i={name:"4_dev.md"};function l(p,s,r,o,c,d){return a(),n("div",null,s[0]||(s[0]=[t("",11)]))}const g=e(i,[["render",l]]);export{h as __pageData,g as default};

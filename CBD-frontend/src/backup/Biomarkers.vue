@@ -108,8 +108,8 @@
               </el-table-column>
               <el-table-column prop="target" label="Target" min-width="90">
                 <template #default="{ row }">
-                  <el-tag :type="row.target === '1' ? 'success' : 'danger'" size="small" effect="dark">
-                    {{ row.target === '1' ? 'Yes' : 'No' }}
+                  <el-tag :type="row.target === 'Yes' ? 'success' : 'danger'" size="small" effect="dark">
+                    {{ row.target || 'No' }}
                   </el-tag>
                 </template>
               </el-table-column>
@@ -135,7 +135,8 @@
                   <h3 class="biomarker-name">{{ biomarker.biomarker }}</h3>
                   <div>
                     <el-tag :color="getCategoryColor(biomarker.category)"
-                      :class="['category-tag', getTextColorClass(biomarker.category)]" style="border: 1px; margin-right: 8px;">
+                      :class="['category-tag', getTextColorClass(biomarker.category)]"
+                      style="border: 1px; margin-right: 8px;">
                       {{ biomarker.category }}
                     </el-tag>
                     <el-tag :type="biomarker.clinical_use === 'Yes' ? 'success' : 'danger'" effect="dark">
@@ -170,8 +171,8 @@
                   <font-awesome-icon :icon="['fas', 'bullseye']" class="info-icon" />
                   <span class="info-label">Target:</span>
                   <span class="info-value">
-                    <el-tag :type="biomarker.target === '1' ? 'success' : 'danger'" size="small" effect="dark">
-                      {{ biomarker.target === '1' ? 'Yes' : 'No' }}
+                    <el-tag :type="biomarker.target === 'Yes' ? 'success' : 'danger'" size="small" effect="dark">
+                      {{ biomarker.target || 'No' }}
                     </el-tag>
                   </span>
                 </div>
@@ -242,7 +243,7 @@ const sortOptions = ref([
 ])
 
 // Computed properties
-const totalItems = computed(() => biomarkerStore.pagination.total)
+const totalItems = computed(() => biomarkerStore.pagination.totalItems)
 const paginatedBiomarkers = computed(() => biomarkerStore.biomarkers)
 
 // Methods

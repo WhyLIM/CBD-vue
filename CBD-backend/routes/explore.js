@@ -197,8 +197,8 @@ router.get('/history', async (req, res) => {
         id, analysis_type, parameters, result_summary, created_at
       FROM analysis_logs 
       ORDER BY created_at DESC
-      LIMIT ? OFFSET ?
-    `, [limit, offset]);
+      LIMIT ${parseInt(limit, 10)} OFFSET ${offset}
+    `);
 
     res.json({
       success: true,

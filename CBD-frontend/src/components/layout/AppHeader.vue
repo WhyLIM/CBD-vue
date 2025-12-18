@@ -59,11 +59,23 @@
                 <span class="nav-text">Advanced Search</span>
               </router-link>
             </li>
-            <li class="nav-item" :class="{ active: $route.name === 'explore' }">
-              <router-link to="/explore" class="nav-link">
+            <li class="nav-item dropdown" :class="{ active: isExploreActive }" @mouseenter="showExploreDropdown = true"
+              @mouseleave="showExploreDropdown = false">
+              <div class="nav-link">
                 <font-awesome-icon :icon="['fas', 'chart-line']" class="nav-icon" />
                 <span class="nav-text">Explore</span>
-              </router-link>
+                <font-awesome-icon :icon="['fas', 'chevron-down']" class="dropdown-arrow" />
+              </div>
+              <div class="dropdown-menu" :class="{ show: showExploreDropdown }">
+                <router-link to="/network-explore" class="dropdown-item" @click="showExploreDropdown = false">
+                  <font-awesome-icon :icon="['fas', 'project-diagram']" class="dropdown-icon" />
+                  <span>Network Analysis</span>
+                </router-link>
+                <router-link to="/umap" class="dropdown-item" @click="showExploreDropdown = false">
+                  <font-awesome-icon :icon="['fas', 'map']" class="dropdown-icon" />
+                  <span>Bulk to Single-Cell</span>
+                </router-link>
+              </div>
             </li>
             <li class="nav-item" :class="{ active: $route.name === 'download' }">
               <router-link to="/download" class="nav-link">
@@ -104,6 +116,30 @@
               <span class="mobile-nav-text">{{ item.label }}</span>
             </router-link>
           </li>
+
+          <!-- Explore submenu for mobile -->
+          <li class="mobile-nav-item mobile-submenu">
+            <div class="mobile-nav-link mobile-submenu-header" @click="toggleExploreSubmenu">
+              <font-awesome-icon :icon="['fas', 'chart-line']" class="mobile-nav-icon" />
+              <span class="mobile-nav-text">Explore</span>
+              <font-awesome-icon :icon="['fas', 'chevron-down']" class="mobile-submenu-arrow"
+                :class="{ expanded: exploreSubmenuOpen }" />
+            </div>
+            <ul class="mobile-submenu-items" :class="{ expanded: exploreSubmenuOpen }">
+              <li class="mobile-submenu-item">
+                <router-link to="/network-explore" class="mobile-nav-link" @click="closeMobileMenu">
+                  <font-awesome-icon :icon="['fas', 'project-diagram']" class="mobile-nav-icon" />
+                  <span class="mobile-nav-text">Network Analysis</span>
+                </router-link>
+              </li>
+              <li class="mobile-submenu-item">
+                <router-link to="/umap" class="mobile-nav-link" @click="closeMobileMenu">
+                  <font-awesome-icon :icon="['fas', 'map']" class="mobile-nav-icon" />
+                  <span class="mobile-nav-text">UMAP Explorer</span>
+                </router-link>
+              </li>
+            </ul>
+          </li>
         </ul>
       </div>
     </div>
@@ -114,21 +150,27 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const mobileMenuOpen = ref(false)
+const showExploreDropdown = ref(false)
+const exploreSubmenuOpen = ref(false)
 
 const navItems = [
   { name: 'home', path: '/', label: 'Home', icon: ['fas', 'home'] },
   { name: 'biomarkers', path: '/biomarkers', label: 'Biomarkers', icon: ['fas', 'list'] },
   { name: 'advanced', path: '/advanced', label: 'Advanced Search', icon: ['fas', 'search-plus'] },
-  { name: 'explore', path: '/explore', label: 'Explore', icon: ['fas', 'chart-line'] },
   { name: 'download', path: '/download', label: 'Download', icon: ['fas', 'download'] },
   { name: 'submission', path: '/submission', label: 'Submission', icon: ['fas', 'upload'] },
   { name: 'about', path: '/about', label: 'About', icon: ['fas', 'info-circle'] }
 ]
+
+// Computed property to check if any explore route is active
+const isExploreActive = computed(() => {
+  return route.name === 'network-explore' || route.name === 'umap'
+})
 
 const toggleMobileMenu = () => {
   mobileMenuOpen.value = !mobileMenuOpen.value
@@ -136,6 +178,10 @@ const toggleMobileMenu = () => {
 
 const closeMobileMenu = () => {
   mobileMenuOpen.value = false
+}
+
+const toggleExploreSubmenu = () => {
+  exploreSubmenuOpen.value = !exploreSubmenuOpen.value
 }
 </script>
 
@@ -280,6 +326,67 @@ const closeMobileMenu = () => {
   position: relative;
 }
 
+.nav-item.dropdown {
+  position: relative;
+}
+
+.dropdown-arrow {
+  margin-left: 5px;
+  font-size: 0.8rem;
+  transition: transform 0.3s ease;
+}
+
+.nav-item.dropdown:hover .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  min-width: 200px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 8px 0;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition: all 0.3s ease;
+}
+
+.dropdown-menu.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+  color: var(--text-primary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background: var(--bg-tertiary);
+  color: var(--primary-color);
+}
+
+.dropdown-item.router-link-active {
+  background: var(--bg-tertiary);
+  color: var(--primary-color);
+}
+
+.dropdown-icon {
+  margin-right: 10px;
+  font-size: 1rem;
+}
+
 .nav-link {
   display: flex;
   align-items: center;
@@ -404,6 +511,40 @@ const closeMobileMenu = () => {
 
 .mobile-nav-text {
   font-size: var(--font-size-base);
+}
+
+/* Mobile Submenu Styles */
+.mobile-submenu {
+  border-bottom: 1px solid var(--border-light);
+}
+
+.mobile-submenu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mobile-submenu-arrow {
+  transition: transform 0.3s ease;
+}
+
+.mobile-submenu-arrow.expanded {
+  transform: rotate(180deg);
+}
+
+.mobile-submenu-items {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.mobile-submenu-items.expanded {
+  max-height: 200px;
+}
+
+.mobile-submenu-item {
+  padding-left: 20px;
 }
 
 /* 移动端遮罩 */

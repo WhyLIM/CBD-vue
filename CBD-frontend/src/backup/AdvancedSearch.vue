@@ -788,7 +788,7 @@ const handleSearch = async () => {
 
       if (response.success) {
         searchResults.value = response.data || []
-        totalResults.value = response.pagination.total || 0
+        totalResults.value = response.pagination.totalItems || 0
         ElMessage.success(`Found ${totalResults.value} matching results`)
 
         // Initialize charts if they are visible

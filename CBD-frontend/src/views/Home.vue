@@ -46,7 +46,8 @@
     </section>
 
     <!-- Quick Search Section -->
-    <QuickSearch title="Quick Search" placeholder="Enter biomarker name, gene symbol or keywords..." />
+    <QuickSearch title="Quick Search" placeholder="Enter biomarker name, gene symbol or keywords..."
+      @search="handleSearch" />
 
     <!-- Research Tools Navigation -->
     <section class="research-tools">
@@ -151,9 +152,9 @@
                 <el-table-column prop="Biomarker" label="Biomarker Name" width="350" />
                 <el-table-column prop="Category" label="Category" />
                 <el-table-column prop="Application" label="Application" />
-                <el-table-column prop="Reference_first_author" label="First Author" width="150" />
-                <el-table-column prop="Reference_journal" label="Journal" width="180" />
-                <el-table-column prop="Reference_year" label="Year" width="80" />
+                <el-table-column prop="First_Author" label="First Author" width="150" />
+                <el-table-column prop="Journal" label="Journal" width="180" />
+                <el-table-column prop="Year" label="Year" width="80" />
               </el-table>
             </div>
             <el-button type="primary" @click="$router.push('/biomarkers')">
@@ -249,7 +250,7 @@ const copyText = async (text) => {
   try {
     await navigator.clipboard.writeText(text)
     ElMessage.success('Copied to clipboard')
-  } catch (e) {
+  } catch {
     const textarea = document.createElement('textarea')
     textarea.value = text
     textarea.style.position = 'fixed'
@@ -274,9 +275,9 @@ const fetchStats = async () => {
     if (response.success) {
       const data = response.data
       stats.value = {
-        totalBiomarkers: data.overview.totalBiomarkers || 2847,
-        totalArticles: data.overview.totalArticles || 1256,
-        researchInstitutions: data.overview.researchInstitutions || 89,
+        totalBiomarkers: data.overview.totalBiomarkers || 0,
+        totalArticles: data.overview.totalArticles || 0,
+        researchInstitutions: data.overview.researchInstitutions || 0,
         lastUpdated: data.overview.lastUpdated ?
           new Date(data.overview.lastUpdated).toLocaleDateString() : 'N/A'
       }
@@ -300,20 +301,22 @@ const fetchRecentBiomarkers = async () => {
     // 提供默认数据
     recentBiomarkers.value = [
       {
+        ID: 1,
         Biomarker: 'CEA',
-        Category: '蛋白质',
-        Application: '诊断标记物',
-        Reference_first_author: 'Zhang L',
-        Reference_journal: 'Nature Medicine',
-        Reference_year: 2024
+        Category: 'Protein',
+        Application: 'Diagnosis',
+        First_Author: 'Zhang L',
+        Journal: 'Nature Medicine',
+        Year: 2024
       },
       {
+        ID: 2,
         Biomarker: 'KRAS',
-        Category: '基因',
-        Application: '预后标记物',
-        Reference_first_author: 'Wang M',
-        Reference_journal: 'Cell',
-        Reference_year: 2024
+        Category: 'Gene',
+        Application: 'Prognosis',
+        First_Author: 'Wang M',
+        Journal: 'Cell',
+        Year: 2024
       }
     ]
   }
@@ -322,7 +325,7 @@ const fetchRecentBiomarkers = async () => {
 
 // 表格行点击
 const handleRowClick = (row) => {
-  router.push(`/biomarkers/${row.id}`)
+  router.push(`/biomarkers/${row.ID || row.id}`)
 }
 
 // 初始化数据
@@ -339,6 +342,20 @@ const initializeData = async () => {
   } finally {
     loading.value = false
   }
+}
+
+// 处理搜索事件
+const handleSearch = (query) => {
+  if (!query.trim()) {
+    ElMessage.warning('Please enter search keywords')
+    return
+  }
+
+  // 跳转到 biomarkers 页面并传递搜索参数
+  router.push({
+    path: '/biomarkers',
+    query: { q: query.trim() }
+  })
 }
 
 onMounted(() => {

@@ -27,7 +27,8 @@
               :available-locations="availableLocations" :available-sources="availableSources"
               :available-regions="availableRegions" :available-stages="availableStages" :min-year="minYear"
               :max-year="maxYear" :preset-filters="presetFilters" @filter-change="handleFilterChange"
-              @apply-preset="applyPresetFilter" @clear-filters="clearAllFilters" @save-preset="saveFilterPreset" />
+              @filterChange="handleFilterChange" @apply-preset="applyPresetFilter" @clear-filters="clearAllFilters"
+              @save-preset="saveFilterPreset" />
           </el-col>
 
           <!-- 右侧主要内容区域 -->
@@ -58,6 +59,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { debounce } from 'lodash-es'
 import { useBiomarkerStore } from '@/stores/biomarker'
@@ -161,18 +163,42 @@ const downloadFormats = ref([
   }
 ])
 
-// Available fields
+// Available fields (aligned to new biomarker table)
 const availableFields = ref([
-  { key: 'name', name: 'Biomarker Name', description: 'Name of the biomarker', essential: true },
+  { key: 'id', name: 'ID', description: 'Record identifier', essential: true },
+  { key: 'name', name: 'Biomarker Name', description: 'Name of the biomarker (Biomarker)', essential: true },
+  { key: 'type', name: 'Type', description: 'Biomarker type', essential: false },
   { key: 'category', name: 'Category', description: 'Biomarker category', essential: true },
+  { key: 'symbol', name: 'Symbol', description: 'Gene symbol', essential: false },
   { key: 'application', name: 'Application', description: 'Clinical application', essential: true },
   { key: 'location', name: 'Location', description: 'Anatomical location', essential: false },
   { key: 'source', name: 'Sample Source', description: 'Source of the sample', essential: false },
-  { key: 'first_author', name: 'First Author', description: 'First author of the study', essential: false },
-  { key: 'journal', name: 'Journal', description: 'Publication journal', essential: false },
+  { key: 'description', name: 'Description', description: 'Biomarker description', essential: false },
+  { key: 'region', name: 'Region', description: 'Geographic region of study', essential: false },
+  { key: 'race', name: 'Race', description: 'Population race', essential: false },
+  { key: 'number', name: 'Sample Number', description: 'Total sample count', essential: false },
+  { key: 'male', name: 'Male', description: 'Male sample count', essential: false },
+  { key: 'female', name: 'Female', description: 'Female sample count', essential: false },
+  { key: 'gender_m_f', name: 'Gender M/F', description: 'Gender ratio (M/F)', essential: false },
+  { key: 'age_mean', name: 'Age Mean', description: 'Mean age', essential: false },
+  { key: 'age', name: 'Age', description: 'Age range/value', essential: false },
+  { key: 'stage', name: 'Stage', description: 'Disease stage', essential: false },
+  { key: 'experiment', name: 'Experiment', description: 'Experimental method', essential: false },
+  { key: 'statistics', name: 'Statistics', description: 'Statistical methods', essential: false },
+  { key: 'conclusion', name: 'Conclusion', description: 'Study conclusion', essential: false },
+  { key: 'clinical_use', name: 'Clinical Use', description: 'Clinical use (Yes/No)', essential: false },
+  { key: 'target', name: 'Target', description: 'Therapeutic target (Yes/No)', essential: false },
+  { key: 'drugs', name: 'Drugs', description: 'Associated drugs', essential: false },
+  { key: 'first_author', name: 'First Author', description: 'First author of the study', essential: true },
+  { key: 'journal', name: 'Journal', description: 'Publication journal', essential: true },
   { key: 'publication_year', name: 'Publication Year', description: 'Year of publication', essential: true },
-  { key: 'region', name: 'Research Region', description: 'Geographic region of study', essential: false },
-  { key: 'stage', name: 'Disease Stage', description: 'Stage of colorectal cancer', essential: false }
+  { key: 'pmid', name: 'PMID', description: 'PubMed identifier', essential: true },
+  { key: 'doi', name: 'DOI', description: 'Digital Object Identifier', essential: false },
+  { key: 'pmc', name: 'PMC', description: 'PubMed Central ID', essential: false },
+  { key: 'title', name: 'Title', description: 'Article title', essential: false },
+  { key: 'authors', name: 'Authors', description: 'All authors', essential: false },
+  { key: 'abstract', name: 'Abstract', description: 'Article abstract', essential: false },
+  { key: 'keywords', name: 'Keywords', description: 'Article keywords', essential: false }
 ])
 
 // Methods
@@ -220,7 +246,7 @@ const applyFilters = async () => {
     const response = await biomarkerStore.advancedSearch(params)
 
     if (response && response.success) {
-      filteredRecords.value = response.pagination?.total || 0
+      filteredRecords.value = (response.pagination?.totalItems ?? response.pagination?.total ?? response.pagination?.count ?? (Array.isArray(response.data) ? response.data.length : 0)) || 0
 
       if (Array.isArray(response.data)) {
         previewData.value = response.data
@@ -232,9 +258,9 @@ const applyFilters = async () => {
     }
   } catch (error) {
     console.error('Filter error:', error)
-    filteredRecords.value = 50
-    previewData.value = generateMockData(10)
-    ElMessage.warning('Unable to apply filters. Using default data.')
+    filteredRecords.value = 0
+    previewData.value = []
+    ElMessage.warning('Unable to apply filters.')
   } finally {
     loading.value = false
   }
@@ -322,40 +348,12 @@ const updatePreview = async () => {
     }
   } catch (error) {
     console.error('Preview error:', error)
-    previewData.value = generateMockData(previewPageSize.value)
-    ElMessage.warning('Unable to load preview. Using sample data.')
+    ElMessage.warning('Unable to load preview.')
   } finally {
     loading.value = false
   }
 }
 
-const generateMockData = (count) => {
-  const mockData = []
-  const categories = ['Protein', 'Gene', 'Metabolite', 'Other']
-  const applications = ['Diagnosis', 'Prognosis', 'Treatment', 'Monitoring']
-  const locations = ['Colon', 'Rectum', 'Serum', 'Plasma']
-  const sources = ['Tissue', 'Blood', 'Stool', 'Urine']
-  const journals = ['Nature', 'Science', 'Cell', 'NEJM', 'Lancet']
-  const regions = ['Asia', 'Europe', 'North America', 'South America']
-  const stages = ['I', 'II', 'III', 'IV', 'All']
-
-  for (let i = 0; i < count; i++) {
-    mockData.push({
-      name: `Biomarker-${i + 1}`,
-      category: categories[Math.floor(Math.random() * categories.length)],
-      application: applications[Math.floor(Math.random() * applications.length)],
-      location: locations[Math.floor(Math.random() * locations.length)],
-      source: sources[Math.floor(Math.random() * sources.length)],
-      first_author: `Author ${String.fromCharCode(65 + Math.floor(Math.random() * 26))}`,
-      journal: journals[Math.floor(Math.random() * journals.length)],
-      publication_year: 2000 + Math.floor(Math.random() * 24),
-      region: regions[Math.floor(Math.random() * regions.length)],
-      stage: stages[Math.floor(Math.random() * stages.length)]
-    })
-  }
-
-  return mockData
-}
 
 const handleFormatChange = (format) => {
   selectedFormat.value = format
@@ -410,7 +408,7 @@ const downloadData = async () => {
     try {
       const response = await axios({
         method: 'get',
-        url: `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'}/biomarkers/export`,
+        url: `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'}/biomarkers/export`,
         params: params,
         responseType: 'blob',
         headers: {
@@ -458,51 +456,6 @@ const downloadData = async () => {
   } catch (error) {
     console.error('Download error:', error)
     ElMessage.error('Download failed')
-
-    if (import.meta.env.DEV) {
-      setTimeout(() => {
-        const mockData = generateMockData(100)
-        let content = ''
-
-        if (selectedFormat.value === 'csv') {
-          const headers = selectedFields.value.map(field => {
-            const fieldInfo = availableFields.value.find(f => f.key === field)
-            return fieldInfo ? fieldInfo.name : field
-          }).join(',')
-
-          content = headers + '\n' + mockData.map(row => {
-            return selectedFields.value.map(field => row[field] || '').join(',')
-          }).join('\n')
-        } else {
-          content = JSON.stringify(mockData.map(row => {
-            const result = {}
-            selectedFields.value.forEach(field => {
-              result[field] = row[field] || ''
-            })
-            return result
-          }), null, 2)
-        }
-
-        const blob = new Blob([content], {
-          type: selectedFormat.value === 'csv'
-            ? 'text/csv;charset=utf-8;'
-            : 'application/json;charset=utf-8;'
-        })
-        const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-
-        // Generate proper filename with date format for mock data
-        const today = new Date().toISOString().split('T')[0]
-        const fileExtension = selectedFormat.value === 'excel' ? 'xlsx' : selectedFormat.value
-        link.download = `cbd_biomarkers_mock_${today}.${fileExtension}`
-
-        link.click()
-        window.URL.revokeObjectURL(url)
-
-        ElMessage.info('Generated mock data for testing')
-      }, 1000)
-    }
   } finally {
     downloading.value = false
   }
@@ -528,12 +481,12 @@ const redownload = async (item) => {
     try {
       const response = await axios({
         method: 'get',
-        url: `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'}/biomarkers/export`,
+        url: `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'}/biomarkers/export`,
         params: params,
         responseType: 'blob',
         headers: {
           ...(localStorage.getItem('token') ? {
-            Authorization: `Bearer ${localStorage.getToken('token')}`
+            Authorization: `Bearer ${localStorage.getItem('token')}`
           } : {})
         }
       })
@@ -611,6 +564,12 @@ const loadFilterOptions = async () => {
 onMounted(() => {
   loadFilterOptions()
   selectAllFields()
+})
+
+watch(() => filters.value.yearRange, (val) => {
+  if (val && Array.isArray(val)) {
+    debouncedFilter()
+  }
 })
 </script>
 

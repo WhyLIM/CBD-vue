@@ -1,0 +1,1 @@
+import{_ as e,c as n,o as s,a3 as i}from"./chunks/framework.BurWKwwG.js";const u=JSON.parse('{"title":"Cite & Support","description":"","frontmatter":{},"headers":[],"relativePath":"5_cite.md","filePath":"5_cite.md"}'),t={name:"5_cite.md"};function o(r,a,l,p,c,d){return s(),n("div",null,a[0]||(a[0]=[i("",23)]))}const g=e(t,[["render",o]]);export{u as __pageData,g as default};

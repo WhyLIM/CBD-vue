@@ -113,8 +113,8 @@ router.get('/history', authenticate, async (req, res) => {
         created_at, pmid
       FROM submissions 
       ORDER BY created_at DESC
-      LIMIT ? OFFSET ?
-    `, [limit, offset]);
+      LIMIT ${parseInt(limit, 10)} OFFSET ${offset}
+    `);
 
     res.json({
       success: true,

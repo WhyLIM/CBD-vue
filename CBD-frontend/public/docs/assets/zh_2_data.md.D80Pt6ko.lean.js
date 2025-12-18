@@ -1,0 +1,1 @@
+import{_ as e,c as t,o as r,a3 as l}from"./chunks/framework.BurWKwwG.js";const m=JSON.parse('{"title":"数据描述与来源","description":"","frontmatter":{},"headers":[],"relativePath":"zh/2_data.md","filePath":"zh/2_data.md"}'),i={name:"zh/2_data.md"};function _(s,a,o,n,h,c){return r(),t("div",null,a[0]||(a[0]=[l("",4)]))}const f=e(i,[["render",_]]);export{m as __pageData,f as default};

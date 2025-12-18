@@ -31,10 +31,10 @@ router.get('/', async (req, res) => {
     if (search) {
       whereConditions.push(`(
         Biomarker LIKE ? OR 
-        Discription LIKE ? OR 
+        Description LIKE ? OR 
         Application LIKE ? OR 
-        Reference_first_author LIKE ? OR 
-        Reference_journal LIKE ?
+        First_Author LIKE ? OR 
+        Journal LIKE ?
       )`);
       const searchTerm = `%${search}%`;
       queryParams.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
@@ -77,7 +77,7 @@ router.get('/', async (req, res) => {
       const fieldMap = {
         id: 'ID',
         name: 'Biomarker',
-        year: 'Reference_year'
+        year: 'Year'
       };
 
       // Validate and get safe values
@@ -89,8 +89,8 @@ router.get('/', async (req, res) => {
         id: 'ID',
         biomarker: 'Biomarker',
         name: 'Biomarker',
-        year: 'Reference_year',
-        reference_year: 'Reference_year'
+        year: 'Year',
+        reference_year: 'Year'
       };
 
       actualSortBy = fieldMap[sortBy] || 'ID';
@@ -114,38 +114,39 @@ router.get('/', async (req, res) => {
         ID as id,
         Biomarker as biomarker,
         Category as category,
-        String_Name as string_name,
-        STRING_ID as string_id,
-        Discription as description,
+        Symbol as string_name,
+        Description as description,
         Region as region,
         Race as race,
         Number as number,
         Male as male,
         Female as female,
+        Gender_M_F as gender_ratio,
         Age_Mean as age_mean,
         Age as age,
         Location as location,
         Stage as stage,
         Source as source,
         Experiment as experiment,
-        Statictics as statistics,
+        Statistics as statistics,
         Application as application,
         Clinical_Use as clinical_use,
         Conclusion as conclusion,
-        Reference_first_author as reference_first_author,
-        Reference_journal as reference_journal,
-        Reference_year as reference_year,
+        First_Author as first_author,
+        Journal as journal,
+        Year as reference_year,
         PMID as pmid,
-        Addition as addition,
+        DOI as doi,
+        PMC as pmc,
         Target as target,
         Drugs as drugs
       FROM biomarker 
       ${whereClause} 
       ${orderClause} 
-      LIMIT ? OFFSET ?
+      LIMIT ${limitNum} OFFSET ${offset}
     `;
-    console.log('Executing data query:', dataQuery, 'Parameters:', [...queryParams, limitNum, offset]);
-    const rows = await db.query(dataQuery, [...queryParams, limitNum, offset]);
+    console.log('Executing data query:', dataQuery, 'Parameters:', queryParams);
+    const rows = await db.query(dataQuery, queryParams);
     console.log('Queried records count:', rows.length);
 
     // Format data - convert data to frontend expected format
@@ -154,13 +155,13 @@ router.get('/', async (req, res) => {
       biomarker: row.biomarker,
       category: row.category,
       string_name: row.string_name,
-      string_id: row.string_id,
       description: row.description,
       region: row.region,
       race: row.race,
       number: row.number,
       male: row.male,
       female: row.female,
+      gender_ratio: row.gender_ratio,
       age_mean: row.age_mean,
       age: row.age,
       location: row.location,
@@ -174,11 +175,10 @@ router.get('/', async (req, res) => {
       target: row.target,
       drugs: row.drugs,
       pmid: row.pmid,
-      addition: row.addition,
       // Format reference information
       reference: {
-        author: row.reference_first_author,
-        journal: row.reference_journal,
+        author: row.first_author,
+        journal: row.journal,
         year: row.reference_year
       }
     }));
@@ -255,12 +255,12 @@ router.get('/export', async (req, res) => {
     const queryParams = [];
 
     if (reference_year_from) {
-      whereClause += ' AND Reference_year >= ?';
+      whereClause += ' AND Year >= ?';
       queryParams.push(parseInt(reference_year_from));
     }
 
     if (reference_year_to) {
-      whereClause += ' AND Reference_year <= ?';
+      whereClause += ' AND Year <= ?';
       queryParams.push(parseInt(reference_year_to));
     }
 
@@ -307,18 +307,40 @@ router.get('/export', async (req, res) => {
 
     // Build field selection - use correct database field names
     const fieldMapping = {
+      id: 'ID',
       name: 'Biomarker',
+      type: 'Type',
       category: 'Category',
+      symbol: 'Symbol',
       application: 'Application',
       location: 'Location',
       source: 'Source',
-      first_author: 'Reference_first_author',
-      journal: 'Reference_journal',
-      publication_year: 'Reference_year',
+      description: 'Description',
       region: 'Region',
+      race: 'Race',
+      number: 'Number',
+      male: 'Male',
+      female: 'Female',
+      gender_m_f: 'Gender_M_F',
+      age_mean: 'Age_Mean',
+      age: 'Age',
       stage: 'Stage',
-      description: 'Discription',
-      pmid: 'PMID'
+      experiment: 'Experiment',
+      statistics: 'Statistics',
+      conclusion: 'Conclusion',
+      clinical_use: 'Clinical_Use',
+      target: 'Target',
+      drugs: 'Drugs',
+      first_author: 'First_Author',
+      journal: 'Journal',
+      publication_year: 'Year',
+      pmid: 'PMID',
+      doi: 'DOI',
+      pmc: 'PMC',
+      title: 'Title',
+      authors: 'Authors',
+      abstract: 'Abstract',
+      keywords: 'Keywords'
     };
 
     const selectedFields = fields.split(',').map(field => fieldMapping[field.trim()] || field.trim());
@@ -334,18 +356,40 @@ router.get('/export', async (req, res) => {
 
     // English headers mapping
     const headerMapping = {
+      id: 'ID',
       name: 'Biomarker Name',
+      type: 'Type',
       category: 'Category',
+      symbol: 'Symbol',
       application: 'Application',
       location: 'Location',
       source: 'Sample Source',
+      description: 'Description',
+      region: 'Research Region',
+      race: 'Race',
+      number: 'Sample Number',
+      male: 'Male',
+      female: 'Female',
+      gender_m_f: 'Gender M/F',
+      age_mean: 'Age Mean',
+      age: 'Age',
+      stage: 'Disease Stage',
+      experiment: 'Experiment',
+      statistics: 'Statistics',
+      conclusion: 'Conclusion',
+      clinical_use: 'Clinical Use',
+      target: 'Target',
+      drugs: 'Drugs',
       first_author: 'First Author',
       journal: 'Journal',
       publication_year: 'Publication Year',
-      region: 'Research Region',
-      stage: 'Disease Stage',
-      description: 'Description',
-      pmid: 'PubMed ID'
+      pmid: 'PubMed ID',
+      doi: 'DOI',
+      pmc: 'PMC',
+      title: 'Title',
+      authors: 'Authors',
+      abstract: 'Abstract',
+      keywords: 'Keywords'
     };
 
     if (format === 'csv') {
@@ -442,30 +486,30 @@ router.get('/:id', async (req, res) => {
         ID as id,
         Biomarker as biomarker,
         Category as category,
-        String_Name as string_name,
-        STRING_ID as string_id,
-        Discription as description,
+        Symbol as string_name,
+        Description as description,
         Region as region,
         Race as race,
         Number as number,
         Male as male,
         Female as female,
-        \`Gender_M/F\` as gender_ratio,
+        Gender_M_F as gender_ratio,
         Age_Mean as age_mean,
         Age as age,
         Location as location,
         Stage as stage,
         Source as source,
         Experiment as experiment,
-        Statictics as statistics,
+        Statistics as statistics,
         Application as application,
         Clinical_Use as clinical_use,
         Conclusion as conclusion,
-        Reference_first_author as reference_first_author,
-        Reference_journal as reference_journal,
-        Reference_year as reference_year,
+        First_Author as first_author,
+        Journal as journal,
+        Year as reference_year,
         PMID as pmid,
-        Addition as addition,
+        DOI as doi,
+        PMC as pmc,
         Target as target,
         Drugs as drugs
       FROM biomarker 
@@ -487,7 +531,6 @@ router.get('/:id', async (req, res) => {
       biomarker: row.biomarker,
       category: row.category,
       string_name: row.string_name,
-      string_id: row.string_id,
       description: row.description,
       region: row.region,
       race: row.race,
@@ -508,10 +551,9 @@ router.get('/:id', async (req, res) => {
       target: row.target,
       drugs: row.drugs,
       pmid: row.pmid,
-      addition: row.addition,
       reference: {
-        author: row.reference_first_author,
-        journal: row.reference_journal,
+        author: row.first_author,
+        journal: row.journal,
         year: row.reference_year
       }
     };
@@ -853,10 +895,10 @@ router.get('/filter-options', async (req, res) => {
     // Get year range
     const yearRange = await db.query(`
       SELECT 
-        MIN(Reference_year) as min_year,
-        MAX(Reference_year) as max_year
+        MIN(Year) as min_year,
+        MAX(Year) as max_year
       FROM biomarker 
-      WHERE Reference_year IS NOT NULL AND Reference_year > 0
+      WHERE Year IS NOT NULL AND Year > 0
     `);
 
     const result = {
@@ -989,23 +1031,20 @@ router.get('/filter', async (req, res) => {
         Application as application,
         Location as location,
         Source as source,
-        Discription as description,
-        Reference_first_author as first_author,
-        Reference_journal as journal,
-        Reference_year as publication_year,
+        Description as description,
+        First_Author as first_author,
+        Journal as journal,
+        Year as publication_year,
         PMID as pmid,
         Region as region,
         Stage as stage
       FROM biomarker 
       ${whereClause}
       ORDER BY ID DESC
-      LIMIT ? OFFSET ?
+      LIMIT ${limitNum} OFFSET ${offset}
     `;
-
-    const dataParams = [...queryParams, limitNum, offset];
-    console.log('Filter data SQL:', dataQuery, 'Parameters:', dataParams);
-
-    const data = await db.query(dataQuery, dataParams);
+    console.log('Filter data SQL:', dataQuery, 'Parameters:', queryParams);
+    const data = await db.query(dataQuery, queryParams);
 
     console.log(`Filter successful: Total=${total}, Current page data=${data?.length || 0}`);
 

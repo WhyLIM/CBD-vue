@@ -71,11 +71,11 @@ router.get('/complete', async (req, res) => {
         Application as application,
         Location as location,
         Source as source,
-        Discription as description,
+        Description as description,
         PMID as pmid,
-        Reference_first_author as first_author,
-        Reference_journal as journal,
-        Reference_year as publication_year,
+        First_Author as first_author,
+        Journal as journal,
+        Year as publication_year,
         Region as region,
         Stage as stage
       FROM biomarker ORDER BY Biomarker ASC
@@ -175,11 +175,11 @@ router.post('/custom', [
         Application as application,
         Location as location,
         Source as source,
-        Discription as description,
+        Description as description,
         PMID as pmid,
-        Reference_first_author as first_author,
-        Reference_journal as journal,
-        Reference_year as publication_year,
+        First_Author as first_author,
+        Journal as journal,
+        Year as publication_year,
         Region as region,
         Stage as stage
       FROM biomarker ${whereClause} ORDER BY Biomarker ASC

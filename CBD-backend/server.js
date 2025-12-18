@@ -10,7 +10,9 @@ const { initializeTables } = require('./config/database');
 const app = express();
 
 // 中间件配置
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
   credentials: true
@@ -34,7 +36,10 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // 静态文件服务
-app.use('/uploads', express.static('uploads'));
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+}, express.static('uploads'));
 
 // 路由配置
 app.use('/api/biomarkers', require('./routes/biomarkers'));
@@ -43,6 +48,9 @@ app.use('/api/submission', require('./routes/submission'));
 app.use('/api/download', require('./routes/download'));
 app.use('/api/explore', require('./routes/explore'));
 app.use('/api/stats', require('./routes/stats'));
+app.use('/api/scrna', require('./routes/scrna'));
+app.use('/api/analysis', require('./routes/analysis'));
+app.use('/api/clinical', require('./routes/clinical'));
 
 // 简单登录颁发令牌
 app.post('/api/auth/login', (req, res) => {

@@ -13,7 +13,8 @@ const BiomarkerDetail = () => import('../views/BiomarkerDetail.vue')
 const AdvancedSearch = () => import('../views/AdvancedSearch.vue')
 const Submission = () => import('../views/Submission.vue')
 const Download = () => import('../views/Download.vue')
-const Explore = () => import('../views/Explore.vue')
+const NetworkExplore = () => import('../views/NetworkExplore.vue')
+const UMAPExplorer = () => import('../views/UMAPExplorer.vue')
 const About = () => import('../views/About.vue')
 
 const router = createRouter({
@@ -51,9 +52,14 @@ const router = createRouter({
       component: Download
     },
     {
-      path: '/explore',
-      name: 'explore',
-      component: Explore
+      path: '/network-explore',
+      name: 'network-explore',
+      component: NetworkExplore
+    },
+    {
+      path: '/umap',
+      name: 'umap',
+      component: UMAPExplorer
     },
     {
       path: '/about',

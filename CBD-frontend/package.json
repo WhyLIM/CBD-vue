@@ -24,7 +24,6 @@
     "@fortawesome/free-solid-svg-icons": "^7.0.0",
     "@fortawesome/vue-fontawesome": "^3.1.1",
     "axios": "^1.11.0",
-    "cytoscape": "^3.33.1",
     "echarts": "^6.0.0",
     "element-plus": "^2.10.5",
     "lodash-es": "^4.17.21",
@@ -33,17 +32,25 @@
     "vue-router": "^4.5.1"
   },
   "devDependencies": {
+    "@braintree/sanitize-url": "^7.1.1",
     "@eslint/js": "^9.31.0",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vitejs/plugin-vue-jsx": "^5.0.1",
     "@vue/eslint-config-prettier": "^10.2.0",
+    "cytoscape": "^3.33.1",
+    "cytoscape-cose-bilkent": "^4.1.0",
+    "dayjs": "^1.11.19",
+    "debug": "^4.4.3",
     "eslint": "^9.31.0",
     "eslint-plugin-vue": "~10.3.0",
     "fs-extra": "^11.3.1",
     "globals": "^16.3.0",
+    "markdown-it-task-checkbox": "^1.0.6",
+    "markdown-it-task-lists": "^2.1.1",
     "prettier": "3.6.2",
     "vite": "^7.0.6",
     "vite-plugin-vue-devtools": "^8.0.0",
-    "vitepress": "2.0.0-alpha.12"
+    "vitepress": "2.0.0-alpha.12",
+    "vitepress-plugin-mermaid": "^2.0.17"
   }
 }

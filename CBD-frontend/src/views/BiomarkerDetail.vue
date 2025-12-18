@@ -49,148 +49,146 @@
 
       <div class="container main-body">
         <el-row :gutter="32">
+          <el-col :xs="24" :lg="6">
+            <el-anchor>
+              <el-anchor-link href="#basic-info" title="Basic Information" />
+              <el-anchor-link v-if="hasArticleInfo" href="#article-info" title="Article Information" />
+              <el-anchor-link v-if="hasExperimentInfo" href="#experiment-info"
+                title="Experimental and Sample Statistics" />
+              <el-anchor-link v-if="hasAssociatedDrugs" href="#associated-drugs" title="Associated Drugs" />
+              <el-anchor-link v-if="hasComposition" href="#sample-composition" title="Sample Composition" />
+              <el-anchor-link v-if="showEnrichmentLinks" href="#enrichment-links" title="Functional Enrichment Links" />
+            </el-anchor>
+          </el-col>
 
-          <el-col :xs="24" :lg="16">
-
-            <div class="status-cards" v-if="display.clinical_use === 'Yes' || display.target === '1'">
+          <el-col :xs="24" :lg="18">
+            <div class="status-cards" v-if="display.clinical_use === 'Yes' || display.target === 'Yes'">
               <div v-if="display.clinical_use === 'Yes'" class="status-item">
                 <el-alert title="Clinical Relevance" type="success" :closable="false" show-icon
                   description="This biomarker has confirmed clinical utility." />
               </div>
-              <div v-if="display.target === '1'" class="status-item">
+              <div v-if="display.target === 'Yes'" class="status-item">
                 <el-alert title="Therapeutic Target" type="warning" :closable="false" show-icon
                   description="Identified as a potential drug target." />
               </div>
             </div>
 
-            <div class="content-card">
-              <el-tabs v-model="activeTab" class="custom-tabs">
-
-                <el-tab-pane label="Overview" name="overview">
-                  <div class="tab-inner">
-                    <h3 class="section-heading">Description</h3>
-                    <p class="text-body">{{ display.description || 'No description available for this biomarker.' }}</p>
-
-                    <div class="mt-6">
-                      <h3 class="section-heading">Associated Drugs</h3>
-                      <div v-if="drugList.length > 0" class="drug-grid">
-                        <a v-for="(drug, idx) in drugList" :key="idx" :href="drug.url" target="_blank"
-                          class="drug-item">
-                          <font-awesome-icon :icon="['fas', 'capsules']" class="mr-2" />
-                          {{ drug.label }}
-                        </a>
-                      </div>
-                      <el-alert v-else title="No Associated Drugs" type="info" :closable="false" show-icon
-                        description="No data available for associated drugs." />
-                    </div>
-                  </div>
-                </el-tab-pane>
-
-                <el-tab-pane label="Properties" name="properties">
-                  <div class="tab-inner">
-                    <dl class="property-list">
-                      <div class="property-item">
-                        <dt>Location</dt>
-                        <dd>{{ display.location || 'N/A' }}</dd>
-                      </div>
-                      <div class="property-item">
-                        <dt>Source</dt>
-                        <dd>{{ display.source || 'N/A' }}</dd>
-                      </div>
-                      <div class="property-item">
-                        <dt>Application</dt>
-                        <dd>{{ display.application || 'N/A' }}</dd>
-                      </div>
-                      <div class="property-item" v-if="display.string_name">
-                        <dt>String DB ID</dt>
-                        <dd>
-                          <a @click="openExternalLink('string', display.string_name)" class="link-text">
-                            {{ display.string_name }} <font-awesome-icon :icon="['fas', 'external-link-alt']" />
-                          </a>
-                        </dd>
-                      </div>
-                    </dl>
-                  </div>
-                </el-tab-pane>
-
-                <el-tab-pane label="References" name="references">
-                  <div class="tab-inner">
-                    <div class="reference-card" v-if="display.reference">
-                      <div class="ref-year">{{ display.reference.year || 'N/A' }}</div>
-                      <div class="ref-content">
-                        <h4 class="ref-journal">{{ display.reference.journal || 'Unknown Journal' }}</h4>
-                        <p class="ref-author">By {{ display.reference.author || 'Unknown Author' }}</p>
-                        <el-button v-if="display.pmid" size="small" type="primary" plain
-                          @click="openExternalLink('pmid', display.pmid)">
-                          View PubMed ({{ display.pmid }})
-                        </el-button>
-                      </div>
-                    </div>
-                    <el-empty v-else description="No citation data available" />
-                  </div>
-                </el-tab-pane>
-              </el-tabs>
-            </div>
-
-            <div class="related-section" v-if="related.length">
-              <div class="section-header-row">
-                <h3>Related Biomarkers</h3>
-              </div>
-              <div class="related-grid">
-                <div v-for="r in related" :key="r.id" class="related-card" @click="$router.push(`/biomarkers/${r.id}`)">
-                  <div class="rc-top">
-                    <span class="rc-category" :class="r.category.toLowerCase()">{{ r.category }}</span>
-                  </div>
-                  <div class="rc-main">
-                    <h4>{{ r.name || r.biomarker }}</h4>
-                    <p>{{ r.application }}</p>
-                  </div>
-                </div>
+            <div id="basic-info" class="content-card">
+              <div class="tab-inner">
+                <h3 class="section-heading">Basic Information</h3>
+                <el-descriptions :column="1" border>
+                  <el-descriptions-item label="Name">{{ display.name || 'N/A' }}</el-descriptions-item>
+                  <el-descriptions-item label="Type">{{ display.type || 'N/A' }}</el-descriptions-item>
+                  <el-descriptions-item label="Category">{{ display.category || 'N/A' }}</el-descriptions-item>
+                  <el-descriptions-item
+                    v-if="String(display.category).toLowerCase() === 'protein' && display.string_name && String(display.string_name).trim() !== ''"
+                    label="Symbol">{{ display.string_name }}</el-descriptions-item>
+                  <el-descriptions-item label="Application">{{ display.application || 'N/A' }}</el-descriptions-item>
+                  <el-descriptions-item label="Description">{{ display.description || 'N/A' }}</el-descriptions-item>
+                </el-descriptions>
               </div>
             </div>
-          </el-col>
 
-          <el-col :xs="24" :lg="8">
-            <div class="sidebar-wrapper">
-
-              <div class="sidebar-widget" v-if="hasComposition">
-                <div class="widget-header">
-                  <h4>Sample Composition</h4>
-                </div>
-                <div class="widget-body">
-                  <div ref="chartRef" class="chart-box"></div>
-                  <div class="chart-legend">
-                    <span v-if="Number(display.male) > 0"><i class="fas fa-circle" style="color:#409EFF"></i>
-                      Male</span>
-                    <span v-if="Number(display.female) > 0"><i class="fas fa-circle" style="color:#F56C6C"></i>
-                      Female</span>
+            <div id="article-info" class="content-card">
+              <div class="tab-inner">
+                <h3 class="section-heading">References</h3>
+                <div class="reference-card" v-if="display.reference">
+                  <div class="ref-year">{{ display.reference.year || 'N/A' }}</div>
+                  <div class="ref-content">
+                    <h4 class="ref-journal">{{ display.reference.journal || 'Unknown Journal' }}</h4>
+                    <p class="ref-author">By {{ display.reference.author || 'Unknown Author' }}</p>
+                    <el-button v-if="display.pmid" size="small" type="primary" plain
+                      @click="openExternalLink('pmid', display.pmid)">
+                      View PubMed ({{ display.pmid }})
+                    </el-button>
                   </div>
                 </div>
+                <el-empty v-else description="No citation data available" />
               </div>
+            </div>
 
+            <div id="experiment-info" class="content-card">
+              <div class="tab-inner">
+                <h3 class="section-heading">Experimental and Sample Statistics</h3>
+                <el-descriptions :column="1" border label-width="180px">
+                  <el-descriptions-item label="Region">{{ display.region || 'N/A' }}</el-descriptions-item>
+                  <el-descriptions-item label="Race">{{ display.race || 'N/A' }}</el-descriptions-item>
+                  <el-descriptions-item label="Total Sample Size">{{ display.number || 'N/A' }}</el-descriptions-item>
+                  <el-descriptions-item label="Male">{{ display.male || 'N/A' }}</el-descriptions-item>
+                  <el-descriptions-item label="Female">{{ display.female || 'N/A' }}</el-descriptions-item>
+                  <el-descriptions-item label="Gender Ratio">{{ display.gender_ratio || 'N/A' }}</el-descriptions-item>
+                  <el-descriptions-item label="Average Age">{{ display.age_mean || 'N/A' }}</el-descriptions-item>
+                  <el-descriptions-item label="Age Range">{{ display.age || 'N/A' }}</el-descriptions-item>
+                  <el-descriptions-item label="Location">{{ display.location || 'N/A' }}</el-descriptions-item>
+                  <el-descriptions-item label="Stage">{{ display.stage || 'N/A' }}</el-descriptions-item>
+                  <el-descriptions-item label="Source">{{ display.source || 'N/A' }}</el-descriptions-item>
+                  <el-descriptions-item label="Experiment Method">{{ display.experiment || 'N/A'
+                    }}</el-descriptions-item>
+                  <el-descriptions-item label="Statistics">{{ display.statistics || 'N/A' }}</el-descriptions-item>
+                </el-descriptions>
+              </div>
+            </div>
 
-
-              <div class="sidebar-widget">
-                <div class="widget-header">
-                  <h4>External Resources</h4>
-                </div>
-                <div class="widget-body resource-links">
-                  <a v-if="display.pmid" @click.prevent="openExternalLink('pmid', display.pmid)" class="res-link">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/f/fb/PubMed_logo.svg" alt="PubMed"
-                      class="res-icon" style="filter: grayscale(1); opacity:0.7">
-                    <span>PubMed Database</span>
-                    <i class="fas fa-chevron-right"></i>
-                  </a>
-                  <a v-if="display.string_name" @click.prevent="openExternalLink('string', display.string_name)"
-                    class="res-link">
-                    <span class="res-icon-circle"><i class="fas fa-project-diagram"></i></span>
-                    <span>STRING Interaction</span>
-                    <i class="fas fa-chevron-right"></i>
+            <div id="associated-drugs" class="content-card">
+              <div class="tab-inner">
+                <h3 class="section-heading">Associated Drugs</h3>
+                <div v-if="drugList.length > 0" class="drug-grid">
+                  <a v-for="(drug, idx) in drugList" :key="idx" :href="drug.url" target="_blank" class="drug-item">
+                    <font-awesome-icon :icon="['fas', 'capsules']" class="mr-2" />
+                    {{ drug.label }}
                   </a>
                 </div>
+                <el-alert v-else title="No Associated Drugs" type="info" :closable="false" show-icon
+                  description="No data available for associated drugs." />
               </div>
-
             </div>
+
+            <div id="sample-composition" class="content-card" v-if="hasComposition">
+              <div class="tab-inner">
+                <h3 class="section-heading">Sample Composition</h3>
+                <div ref="chartRef" class="chart-box"></div>
+                <div class="chart-legend">
+                  <span v-if="Number(display.male) > 0"><i class="fas fa-circle" style="color:#409EFF"></i> Male</span>
+                  <span v-if="Number(display.female) > 0"><i class="fas fa-circle" style="color:#F56C6C"></i>
+                    Female</span>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="showEnrichmentLinks" id="enrichment-links" class="content-card">
+              <div class="tab-inner">
+                <h3 class="section-heading">Functional Enrichment Links</h3>
+                <el-skeleton :loading="enrichmentLoading" animated>
+                  <template #template>
+                    <el-skeleton-item variant="h3" style="width: 40%" />
+                    <el-skeleton-item variant="text" />
+                    <el-skeleton-item variant="text" />
+                    <el-skeleton-item variant="text" />
+                  </template>
+                  <template #default>
+                    <el-tabs type="border-card">
+                      <el-tab-pane v-for="(items, cat) in enrichmentByCategory" :key="cat" :label="cat">
+                        <el-table :data="items" stripe style="width: 100%">
+                          <el-table-column prop="term" label="Term" width="200px">
+                            <template #default="scope">
+                              <a :href="scope.row.url" target="_blank"
+                                :style="{ color: scope.row.color, fontWeight: 'bold' }">{{ scope.row.term }}</a>
+                            </template>
+                          </el-table-column>
+                          <el-table-column prop="link" label="Link">
+                            <template #default="scope">
+                              <a :href="scope.row.url" target="_blank" style="color: #20558a;">{{ scope.row.url }}</a>
+                            </template>
+                          </el-table-column>
+                        </el-table>
+                      </el-tab-pane>
+                    </el-tabs>
+                  </template>
+                </el-skeleton>
+              </div>
+            </div>
+
+
           </el-col>
         </el-row>
       </div>
@@ -204,15 +202,15 @@ import { useRoute } from 'vue-router'
 // removed ElMessage (share feature deprecated)
 import { getCategoryColor, getTextColorClass } from '@/utils/categoryColors'
 import api from '@/utils/api'
+import stringApi from '@/services/stringApi'
+import { EnrichmentProcessor } from '@/utils/networkAnalysis'
 import * as echarts from 'echarts'
 
 const route = useRoute()
 const loading = ref(false)
 const error = ref(null)
 const bio = ref(null)
-const related = ref([])
 const chartRef = ref(null)
-const activeTab = ref('overview')
 let chartInstance = null
 
 // --- Data Computed Properties ---
@@ -243,6 +241,38 @@ const drugList = computed(() => {
 })
 
 const hasComposition = computed(() => Number(display.value?.male) > 0 || Number(display.value?.female) > 0)
+
+const enrichmentLinks = ref([])
+const enrichmentLoading = ref(false)
+const showEnrichmentLinks = computed(() => {
+  const cat = display.value?.category
+  const sym = display.value?.string_name
+  if (!cat) return false
+  if (String(cat).toLowerCase() !== 'protein') return false
+  if (!sym) return false
+  const s = String(sym).trim()
+  return s !== '' && s.toUpperCase() !== 'NA'
+})
+const enrichmentByCategory = computed(() => {
+  const groups = {}
+  for (const item of enrichmentLinks.value) {
+    if (!groups[item.category]) groups[item.category] = []
+    groups[item.category].push(item)
+  }
+  return groups
+})
+
+const hasArticleInfo = computed(() => {
+  return !!(display.value?.reference || display.value?.pmid)
+})
+
+const hasExperimentInfo = computed(() => {
+  const d = display.value || {}
+  return [d.region, d.race, d.number, d.male, d.female, d.gender_ratio, d.age_mean, d.age, d.location, d.stage, d.source, d.experiment, d.statistics]
+    .some(v => v !== undefined && v !== null && String(v).trim() !== '')
+})
+
+const hasAssociatedDrugs = computed(() => drugList.value.length > 0)
 
 // --- Helper Functions ---
 const getCategoryTagType = (category) => {
@@ -286,8 +316,9 @@ const fetchBiomarkerDetail = async () => {
     const response = await api.get(`/biomarkers/${id}`)
     if (response.success) {
       bio.value = response.data
-      activeTab.value = 'overview'
-      await fetchRelatedBiomarkers(id)
+      if (showEnrichmentLinks.value) {
+        await loadEnrichment()
+      }
       nextTick(() => { initChart() })
     } else {
       error.value = response.message || 'Failed to load'
@@ -299,11 +330,23 @@ const fetchBiomarkerDetail = async () => {
   }
 }
 
-const fetchRelatedBiomarkers = async (id) => {
+
+
+const loadEnrichment = async () => {
   try {
-    const response = await api.get(`/biomarkers/${id}/related`)
-    if (response.success) related.value = response.data || []
-  } catch (e) { console.error(e) }
+    enrichmentLoading.value = true
+    const symbol = String(display.value?.string_name || '').trim()
+    if (!symbol) { enrichmentLinks.value = []; enrichmentLoading.value = false; return }
+    const rows = await stringApi.getEnrichmentAnalysis([symbol], '9606')
+    const processor = new EnrichmentProcessor()
+    const processed = processor.processEnrichmentData(rows || [], '9606')
+    enrichmentLinks.value = processed
+  } catch (e) {
+    console.error('Failed to load enrichment:', e)
+    enrichmentLinks.value = []
+  } finally {
+    enrichmentLoading.value = false
+  }
 }
 
 
@@ -636,8 +679,10 @@ watch(() => route.params.id, (n) => { if (n) fetchBiomarkerDetail() })
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: var(--bg-tertiary);
-  color: var(--primary-color);
+  /* background: var(--bg-tertiary); */
+  /* color: var(--primary-color); */
+  background: #ffe3f7;
+  color: #ff00b8;
   padding: 8px 12px;
   border-radius: var(--radius-sm);
   text-decoration: none;
@@ -648,7 +693,8 @@ watch(() => route.params.id, (n) => { if (n) fetchBiomarkerDetail() })
 }
 
 .drug-item:hover {
-  border-color: var(--accent-color);
+  /* border-color: var(--accent-color); */
+  border-color: #ff00b8;
   background: var(--bg-primary);
 }
 

@@ -30,7 +30,8 @@
               </el-col>
               <el-col :span="12">
                 <el-form-item label="Category">
-                  <el-select v-model="searchForm.category" placeholder="Select category" clearable multiple>
+                  <el-select v-model="searchForm.category" placeholder="Select category" clearable multiple
+                    :loading="filterOptionsLoading" :disabled="filterOptionsLoading">
                     <el-option v-for="category in filterOptions.categories" :key="category" :label="category"
                       :value="category" />
                   </el-select>
@@ -40,8 +41,8 @@
 
             <el-row :gutter="20">
               <el-col :span="12">
-                <el-form-item label="String Name">
-                  <el-input v-model="searchForm.string_name" placeholder="Enter String name" clearable />
+                <el-form-item label="Symbol">
+                  <el-input v-model="searchForm.string_name" placeholder="Enter gene symbol" clearable />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
@@ -54,14 +55,16 @@
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="Region">
-                  <el-select v-model="searchForm.region" placeholder="Select region" clearable>
+                  <el-select v-model="searchForm.region" placeholder="Select region" clearable
+                    :loading="filterOptionsLoading" :disabled="filterOptionsLoading">
                     <el-option v-for="region in filterOptions.regions" :key="region" :label="region" :value="region" />
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
                 <el-form-item label="Race">
-                  <el-select v-model="searchForm.race" placeholder="Select race" clearable>
+                  <el-select v-model="searchForm.race" placeholder="Select race" clearable
+                    :loading="filterOptionsLoading" :disabled="filterOptionsLoading">
                     <el-option v-for="race in filterOptions.races" :key="race" :label="race" :value="race" />
                   </el-select>
                 </el-form-item>
@@ -76,7 +79,8 @@
               </el-col>
               <el-col :span="12">
                 <el-form-item label="Stage">
-                  <el-select v-model="searchForm.stage" placeholder="Select stage" clearable>
+                  <el-select v-model="searchForm.stage" placeholder="Select stage" clearable
+                    :loading="filterOptionsLoading" :disabled="filterOptionsLoading">
                     <el-option v-for="stage in filterOptions.stages" :key="stage" :label="stage" :value="stage" />
                   </el-select>
                 </el-form-item>
@@ -86,14 +90,16 @@
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="Source">
-                  <el-select v-model="searchForm.source" placeholder="Select source" clearable>
+                  <el-select v-model="searchForm.source" placeholder="Select source" clearable
+                    :loading="filterOptionsLoading" :disabled="filterOptionsLoading">
                     <el-option v-for="source in filterOptions.sources" :key="source" :label="source" :value="source" />
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
                 <el-form-item label="Experiment Method">
-                  <el-select v-model="searchForm.experiment" placeholder="Select experiment method" clearable>
+                  <el-select v-model="searchForm.experiment" placeholder="Select experiment method" clearable
+                    :loading="filterOptionsLoading" :disabled="filterOptionsLoading">
                     <el-option v-for="experiment in filterOptions.experiments" :key="experiment" :label="experiment"
                       :value="experiment" />
                   </el-select>
@@ -104,14 +110,19 @@
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="Application">
-                  <el-input v-model="searchForm.application" placeholder="Enter application field" clearable />
+                  <el-select v-model="searchForm.application" placeholder="Select application" clearable
+                    :loading="filterOptionsLoading" :disabled="filterOptionsLoading">
+                    <el-option v-for="application in filterOptions.applications" :key="application" :label="application"
+                      :value="application" />
+                  </el-select>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
                 <el-form-item label="Clinical Use">
-                  <el-select v-model="searchForm.clinical_use" placeholder="Select clinical use status" clearable>
-                    <el-option label="Yes" value="Yes" />
-                    <el-option label="No" value="No" />
+                  <el-select v-model="searchForm.clinical_use" placeholder="Select clinical use status" clearable
+                    :loading="filterOptionsLoading" :disabled="filterOptionsLoading">
+                    <el-option v-for="clinical_use in filterOptions.clinical_uses" :key="clinical_use"
+                      :label="clinical_use" :value="clinical_use" />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -120,9 +131,9 @@
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="Is Target">
-                  <el-select v-model="searchForm.target" placeholder="Select if target" clearable>
-                    <el-option label="Yes" :value="1" />
-                    <el-option label="No" :value="0" />
+                  <el-select v-model="searchForm.target" placeholder="Select if target" clearable
+                    :loading="filterOptionsLoading" :disabled="filterOptionsLoading">
+                    <el-option v-for="target in filterOptions.targets" :key="target" :label="target" :value="target" />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -144,18 +155,26 @@
               <el-col :span="12">
                 <el-form-item label="Total Sample Size">
                   <div class="range-input">
-                    <el-input-number v-model="searchForm.number_min" placeholder="Min value" :min="0" />
+                    <el-input-number :model-value="searchForm.number_min"
+                      @update:model-value="(val) => searchForm.number_min = val === '' ? null : Number(val)"
+                      placeholder="Min value" :min="0" />
                     <span class="range-separator">to</span>
-                    <el-input-number v-model="searchForm.number_max" placeholder="Max value" :min="0" />
+                    <el-input-number :model-value="searchForm.number_max"
+                      @update:model-value="(val) => searchForm.number_max = val === '' ? null : Number(val)"
+                      placeholder="Max value" :min="0" />
                   </div>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
                 <el-form-item label="Male Sample Size">
                   <div class="range-input">
-                    <el-input-number v-model="searchForm.male_min" placeholder="Min value" :min="0" />
+                    <el-input-number :model-value="searchForm.male_min"
+                      @update:model-value="(val) => searchForm.male_min = val === '' ? null : Number(val)"
+                      placeholder="Min value" :min="0" />
                     <span class="range-separator">to</span>
-                    <el-input-number v-model="searchForm.male_max" placeholder="Max value" :min="0" />
+                    <el-input-number :model-value="searchForm.male_max"
+                      @update:model-value="(val) => searchForm.male_max = val === '' ? null : Number(val)"
+                      placeholder="Max value" :min="0" />
                   </div>
                 </el-form-item>
               </el-col>
@@ -165,18 +184,26 @@
               <el-col :span="12">
                 <el-form-item label="Female Sample Size">
                   <div class="range-input">
-                    <el-input-number v-model="searchForm.female_min" placeholder="Min value" :min="0" />
+                    <el-input-number :model-value="searchForm.female_min"
+                      @update:model-value="(val) => searchForm.female_min = val === '' ? null : Number(val)"
+                      placeholder="Min value" :min="0" />
                     <span class="range-separator">to</span>
-                    <el-input-number v-model="searchForm.female_max" placeholder="Max value" :min="0" />
+                    <el-input-number :model-value="searchForm.female_max"
+                      @update:model-value="(val) => searchForm.female_max = val === '' ? null : Number(val)"
+                      placeholder="Max value" :min="0" />
                   </div>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
                 <el-form-item label="Average Age">
                   <div class="range-input">
-                    <el-input-number v-model="searchForm.age_mean_min" placeholder="Min value" :min="0" />
+                    <el-input-number :model-value="searchForm.age_mean_min"
+                      @update:model-value="(val) => searchForm.age_mean_min = val === '' ? null : Number(val)"
+                      placeholder="Min value" :min="0" />
                     <span class="range-separator">to</span>
-                    <el-input-number v-model="searchForm.age_mean_max" placeholder="Max value" :min="0" />
+                    <el-input-number :model-value="searchForm.age_mean_max"
+                      @update:model-value="(val) => searchForm.age_mean_max = val === '' ? null : Number(val)"
+                      placeholder="Max value" :min="0" />
                   </div>
                 </el-form-item>
               </el-col>
@@ -186,9 +213,13 @@
               <el-col :span="12">
                 <el-form-item label="Age Range">
                   <div class="range-input">
-                    <el-input-number v-model="searchForm.age_min" placeholder="Min value" :min="0" />
+                    <el-input-number :model-value="searchForm.age_min"
+                      @update:model-value="(val) => searchForm.age_min = val === '' ? null : Number(val)"
+                      placeholder="Min value" :min="0" />
                     <span class="range-separator">to</span>
-                    <el-input-number v-model="searchForm.age_max" placeholder="Max value" :min="0" />
+                    <el-input-number :model-value="searchForm.age_max"
+                      @update:model-value="(val) => searchForm.age_max = val === '' ? null : Number(val)"
+                      placeholder="Max value" :min="0" />
                   </div>
                 </el-form-item>
               </el-col>
@@ -365,85 +396,108 @@
           <div v-if="viewMode === 'table'" class="table-view">
             <el-table :data="searchResults" v-loading="loading" @row-click="handleResultClick" class="biomarkers-table"
               stripe highlight-current-row>
-              <el-table-column prop="ID" label="ID" width="80" sortable />
-              <el-table-column prop="Biomarker" label="Biomarker" width="140" sortable />
-              <el-table-column prop="Category" label="Category" width="120">
+              <el-table-column prop="id" label="ID" width="70" sortable />
+              <el-table-column prop="biomarker" label="Biomarker" width="140" sortable />
+              <el-table-column prop="category" label="Category" width="100">
                 <template #default="{ row }">
-                  <el-tag :type="getCategoryTagType(row.Category)" size="small">
-                    {{ row.Category }}
+                  <el-tag :color="getCategoryColor(row.category)" size="small"
+                    :class="['category-tag', getTextColorClass(row.category)]" style="border: 1px;">
+                    {{ row.category }}
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="Application" label="Application" min-width="200" />
-              <el-table-column prop="Location" label="Location" width="150" />
-              <el-table-column prop="Source" label="Source" width="100" />
-              <el-table-column prop="Reference_first_author" label="Author" width="150" />
-              <el-table-column prop="Reference_journal" label="Journal" width="180" />
-              <el-table-column prop="Reference_year" label="Year" width="80" sortable />
-              <el-table-column prop="Clinical_Use" label="Clinical Use" width="100">
+              <el-table-column prop="application" label="Application" min-width="100" />
+              <el-table-column prop="clinical_use" label="Clinical Use" min-width="100">
                 <template #default="{ row }">
-                  <el-tag :type="row.Clinical_Use === 'Yes' ? 'success' : 'info'" size="small">
-                    {{ row.Clinical_Use === 'Yes' ? 'Yes' : 'No' }}
+                  <el-tag :type="row.clinical_use === 'Yes' ? 'success' : 'danger'" size="small" effect="dark">
+                    {{ row.clinical_use }}
                   </el-tag>
                 </template>
               </el-table-column>
+              <el-table-column prop="location" label="Location" width="120" />
+              <el-table-column prop="source" label="Source" width="80" />
+              <el-table-column label="Author" width="150">
+                <template #default="{ row }">
+                  {{ row.reference?.author || 'N/A' }}
+                </template>
+              </el-table-column>
+              <el-table-column label="Journal" width="150">
+                <template #default="{ row }">
+                  {{ row.reference?.journal || 'N/A' }}
+                </template>
+              </el-table-column>
+              <el-table-column label="Year" width="80" sortable>
+                <template #default="{ row }">
+                  {{ row.reference?.year || 'N/A' }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="target" label="Target" min-width="90">
+                <template #default="{ row }">
+                  <el-tag :type="row.target === 'Yes' ? 'success' : 'danger'" size="small" effect="dark">
+                    {{ row.target || 'No' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="drugs" label="Drugs" width="500" />
             </el-table>
           </div>
 
           <!-- Card View -->
           <div v-else class="card-view">
             <div class="cards-grid" v-loading="loading">
-              <el-card v-for="result in searchResults" :key="result.ID" class="biomarker-card"
+              <el-card v-for="result in searchResults" :key="result.id" class="biomarker-card"
                 @click="handleResultClick(result)">
                 <template #header>
                   <div class="card-header">
-                    <h3 class="biomarker-name">{{ result.Biomarker }}</h3>
-                    <el-tag :type="getCategoryTagType(result.Category)" class="category-tag">
-                      {{ result.Category }}
+                    <h3 class="biomarker-name">{{ result.biomarker }}</h3>
+                    <el-tag :color="getCategoryColor(result.category)"
+                      :class="['category-tag', getTextColorClass(result.category)]"
+                      style="border: 1px; margin-right: 8px;">
+                      {{ result.category }}
+                    </el-tag>
+                    <el-tag :type="result.clinical_use === 'Yes' ? 'success' : 'danger'" effect="dark">
+                      {{ result.clinical_use === 'Yes' ? 'Clinical Use' : 'Unknown Clinical Info' }}
                     </el-tag>
                   </div>
                 </template>
 
                 <div class="card-content">
-                  <div class="info-row" v-if="result.Discription">
+                  <div class="info-row" v-if="result.description">
                     <font-awesome-icon :icon="['fas', 'info-circle']" class="info-icon" />
                     <span class="info-label">Description:</span>
-                    <span class="info-value">{{ result.Discription }}</span>
+                    <span class="info-value">{{ result.description }}</span>
                   </div>
-                  <div class="info-row" v-if="result.Application">
+                  <div class="info-row" v-if="result.application">
                     <font-awesome-icon :icon="['fas', 'flask']" class="info-icon" />
                     <span class="info-label">Application:</span>
-                    <span class="info-value">{{ result.Application }}</span>
+                    <span class="info-value">{{ result.application }}</span>
                   </div>
-                  <div class="info-row" v-if="result.Location">
+                  <div class="info-row" v-if="result.location">
                     <font-awesome-icon :icon="['fas', 'map-marker-alt']" class="info-icon" />
                     <span class="info-label">Location:</span>
-                    <span class="info-value">{{ result.Location }}</span>
+                    <span class="info-value">{{ result.location }}</span>
                   </div>
-                  <div class="info-row" v-if="result.Source">
+                  <div class="info-row" v-if="result.source">
                     <font-awesome-icon :icon="['fas', 'dna']" class="info-icon" />
                     <span class="info-label">Source:</span>
-                    <span class="info-value">{{ result.Source }}</span>
+                    <span class="info-value">{{ result.source }}</span>
                   </div>
-                  <div class="info-row" v-if="result.Number">
-                    <font-awesome-icon :icon="['fas', 'users']" class="info-icon" />
-                    <span class="info-label">Sample Size:</span>
-                    <span class="info-value">{{ result.Number }}</span>
-                  </div>
-                  <div class="info-row" v-if="result.Clinical_Use">
-                    <font-awesome-icon :icon="['fas', 'hospital']" class="info-icon" />
-                    <span class="info-label">Clinical Use:</span>
-                    <el-tag :type="result.Clinical_Use === 'Yes' ? 'success' : 'info'" size="small">
-                      {{ result.Clinical_Use === 'Yes' ? 'Yes' : 'No' }}
-                    </el-tag>
-                  </div>
-                  <div class="info-row reference-row">
-                    <font-awesome-icon :icon="['fas', 'book']" class="info-icon" />
-                    <span class="info-label">Reference:</span>
+                  <div class="info-row" v-if="result.target">
+                    <font-awesome-icon :icon="['fas', 'bullseye']" class="info-icon" />
+                    <span class="info-label">Target:</span>
                     <span class="info-value">
-                      {{ result.Reference_first_author }} et al.,
-                      {{ result.Reference_journal }}
-                      ({{ result.Reference_year }})
+                      <el-tag :type="result.target === 'Yes' ? 'success' : 'danger'" size="small" effect="dark">
+                        {{ result.target || 'No' }}
+                      </el-tag>
+                    </span>
+                  </div>
+                  <div class="info-row reference-row" v-if="result.reference?.author">
+                    <font-awesome-icon :icon="['fas', 'book']" class="info-icon" />
+                    <span class="info-label">References:</span>
+                    <span class="info-value">
+                      {{ result.reference.author }} et al.,
+                      {{ result.reference.journal }}
+                      ({{ result.reference.year }})
                     </span>
                   </div>
                 </div>
@@ -500,6 +554,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useBiomarkerStore } from '@/stores/biomarker'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
+import { getCategoryColor, getTextColorClass } from '@/utils/categoryColors'
 
 const router = useRouter()
 const route = useRoute()
@@ -508,6 +563,7 @@ const biomarkerStore = useBiomarkerStore()
 // Reactive data
 const loading = ref(false)
 const hasSearched = ref(false)
+const filterOptionsLoading = ref(false)
 const searchFormRef = ref()
 const currentPage = ref(1)
 const pageSize = ref(20)
@@ -524,10 +580,10 @@ const yearTrendChartRef = ref(null)
 let categoryChart = null
 let yearTrendChart = null
 
-// Chart view types
-const categoryViewType = ref('pie')
 
-const searchForm = reactive({
+
+// Default form values
+const defaultFormValues = {
   biomarker: '',
   category: [],
   string_name: '',
@@ -542,16 +598,16 @@ const searchForm = reactive({
   clinical_use: '',
   target: '',
   drugs: '',
-  number_min: '',
-  number_max: '',
-  male_min: '',
-  male_max: '',
-  female_min: '',
-  female_max: '',
-  age_mean_min: '',
-  age_mean_max: '',
-  age_min: '',
-  age_max: '',
+  number_min: null,
+  number_max: null,
+  male_min: null,
+  male_max: null,
+  female_min: null,
+  female_max: null,
+  age_mean_min: null,
+  age_mean_max: null,
+  age_min: null,
+  age_max: null,
   reference_first_author: '',
   reference_journal: '',
   reference_year_from: '',
@@ -559,16 +615,25 @@ const searchForm = reactive({
   reference_year_range: '',
   pmid: '',
   keywords: ''
-})
+}
+
+// Chart view types
+const categoryViewType = ref('pie')
+
+const searchForm = reactive({ ...defaultFormValues })
 
 const searchResults = ref([])
+const allSearchResults = ref([]) // 存储所有搜索结果用于统计
 const filterOptions = ref({
   categories: [],
   sources: [],
   stages: [],
   experiments: [],
   regions: [],
-  races: []
+  races: [],
+  applications: [],
+  clinical_uses: [],
+  targets: []
 })
 
 const sortOptions = ref([
@@ -612,20 +677,20 @@ const resultStats = computed(() => [
 // Helper functions for statistics
 const getUniqueCategories = () => {
   const categories = new Set()
-  searchResults.value.forEach(result => {
-    if (result.Category) categories.add(result.Category)
+  allSearchResults.value.forEach(result => {
+    if (result.category) categories.add(result.category)
   })
   return Array.from(categories)
 }
 
 const getValidatedCount = () => {
-  return searchResults.value.filter(result => result.Clinical_Use === 'Yes').length
+  return allSearchResults.value.filter(result => result.clinical_use === 'Yes').length
 }
 
 const getRecentCount = () => {
   const currentYear = new Date().getFullYear()
-  return searchResults.value.filter(result =>
-    result.Reference_year && (currentYear - result.Reference_year) <= 5
+  return allSearchResults.value.filter(result =>
+    result.reference?.year && (currentYear - result.reference.year) <= 5
   ).length
 }
 
@@ -638,8 +703,11 @@ const initCategoryChart = () => {
   const updateChart = () => {
     const categoryData = getUniqueCategories().map(category => ({
       name: category,
-      value: searchResults.value.filter(result => result.Category === category).length
+      value: allSearchResults.value.filter(result => result.category === category).length
     }))
+
+    // 清理图表配置，避免切换时残留
+    categoryChart.clear()
 
     const option = categoryViewType.value === 'pie' ? {
       tooltip: {
@@ -647,8 +715,11 @@ const initCategoryChart = () => {
         formatter: '{a} <br/>{b}: {c} ({d}%)'
       },
       legend: {
-        orient: 'vertical',
-        left: 'left'
+        type: 'scroll',
+        orient: 'horizontal',
+        bottom: 0,
+        itemGap: 20,
+        padding: [5, 20]
       },
       series: [{
         name: 'Category Distribution',
@@ -669,6 +740,13 @@ const initCategoryChart = () => {
         axisPointer: {
           type: 'shadow'
         }
+      },
+      legend: {
+        type: 'scroll',
+        orient: 'horizontal',
+        bottom: 10,
+        itemGap: 20,
+        padding: [5, 20]
       },
       xAxis: {
         type: 'category',
@@ -703,9 +781,9 @@ const initYearTrendChart = () => {
   yearTrendChart = echarts.init(yearTrendChartRef.value)
 
   const yearData = {}
-  searchResults.value.forEach(result => {
-    if (result.Reference_year) {
-      yearData[result.Reference_year] = (yearData[result.Reference_year] || 0) + 1
+  allSearchResults.value.forEach(result => {
+    if (result.reference?.year) {
+      yearData[result.reference.year] = (yearData[result.reference.year] || 0) + 1
     }
   })
 
@@ -745,6 +823,32 @@ const initYearTrendChart = () => {
 
 const toggleCharts = () => {
   showCharts.value = !showCharts.value
+  initChartsIfVisible()
+}
+
+// Helper function to clean search parameters
+const cleanSearchParams = (params) => {
+  const cleaned = { ...params }
+
+  Object.keys(cleaned).forEach(key => {
+    if (cleaned[key] === '' || cleaned[key] === null ||
+      (Array.isArray(cleaned[key]) && cleaned[key].length === 0)) {
+      delete cleaned[key]
+    }
+  })
+
+  // Handle year range
+  if (cleaned.reference_year_range && Array.isArray(cleaned.reference_year_range)) {
+    cleaned.reference_year_from = cleaned.reference_year_range[0]?.getFullYear() || null;
+    cleaned.reference_year_to = cleaned.reference_year_range[1]?.getFullYear() || null;
+    delete cleaned.reference_year_range;
+  }
+
+  return cleaned
+}
+
+// Helper function to initialize charts
+const initChartsIfVisible = () => {
   if (showCharts.value) {
     nextTick(() => {
       initCategoryChart()
@@ -759,196 +863,173 @@ const handleSearch = async () => {
   hasSearched.value = true
 
   try {
-    const params = {
+    // 首先获取当前页的数据
+    const params = cleanSearchParams({
       page: currentPage.value,
       limit: pageSize.value,
       sort: sortBy.value,
       ...searchForm
-    }
-
-    // 清理空值和处理特殊格式
-    Object.keys(params).forEach(key => {
-      if (params[key] === '' || params[key] === null ||
-        (Array.isArray(params[key]) && params[key].length === 0)) {
-        delete params[key]
-      }
     })
 
-    // 处理年份范围
-    if (params.reference_year_range && Array.isArray(params.reference_year_range)) {
-      params.reference_year_from = params.reference_year_range[0]?.getFullYear() || null;
-      params.reference_year_to = params.reference_year_range[1]?.getFullYear() || null;
-      delete params.reference_year_range;
-    }
+    const response = await biomarkerStore.advancedSearch(params)
 
-    console.log('Search params:', params);
+    if (response.success) {
+      // 转换字段名为小写，保持与前端代码一致
+      const convertFields = (data) => {
+        return data.map(item => ({
+          id: item.ID,
+          biomarker: item.Biomarker,
+          category: item.Category,
+          string_name: item.String_Name,
+          description: item.Description,
+          region: item.Region,
+          race: item.Race,
+          location: item.Location,
+          stage: item.Stage,
+          source: item.Source,
+          experiment: item.Experiment,
+          application: item.Application,
+          clinical_use: item.Clinical_Use,
+          target: item.Target,
+          drugs: item.Drugs,
+          number: item.Number,
+          male: item.Male,
+          female: item.Female,
+          age_mean: item.Age_Mean,
+          age: item.Age,
+          reference: {
+            author: item.First_Author,
+            journal: item.Journal,
+            year: item.Year,
+            pmid: item.PMID
+          },
+          pmid: item.PMID,
+          keywords: item.Keywords
+        }))
+      }
 
-    try {
-      const response = await biomarkerStore.advancedSearch(params)
+      const convertedData = convertFields(response.data || [])
+      searchResults.value = convertedData
+      const total = response.pagination.totalItems || 0
+      totalResults.value = total
 
-      if (response.success) {
-        searchResults.value = response.data || []
-        totalResults.value = response.pagination.total || 0
-        ElMessage.success(`Found ${totalResults.value} matching results`)
-
-        // Initialize charts if they are visible
-        if (showCharts.value) {
-          nextTick(() => {
-            initCategoryChart()
-            initYearTrendChart()
+      // 如果总结果数大于当前页数据量，需要获取所有数据用于统计
+      if (total > pageSize.value) {
+        try {
+          const allParams = cleanSearchParams({
+            page: 1,
+            limit: total, // 获取所有结果进行统计
+            sort: sortBy.value,
+            ...searchForm
           })
+
+          const allResponse = await biomarkerStore.advancedSearch(allParams)
+          if (allResponse.success) {
+            allSearchResults.value = convertFields(allResponse.data || [])
+          } else {
+            // 如果获取所有数据失败，使用当前页数据进行统计
+            allSearchResults.value = convertedData
+          }
+        } catch (error) {
+          console.warn('Failed to fetch all data for statistics:', error)
+          // 如果获取所有数据失败，使用当前页数据进行统计
+          allSearchResults.value = convertedData
         }
       } else {
-        throw new Error(response.message || 'Search failed')
+        // 如果所有数据都在当前页，直接使用
+        allSearchResults.value = convertedData
       }
-    } catch (apiError) {
-      console.error('API error:', apiError)
-      ElMessage.warning('Unable to connect to the server. Using demo data instead.')
 
-      // 使用演示数据
-      searchResults.value = getDemoSearchResults()
-      totalResults.value = searchResults.value.length
-
-      // Initialize charts with demo data
-      if (showCharts.value && showCharts.value) {
-        nextTick(() => {
-          initCategoryChart()
-          initYearTrendChart()
-        })
-      }
+      ElMessage.success(`Found ${totalResults.value} matching results`)
+    } else {
+      throw new Error(response.message || 'Search failed')
     }
   } catch (error) {
     console.error('Search failed:', error)
-    ElMessage.error('Search failed, please try again later')
-    searchResults.value = []
-    totalResults.value = 0
+    ElMessage.warning('Unable to connect to the server. Using demo data instead.')
+    const demoResults = getDemoSearchResults()
+    searchResults.value = demoResults
+    allSearchResults.value = demoResults
+    totalResults.value = demoResults.length
   } finally {
     loading.value = false
+    initChartsIfVisible()
   }
 }
 
 // 获取演示搜索结果
-const getDemoSearchResults = () => {
-  return [
-    {
-      id: 1,
-      Biomarker: 'TP53',
-      Category: 'Protein',
-      Application: 'Diagnosis, Prognosis',
-      Location: 'Colon, Rectum',
-      Source: 'Tissue',
-      Discription: 'Tumor suppressor protein p53 is a key regulator of cell cycle and apoptosis in colorectal cancer.',
-      Reference_first_author: 'Smith',
-      Reference_journal: 'Nature Genetics',
-      Reference_year: 2020,
-      PMID: '12345678',
-      Region: 'Asia',
-      Stage: 'Stage II-III',
-      Number: 120
+const getDemoSearchResults = () => [
+  {
+    id: 1,
+    biomarker: 'TP53',
+    category: 'Protein',
+    application: 'Diagnosis, Prognosis',
+    location: 'Colon, Rectum',
+    source: 'Tissue',
+    description: 'Tumor suppressor protein p53 is a key regulator of cell cycle and apoptosis.',
+    clinical_use: 'Yes',
+    target: 'Yes',
+    drugs: 'Chemotherapy agents',
+    reference: {
+      author: 'Smith',
+      journal: 'Nature Genetics',
+      year: 2020,
+      pmid: '12345678'
     },
-    {
-      id: 2,
-      Biomarker: 'KRAS',
-      Category: 'Protein',
-      Application: 'Diagnosis, Treatment Response',
-      Location: 'Colon',
-      Source: 'Blood',
-      Discription: 'KRAS is a proto-oncogene that encodes a small GTPase involved in cellular signaling pathways.',
-      Reference_first_author: 'Johnson',
-      Reference_journal: 'Cell',
-      Reference_year: 2021,
-      PMID: '23456789',
-      Region: 'Europe',
-      Stage: 'Stage I-IV',
-      Number: 85
+    region: 'Asia',
+    stage: 'Stage II-III',
+    number: 120
+  },
+  {
+    id: 2,
+    biomarker: 'KRAS',
+    category: 'Protein',
+    application: 'Diagnosis, Treatment Response',
+    location: 'Colon',
+    source: 'Blood',
+    description: 'KRAS is a proto-oncogene that encodes a small GTPase involved in cellular signaling.',
+    clinical_use: 'Yes',
+    target: 'Yes',
+    drugs: 'Targeted therapy agents',
+    reference: {
+      author: 'Johnson',
+      journal: 'Cell',
+      year: 2021,
+      pmid: '23456789'
     },
-    {
-      id: 3,
-      Biomarker: 'miR-21',
-      Category: 'MicroRNA',
-      Application: 'Prognosis, Treatment Response',
-      Location: 'Colon, Rectum',
-      Source: 'Serum',
-      Discription: 'MicroRNA-21 is frequently overexpressed in colorectal cancer and associated with poor prognosis.',
-      Reference_first_author: 'Brown',
-      Reference_journal: 'Cancer Research',
-      Reference_year: 2022,
-      PMID: '34567890',
-      Region: 'North America',
-      Stage: 'Stage II-IV',
-      Number: 150
+    region: 'Europe',
+    stage: 'Stage I-IV',
+    number: 85
+  },
+  {
+    id: 3,
+    biomarker: 'miR-21',
+    category: 'MicroRNA',
+    application: 'Prognosis, Treatment Response',
+    location: 'Colon, Rectum',
+    source: 'Serum',
+    description: 'MicroRNA-21 is frequently overexpressed in colorectal cancer.',
+    clinical_use: 'No',
+    target: 'No',
+    drugs: 'Experimental agents',
+    reference: {
+      author: 'Brown',
+      journal: 'Cancer Research',
+      year: 2022,
+      pmid: '34567890'
     },
-    {
-      id: 4,
-      Biomarker: 'CEA',
-      Category: 'Protein',
-      Application: 'Diagnosis, Monitoring',
-      Location: 'Colon, Rectum',
-      Source: 'Serum',
-      Discription: 'Carcinoembryonic antigen is a glycoprotein involved in cell adhesion and is elevated in colorectal cancer.',
-      Reference_first_author: 'Davis',
-      Reference_journal: 'Clinical Chemistry',
-      Reference_year: 2019,
-      PMID: '45678901',
-      Region: 'Global',
-      Stage: 'Stage I-IV',
-      Number: 200
-    },
-    {
-      id: 5,
-      Biomarker: 'APC',
-      Category: 'Gene',
-      Application: 'Diagnosis, Risk Assessment',
-      Location: 'Colon, Rectum',
-      Source: 'Tissue',
-      Discription: 'Adenomatous polyposis coli gene mutations are found in most colorectal cancers.',
-      Reference_first_author: 'Wilson',
-      Reference_journal: 'Nature Medicine',
-      Reference_year: 2023,
-      PMID: '56789012',
-      Region: 'Global',
-      Stage: 'Stage I-III',
-      Number: 95
-    }
-  ]
-}
+    region: 'North America',
+    stage: 'Stage II-IV',
+    number: 150
+  }
+]
 
 // 重置表单
 const handleReset = () => {
   searchFormRef.value?.resetFields()
-  Object.assign(searchForm, {
-    biomarker: '',
-    category: [],
-    string_name: '',
-    description: '',
-    region: '',
-    race: '',
-    location: '',
-    stage: '',
-    source: '',
-    experiment: '',
-    application: '',
-    clinical_use: '',
-    target: '',
-    drugs: '',
-    number_min: '',
-    number_max: '',
-    male_min: '',
-    male_max: '',
-    female_min: '',
-    female_max: '',
-    age_mean_min: '',
-    age_mean_max: '',
-    age_min: '',
-    age_max: '',
-    reference_first_author: '',
-    reference_journal: '',
-    reference_year_from: '',
-    reference_year_to: '',
-    pmid: '',
-    keywords: ''
-  })
+  Object.assign(searchForm, defaultFormValues)
   searchResults.value = []
+  allSearchResults.value = []
   hasSearched.value = false
   currentPage.value = 1
 }
@@ -974,7 +1055,7 @@ const handlePageSizeChange = (size) => {
 
 // 点击结果行
 const handleResultClick = (result) => {
-  router.push(`/biomarkers/${result.ID}`)
+  router.push(`/biomarkers/${result.id}`)
 }
 
 // 保存搜索条件
@@ -997,38 +1078,43 @@ const handleResize = () => {
   })
 }
 
-// 获取分类标签类型
-const getCategoryTagType = (category) => {
-  const typeMap = {
-    'Protein': 'primary',
-    'MicroRNA': 'success',
-    'Gene': 'warning',
-    'Metabolite': 'info',
-    'DNA': 'danger',
-    'RNA': 'success'
-  }
-  return typeMap[category] || 'default'
-}
+
 
 // 加载筛选选项
 const loadFilterOptions = async () => {
+  filterOptionsLoading.value = true
   try {
     const response = await biomarkerStore.getFilterOptions()
     if (response.success) {
-      filterOptions.value = response.data
+      const data = response.data || {}
+      filterOptions.value = {
+        categories: data.categories || [],
+        sources: data.sources || [],
+        stages: data.stages || [],
+        experiments: data.experiments || [],
+        regions: data.regions || [],
+        races: data.races || [],
+        applications: data.applications || [],
+        clinical_uses: data.clinical_uses || [],
+        targets: data.targets || []
+      }
     }
   } catch (error) {
     console.error('加载筛选选项失败:', error)
-    // 使用默认筛选选项
     filterOptions.value = {
-      categories: ['Protein', 'Gene', 'MicroRNA', 'Metabolite', 'DNA', 'RNA'],
-      sources: ['Tissue', 'Blood', 'Serum', 'Plasma', 'Urine', 'Saliva'],
-      stages: ['Stage I', 'Stage II', 'Stage III', 'Stage IV'],
-      experiments: ['PCR', 'Western Blot', 'ELISA', 'Immunohistochemistry', 'Mass Spectrometry'],
-      regions: ['Asia', 'Europe', 'North America', 'South America', 'Africa', 'Oceania', 'Global'],
-      races: ['Asian', 'Caucasian', 'African', 'Hispanic', 'Mixed']
+      categories: [],
+      sources: [],
+      stages: [],
+      experiments: [],
+      regions: [],
+      races: [],
+      applications: [],
+      clinical_uses: [],
+      targets: []
     }
-    ElMessage.warning('Failed to load filter options from server. Using default options instead.')
+    ElMessage.error('Failed to load filter options from server. Please refresh the page.')
+  } finally {
+    filterOptionsLoading.value = false
   }
 }
 
@@ -1114,6 +1200,8 @@ onUnmounted(() => {
 }
 
 .search-btn {
+  background: var(--accent-gradient);
+  border: none;
   font-weight: 600;
   padding: var(--spacing-sm) var(--spacing-xl);
 }
@@ -1288,6 +1376,14 @@ onUnmounted(() => {
 
 .category-tag {
   margin-left: var(--spacing-sm);
+}
+
+.category-tag.text-black {
+  --el-tag-text-color: #5a5a5a !important;
+}
+
+.category-tag.text-white {
+  --el-tag-text-color: #ffffff !important;
 }
 
 .info-row {

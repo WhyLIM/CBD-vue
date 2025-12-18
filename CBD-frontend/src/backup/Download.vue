@@ -410,7 +410,7 @@ const downloadData = async () => {
     try {
       const response = await axios({
         method: 'get',
-        url: `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'}/biomarkers/export`,
+        url: `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'}/biomarkers/export`,
         params: params,
         responseType: 'blob',
         headers: {
@@ -528,7 +528,7 @@ const redownload = async (item) => {
     try {
       const response = await axios({
         method: 'get',
-        url: `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'}/biomarkers/export`,
+        url: `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'}/biomarkers/export`,
         params: params,
         responseType: 'blob',
         headers: {

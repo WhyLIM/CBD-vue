@@ -10,7 +10,7 @@ router.get('/', async (req, res) => {
       SELECT 
         COUNT(DISTINCT Biomarker) as total_biomarkers,
         COUNT(DISTINCT PMID) as total_articles,
-        COUNT(DISTINCT Reference_first_author) as research_institutions
+        COUNT(DISTINCT First_Author) as research_institutions
       FROM biomarker
     `);
 
@@ -27,12 +27,12 @@ router.get('/', async (req, res) => {
     // 获取年份分布
     const yearStats = await query(`
       SELECT 
-        Reference_year as year,
+        Year as year,
         COUNT(*) as count
       FROM biomarker 
-      WHERE Reference_year IS NOT NULL
-      GROUP BY Reference_year 
-      ORDER BY Reference_year DESC
+      WHERE Year IS NOT NULL
+      GROUP BY Year 
+      ORDER BY Year DESC
       LIMIT 10
     `);
 
@@ -114,7 +114,7 @@ router.get('/popular', async (req, res) => {
     const popularBiomarkers = await query(`
       SELECT 
         ID as id, Biomarker as name, Category as category, Application as application,
-        Reference_first_author as first_author, Reference_journal as journal, Reference_year as publication_year
+        First_Author as first_author, Journal as journal, Year as publication_year
       FROM biomarker 
       ORDER BY Biomarker ASC 
       LIMIT 10
@@ -140,9 +140,9 @@ router.get('/recent', async (req, res) => {
     const recentBiomarkers = await query(`
       SELECT 
         ID, Biomarker, Category, Application, 
-        Reference_first_author, Reference_journal, Reference_year
+        First_Author, Journal, Year
       FROM biomarker 
-      ORDER BY Reference_year DESC 
+      ORDER BY Year DESC 
       LIMIT 5
     `);
 

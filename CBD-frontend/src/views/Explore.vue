@@ -18,9 +18,9 @@
     <section class="main-content">
       <div class="container">
         <!-- Main Layout Container -->
-        <el-container class="main-container">
+        <el-row :gutter="24" class="main-container">
           <!-- Left Sidebar - Control Panel -->
-          <el-aside width="380px" class="control-aside">
+          <el-col :xs="24" :lg="7" class="control-aside">
             <div class="control-panel">
               <el-card class="control-card">
                 <template #header>
@@ -196,10 +196,10 @@
                 </div>
               </el-card>
             </div>
-          </el-aside>
+          </el-col>
 
           <!-- Main Content Area -->
-          <el-main class="main-area">
+          <el-col :xs="24" :lg="17" class="main-area">
             <!-- Network Visualization -->
             <el-card class="network-card">
               <NetworkVisualization :network-data="networkData" :loading="loading" :topology-data="topologyData"
@@ -299,19 +299,22 @@
                         Functional Enrichment
                       </h3>
                     </template>
-                    <el-table :data="enrichmentData" class="enrichment-table" max-height="300">
-                      <el-table-column prop="category" label="Category" width="120" />
-                      <el-table-column prop="term" label="Term" min-width="200">
-                        <template #default="{ row }">
-                          <span v-html="row.termHtml || row.term"></span>
-                        </template>
-                      </el-table-column>
-                      <el-table-column prop="pvalue" label="P-value" width="100" sortable>
-                        <template #default="{ row }">
-                          {{ parseFloat(row.pvalue || row.p_value || 0).toExponential(2) }}
-                        </template>
-                      </el-table-column>
-                    </el-table>
+                    <el-tabs v-model="enrichmentActiveTab" type="card" class="enrichment-tabs">
+                      <el-tab-pane v-for="(items, cat) in groupedEnrichment" :key="cat" :label="cat" :name="cat">
+                        <el-table :data="items" class="enrichment-table" max-height="245">
+                          <el-table-column prop="term" label="Term" min-width="200">
+                            <template #default="{ row }">
+                              <span v-html="row.termHtml || row.term"></span>
+                            </template>
+                          </el-table-column>
+                          <el-table-column prop="pvalue" label="P-value" width="100" sortable>
+                            <template #default="{ row }">
+                              {{ parseFloat(row.pvalue || row.p_value || 0).toExponential(2) }}
+                            </template>
+                          </el-table-column>
+                        </el-table>
+                      </el-tab-pane>
+                    </el-tabs>
                   </el-card>
                 </el-col>
               </el-row>
@@ -343,16 +346,16 @@
               </div>
             </div>
 
-          </el-main>
-        </el-container>
+          </el-col>
+        </el-row>
       </div>
     </section>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, onMounted, computed } from 'vue'
+import { ElMessage } from 'element-plus'
 import NetworkVisualization from '@/components/NetworkVisualization.vue'
 import stringApi from '@/services/stringApi'
 import { NetworkAnalyzer, EnrichmentProcessor } from '@/utils/networkAnalysis'
@@ -381,6 +384,16 @@ const networkData = ref([])
 const networkStats = ref(null)
 const topologyData = ref([])
 const enrichmentData = ref([])
+const enrichmentActiveTab = ref('')
+const groupedEnrichment = computed(() => {
+  const processor = new EnrichmentProcessor()
+  const grouped = processor.groupByCategory(enrichmentData.value || [])
+  const keys = Object.keys(grouped)
+  if (!enrichmentActiveTab.value && keys.length) {
+    enrichmentActiveTab.value = keys[0]
+  }
+  return grouped
+})
 const activeHelp = ref([])
 
 // Example data
@@ -489,7 +502,6 @@ const generateNetwork = async () => {
     if (enrichmentRawData && enrichmentRawData.length > 0) {
       const processor = new EnrichmentProcessor()
       enrichmentData.value = processor.processEnrichmentData(enrichmentRawData, networkParams.value.species)
-        .slice(0, 20) // Limit to top 20 results
     }
 
     networkGenerated.value = true
@@ -600,7 +612,7 @@ const fetchAvailableProteins = async () => {
           limit: 100
         }
       })
-    } catch (error) {
+    } catch {
       // If category filter fails, try without it
       console.log('Category filter failed, trying without filter...')
       response = await api.get('/biomarkers', {
@@ -828,7 +840,7 @@ onMounted(() => {
 
 .generate-btn {
   flex: 1;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--accent-gradient);
   border: none;
   color: white;
 }
@@ -914,6 +926,7 @@ onMounted(() => {
   border: none;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   border-radius: 12px;
+  overflow: hidden;
 }
 
 .topology-table,
@@ -940,6 +953,10 @@ onMounted(() => {
 .download-content p {
   margin-bottom: 20px;
   color: #666;
+}
+
+.enrichment-tabs :deep(.el-tabs__nav-wrap) {
+  overflow: hidden;
 }
 
 /* Help Section */

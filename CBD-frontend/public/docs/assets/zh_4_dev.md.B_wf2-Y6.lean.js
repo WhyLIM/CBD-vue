@@ -1,0 +1,1 @@
+import{_ as a,c as n,o as e,a3 as p}from"./chunks/framework.BurWKwwG.js";const g=JSON.parse('{"title":"开发者指南","description":"","frontmatter":{},"headers":[],"relativePath":"zh/4_dev.md","filePath":"zh/4_dev.md"}'),l={name:"zh/4_dev.md"};function i(t,s,r,c,o,d){return e(),n("div",null,s[0]||(s[0]=[p("",11)]))}const u=a(l,[["render",i]]);export{g as __pageData,u as default};

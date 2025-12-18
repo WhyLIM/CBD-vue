@@ -77,38 +77,45 @@ const initializeTables = async () => {
     // 创建生物标记物表
     await run(`
       CREATE TABLE IF NOT EXISTS biomarker (
-        ID INT AUTO_INCREMENT PRIMARY KEY,
-        Biomarker VARCHAR(255) NOT NULL,
-        Category VARCHAR(100) NOT NULL,
+        ID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        Title TEXT,
+        Authors TEXT,
+        First_Author TEXT,
+        Year INT,
+        Abstract TEXT,
+        Keywords TEXT,
+        PMID VARCHAR(15),
+        DOI VARCHAR(100),
+        PMC VARCHAR(50),
+        Journal VARCHAR(255),
+        Biomarker TEXT,
+        Type VARCHAR(50),
+        Category VARCHAR(50),
+        Symbol VARCHAR(10),
+        Description TEXT,
+        Region TEXT,
+        Race TEXT,
+        Number TEXT,
+        Male TEXT,
+        Female TEXT,
+        Gender_M_F TEXT,
+        Age_Mean TEXT,
+        Age TEXT,
+        Location TEXT,
+        Stage TEXT,
+        Source TEXT,
+        Experiment TEXT,
+        Statistics TEXT,
         Application TEXT,
-        Location VARCHAR(255),
-        Source VARCHAR(100),
-        Discription TEXT,
-        Reference_first_author VARCHAR(255),
-        Reference_journal VARCHAR(255),
-        Reference_year INT,
-        PMID VARCHAR(50),
-        Region VARCHAR(100),
-        Stage VARCHAR(100),
-        String_Name VARCHAR(255),
-        STRING_ID VARCHAR(255),
-        Number INT,
-        Male INT,
-        Female INT,
-        Age_Mean FLOAT,
-        Age VARCHAR(50),
-        Experiment VARCHAR(255),
-        Statictics VARCHAR(255),
-        Clinical_Use VARCHAR(50),
         Conclusion TEXT,
-        Target VARCHAR(10),
+        Clinical_Use VARCHAR(5),
+        Target VARCHAR(5),
         Drugs TEXT,
-        Addition TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX idx_biomarker (Biomarker),
         INDEX idx_category (Category),
-        INDEX idx_year (Reference_year)
+        INDEX idx_year (Year)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
@@ -184,6 +191,114 @@ const initializeTables = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
         INDEX idx_key (config_key)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统配置表'
+    `);
+
+    // 单细胞分析相关表
+    await run(`
+      CREATE TABLE IF NOT EXISTS analysis_degs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        cell_type VARCHAR(100),
+        gene VARCHAR(100),
+        logFC DOUBLE,
+        pval_adj DOUBLE,
+        neg_log10_padj DOUBLE,
+        INDEX idx_degs_cell_gene (cell_type, gene),
+        INDEX idx_degs_padj (pval_adj),
+        INDEX idx_degs_neglog (neg_log10_padj)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await run(`
+      CREATE TABLE IF NOT EXISTS analysis_kegg (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        cell_type VARCHAR(100),
+        source_type VARCHAR(100),
+        description VARCHAR(255),
+        p_adjust DOUBLE,
+        fold_enrichment DOUBLE,
+        gene_ids TEXT,
+        INDEX idx_kegg_cell_source (cell_type, source_type),
+        INDEX idx_kegg_padj (p_adjust),
+        INDEX idx_kegg_fold (fold_enrichment)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await run(`
+      CREATE TABLE IF NOT EXISTS analysis_ridge (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        cell_type VARCHAR(100),
+        gene VARCHAR(100),
+        auc DOUBLE,
+        p_value DOUBLE,
+        INDEX idx_ridge_cell_gene (cell_type, gene),
+        INDEX idx_ridge_auc (auc),
+        INDEX idx_ridge_p (p_value)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await run(`
+      CREATE TABLE IF NOT EXISTS analysis_trajectory_files (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        cell_type VARCHAR(100),
+        gene VARCHAR(100),
+        file_path VARCHAR(255),
+        plot_type VARCHAR(100),
+        UNIQUE KEY uniq_file_path (file_path),
+        INDEX idx_traj_cell_gene (cell_type, gene),
+        INDEX idx_traj_plot (plot_type)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await run(`
+      CREATE TABLE IF NOT EXISTS analysis_cellchat (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        source VARCHAR(100),
+        target VARCHAR(100),
+        ligand VARCHAR(100),
+        receptor VARCHAR(100),
+        prob DOUBLE,
+        pval DOUBLE,
+        pathway_name VARCHAR(255),
+        INDEX idx_cellchat_src_tgt (source, target),
+        INDEX idx_cellchat_pathway (pathway_name),
+        INDEX idx_cellchat_prob (prob)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    // 临床相关表
+    await run(`
+      CREATE TABLE IF NOT EXISTS clinical_diagnosis (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        gene VARCHAR(100),
+        auc DOUBLE,
+        label VARCHAR(100),
+        INDEX idx_diag_gene_label (gene, label),
+        INDEX idx_diag_auc (auc)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await run(`
+      CREATE TABLE IF NOT EXISTS clinical_survival (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        gene VARCHAR(100),
+        surv_type VARCHAR(50),
+        surv_pvalue DOUBLE,
+        INDEX idx_surv_gene_type (gene, surv_type),
+        INDEX idx_surv_p (surv_pvalue)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await run(`
+      CREATE TABLE IF NOT EXISTS clinical_immune (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        gene VARCHAR(100),
+        immune_cell VARCHAR(100),
+        r2 DOUBLE,
+        p_value DOUBLE,
+        INDEX idx_immune_gene_cell (gene, immune_cell),
+        INDEX idx_immune_r2 (r2),
+        INDEX idx_immune_p (p_value)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
     console.log('✅ 数据库表结构初始化成功');
@@ -283,8 +398,8 @@ const insertSampleData = async () => {
     for (const b of sampleBiomarkers) {
       await run(`
         INSERT INTO biomarker (
-          Biomarker, Category, Application, Location, Source, Discription,
-          Reference_first_author, Reference_journal, Reference_year, PMID, Region, Stage
+          Biomarker, Category, Application, Location, Source, Description,
+          First_Author, Journal, Year, PMID, Region, Stage
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         b.name, b.category, b.application,

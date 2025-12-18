@@ -108,8 +108,8 @@
               </el-table-column>
               <el-table-column prop="target" label="Target" min-width="90">
                 <template #default="{ row }">
-                  <el-tag :type="row.target === '1' ? 'success' : 'danger'" size="small" effect="dark">
-                    {{ row.target === '1' ? 'Yes' : 'No' }}
+                  <el-tag :type="row.target === 'Yes' ? 'success' : 'danger'" size="small" effect="dark">
+                    {{ row.target || 'No' }}
                   </el-tag>
                 </template>
               </el-table-column>
@@ -171,8 +171,8 @@
                   <font-awesome-icon :icon="['fas', 'bullseye']" class="info-icon" />
                   <span class="info-label">Target:</span>
                   <span class="info-value">
-                    <el-tag :type="biomarker.target === '1' ? 'success' : 'danger'" size="small" effect="dark">
-                      {{ biomarker.target === '1' ? 'Yes' : 'No' }}
+                    <el-tag :type="biomarker.target === 'Yes' ? 'success' : 'danger'" size="small" effect="dark">
+                      {{ biomarker.target || 'No' }}
                     </el-tag>
                   </span>
                 </div>
@@ -244,7 +244,7 @@ const sortOptions = ref([
 ])
 
 // Computed properties
-const totalItems = computed(() => biomarkerStore.pagination.total)
+const totalItems = computed(() => biomarkerStore.pagination.totalItems)
 const paginatedBiomarkers = computed(() => biomarkerStore.biomarkers)
 
 // Methods
@@ -310,7 +310,6 @@ const handleAdvancedSearch = () => {
 watch(() => route.query, (newQuery) => {
   if (newQuery.q) {
     searchQuery.value = newQuery.q
-    handleSearch()
   }
 }, { immediate: true })
 
@@ -403,7 +402,7 @@ onMounted(() => {
 }
 
 .advanced-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--accent-gradient);
   border: none;
   color: white;
   border-radius: 8px;
@@ -452,7 +451,7 @@ onMounted(() => {
 }
 
 .biomarkers-table :deep(.el-table__header) {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--accent-gradient);
   color: white;
 }
 

@@ -1,0 +1,1 @@
+import{_ as n,c as s,o as e,a3 as i}from"./chunks/framework.BurWKwwG.js";const b=JSON.parse('{"title":"引用与支持","description":"","frontmatter":{},"headers":[],"relativePath":"zh/5_cite.md","filePath":"zh/5_cite.md"}'),l={name:"zh/5_cite.md"};function r(t,a,o,p,h,c){return e(),s("div",null,a[0]||(a[0]=[i("",23)]))}const T=n(l,[["render",r]]);export{b as __pageData,T as default};

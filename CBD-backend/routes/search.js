@@ -71,20 +71,20 @@ router.post('/advanced', async (req, res) => {
 
     if (category && category.length > 0) {
       const categoryPlaceholders = category.map(() => '?').join(',');
-      query += ` AND category IN (${categoryPlaceholders})`;
-      countQuery += ` AND category IN (${categoryPlaceholders})`;
+      query += ` AND Category IN (${categoryPlaceholders})`;
+      countQuery += ` AND Category IN (${categoryPlaceholders})`;
       params.push(...category);
     }
 
     if (string_name) {
-      query += ` AND String_Name LIKE ?`;
-      countQuery += ` AND String_Name LIKE ?`;
+      query += ` AND Symbol LIKE ?`;
+      countQuery += ` AND Symbol LIKE ?`;
       params.push(`%${string_name}%`);
     }
 
     if (description) {
-      query += ` AND Discription LIKE ?`;
-      countQuery += ` AND Discription LIKE ?`;
+      query += ` AND Description LIKE ?`;
+      countQuery += ` AND Description LIKE ?`;
       params.push(`%${description}%`);
     }
 
@@ -211,26 +211,26 @@ router.post('/advanced', async (req, res) => {
 
     // 文献信息搜索条件 - 修正字段名
     if (reference_first_author) {
-      query += ` AND Reference_first_author LIKE ?`;
-      countQuery += ` AND Reference_first_author LIKE ?`;
+      query += ` AND First_Author LIKE ?`;
+      countQuery += ` AND First_Author LIKE ?`;
       params.push(`%${reference_first_author}%`);
     }
 
     if (reference_journal) {
-      query += ` AND Reference_journal LIKE ?`;
-      countQuery += ` AND Reference_journal LIKE ?`;
+      query += ` AND Journal LIKE ?`;
+      countQuery += ` AND Journal LIKE ?`;
       params.push(`%${reference_journal}%`);
     }
 
     if (reference_year_from) {
-      query += ` AND Reference_year >= ?`;
-      countQuery += ` AND Reference_year >= ?`;
+      query += ` AND Year >= ?`;
+      countQuery += ` AND Year >= ?`;
       params.push(reference_year_from);
     }
 
     if (reference_year_to) {
-      query += ` AND Reference_year <= ?`;
-      countQuery += ` AND Reference_year <= ?`;
+      query += ` AND Year <= ?`;
+      countQuery += ` AND Year <= ?`;
       params.push(reference_year_to);
     }
 
@@ -244,10 +244,10 @@ router.post('/advanced', async (req, res) => {
     if (keywords) {
       const keywordConditions = [
         'Biomarker LIKE ?',
-        'Discription LIKE ?',
+        'Description LIKE ?',
         'Application LIKE ?',
-        'Reference_first_author LIKE ?',
-        'Reference_journal LIKE ?'
+        'First_Author LIKE ?',
+        'Journal LIKE ?'
       ];
       query += ` AND (${keywordConditions.join(' OR ')})`;
       countQuery += ` AND (${keywordConditions.join(' OR ')})`;
@@ -268,10 +268,10 @@ router.post('/advanced', async (req, res) => {
         orderBy = 'ORDER BY Biomarker DESC';
         break;
       case 'year_desc':
-        orderBy = 'ORDER BY Reference_year DESC';
+        orderBy = 'ORDER BY Year DESC';
         break;
       case 'year_asc':
-        orderBy = 'ORDER BY Reference_year ASC';
+        orderBy = 'ORDER BY Year ASC';
         break;
       case 'number_desc':
         orderBy = 'ORDER BY Number DESC';
@@ -285,20 +285,27 @@ router.post('/advanced', async (req, res) => {
 
     // 分页
     const offset = (page - 1) * limit;
-    query += ` ${orderBy} LIMIT ? OFFSET ?`;
-    params.push(parseInt(limit), parseInt(offset));
+    const pagedQuery = `${query} ${orderBy} LIMIT ${parseInt(limit, 10)} OFFSET ${offset}`;
 
     // 执行查询
-    const results = await db.query(query, params);
+    const results = await db.query(pagedQuery, params);
 
     // 获取总数（不包含分页参数）
-    const countParams = params.slice(0, -2); // 移除 limit 和 offset 参数
-    const countResult = await db.query(countQuery, countParams);
+    const countResult = await db.query(countQuery, params);
     const total = countResult[0].total;
+
+    // 暂时简化统计功能，后续优化
+    const stats = {
+      categories: [],
+      clinicalUse: 0,
+      recent: 0,
+      validated: 0
+    };
 
     res.json({
       success: true,
       data: results,
+      statistics: stats,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -334,17 +341,17 @@ router.get('/quick', async (req, res) => {
     const query = `
       SELECT * FROM biomarker 
       WHERE Biomarker LIKE ? 
-         OR Discription LIKE ? 
+         OR Description LIKE ? 
          OR Application LIKE ?
-         OR Reference_first_author LIKE ?
-         OR Reference_journal LIKE ?
+         OR First_Author LIKE ?
+         OR Journal LIKE ?
       ORDER BY 
         CASE 
           WHEN Biomarker LIKE ? THEN 1
           ELSE 2
         END,
         Biomarker ASC
-      LIMIT ? OFFSET ?
+      LIMIT ${parseInt(limit, 10)} OFFSET ${(page - 1) * limit}
     `;
 
     const searchTerm = `%${q}%`;
@@ -353,8 +360,7 @@ router.get('/quick', async (req, res) => {
 
     const params = [
       searchTerm, searchTerm, searchTerm, searchTerm, searchTerm,
-      exactTerm,
-      parseInt(limit), parseInt(offset)
+      exactTerm
     ];
 
     const results = await db.query(query, params);
@@ -363,10 +369,10 @@ router.get('/quick', async (req, res) => {
     const countQuery = `
       SELECT COUNT(*) as total FROM biomarker 
       WHERE Biomarker LIKE ? 
-         OR Discription LIKE ? 
+         OR Description LIKE ? 
          OR Application LIKE ?
-         OR Reference_first_author LIKE ?
-         OR Reference_journal LIKE ?
+         OR First_Author LIKE ?
+         OR Journal LIKE ?
     `;
 
     const countParams = [searchTerm, searchTerm, searchTerm, searchTerm, searchTerm];
@@ -417,10 +423,10 @@ router.get('/suggestions', async (req, res) => {
         field = 'Category';
         break;
       case 'author':
-        field = 'Reference_first_author';
+        field = 'First_Author';
         break;
       case 'journal':
-        field = 'Reference_journal';
+        field = 'Journal';
         break;
       default:
         field = 'Biomarker';
@@ -471,6 +477,8 @@ router.get('/filters', async (req, res) => {
           sources: ['Tissue', 'Blood', 'Serum', 'Plasma', 'Urine', 'Saliva'],
           stages: ['Stage I', 'Stage II', 'Stage III', 'Stage IV'],
           regions: ['Asia', 'Europe', 'North America', 'South America', 'Africa', 'Oceania', 'Global'],
+          clinical_uses: ['Yes', 'No'],
+          targets: ['Yes', 'No'],
           yearRange: {
             min: 1900,
             max: new Date().getFullYear()
@@ -487,7 +495,9 @@ router.get('/filters', async (req, res) => {
       locations: 'SELECT DISTINCT Location FROM biomarker WHERE Location IS NOT NULL AND Location != "" ORDER BY Location',
       sources: 'SELECT DISTINCT Source FROM biomarker WHERE Source IS NOT NULL AND Source != "" ORDER BY Source',
       stages: 'SELECT DISTINCT Stage FROM biomarker WHERE Stage IS NOT NULL AND Stage != "" ORDER BY Stage',
-      regions: 'SELECT DISTINCT Region FROM biomarker WHERE Region IS NOT NULL AND Region != "" ORDER BY Region'
+      regions: 'SELECT DISTINCT Region FROM biomarker WHERE Region IS NOT NULL AND Region != "" ORDER BY Region',
+      clinical_uses: 'SELECT DISTINCT Clinical_Use FROM biomarker WHERE Clinical_Use IS NOT NULL AND Clinical_Use != "" ORDER BY Clinical_Use',
+      targets: 'SELECT DISTINCT Target FROM biomarker WHERE Target IS NOT NULL AND Target != "" ORDER BY Target'
     };
 
     const results = {};
@@ -506,7 +516,7 @@ router.get('/filters', async (req, res) => {
 
     // 获取年份范围
     try {
-      const yearQuery = 'SELECT MIN(Reference_year) as min_year, MAX(Reference_year) as max_year FROM biomarker WHERE Reference_year IS NOT NULL AND Reference_year > 0';
+      const yearQuery = 'SELECT MIN(Year) as min_year, MAX(Year) as max_year FROM biomarker WHERE Year IS NOT NULL AND Year > 0';
       const yearResult = await db.query(yearQuery);
       if (yearResult && yearResult.length > 0) {
         results.yearRange = {
@@ -551,6 +561,12 @@ router.get('/filters', async (req, res) => {
     if (!results.regions || results.regions.length === 0) {
       results.regions = ['Asia', 'Europe', 'North America', 'South America', 'Africa', 'Oceania', 'Global'];
     }
+    if (!results.clinical_uses || results.clinical_uses.length === 0) {
+      results.clinical_uses = ['Yes', 'No'];
+    }
+    if (!results.targets || results.targets.length === 0) {
+      results.targets = ['Yes', 'No'];
+    }
 
     res.json({
       success: true,
@@ -569,6 +585,8 @@ router.get('/filters', async (req, res) => {
         sources: ['Tissue', 'Blood', 'Serum', 'Plasma', 'Urine', 'Saliva'],
         stages: ['Stage I', 'Stage II', 'Stage III', 'Stage IV'],
         regions: ['Asia', 'Europe', 'North America', 'South America', 'Africa', 'Oceania', 'Global'],
+        clinical_uses: ['Yes', 'No'],
+        targets: ['Yes', 'No'],
         yearRange: {
           min: 1900,
           max: new Date().getFullYear()

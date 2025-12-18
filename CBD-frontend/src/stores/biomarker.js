@@ -9,10 +9,10 @@ export const useBiomarkerStore = defineStore('biomarker', {
     loading: false,
     error: null,
     pagination: {
-      page: 1,
-      limit: 20,
-      total: 0,
-      pages: 0
+      currentPage: 1,
+      pageSize: 20,
+      totalItems: 0,
+      totalPages: 0
     },
     filters: {
       category: '',
@@ -58,17 +58,15 @@ export const useBiomarkerStore = defineStore('biomarker', {
       this.error = null
 
       try {
-        const response = await api.get('/biomarkers', { params })
-        // console.log('API 响应数据:', response.data); // 调试日志
-        this.biomarkers = response.data || []; // 当前页数据
-        // 更新分页信息
+        const resp = await api.get('/biomarkers', { params })
+        this.biomarkers = resp.data || []
         this.pagination = {
-          page: response.pagination?.current || 1,
-          limit: response.pagination?.limit || 20,
-          total: response.pagination?.count || 0,
-          pages: response.pagination?.total || 0
-        };
-        return response.data
+          currentPage: resp.pagination?.currentPage ?? this.pagination.currentPage,
+          pageSize: resp.pagination?.pageSize ?? this.pagination.pageSize,
+          totalItems: resp.pagination?.totalItems ?? 0,
+          totalPages: resp.pagination?.totalPages ?? 0
+        }
+        return resp.data
       } catch (error) {
         this.error = error.message
         console.error('获取生物标志物失败:', error)
@@ -84,9 +82,9 @@ export const useBiomarkerStore = defineStore('biomarker', {
       this.error = null
 
       try {
-        const response = await api.get(`/biomarkers/${id}`)
-        this.currentBiomarker = response.data.data
-        return response.data
+        const resp = await api.get(`/biomarkers/${id}`)
+        this.currentBiomarker = (resp.data && resp.data.data) ? resp.data.data : resp.data
+        return resp.data
       } catch (error) {
         this.error = error.message
         console.error('获取生物标志物详情失败:', error)
@@ -99,25 +97,9 @@ export const useBiomarkerStore = defineStore('biomarker', {
     // 高级搜索
     async advancedSearch(params) {
       try {
-        console.log('Sending advanced search request, params:', params)
-        // 使用配置好的api实例
-        const response = await api.post('/search/advanced', params)
-        console.log('Advanced search response:', response)
-
-        // 返回标准格式的响应
-        return {
-          success: true,
-          data: response.data || [],
-          pagination: response.pagination || {
-            page: 1,
-            limit: 20,
-            total: 0,
-            pages: 0
-          }
-        }
+        const resp = await api.post('/search/advanced', params)
+        return resp
       } catch (error) {
-        console.error('Advanced search failed:', error)
-        console.error('Error details:', error.response?.data || error.message)
         throw error
       }
     },
@@ -125,10 +107,10 @@ export const useBiomarkerStore = defineStore('biomarker', {
     // 快速搜索
     async quickSearch(query, page = 1, limit = 10) {
       try {
-        const response = await api.get('/search/quick', {
+        const resp = await api.get('/search/quick', {
           params: { q: query, page, limit }
         })
-        return response.data
+        return resp.data
       } catch (error) {
         console.error('快速搜索失败:', error)
         throw error
@@ -138,10 +120,10 @@ export const useBiomarkerStore = defineStore('biomarker', {
     // 获取搜索建议
     async getSearchSuggestions(query, type = 'biomarker') {
       try {
-        const response = await api.get('/search/suggestions', {
+        const resp = await api.get('/search/suggestions', {
           params: { q: query, type }
         })
-        return response.data
+        return resp.data
       } catch (error) {
         console.error('获取搜索建议失败:', error)
         throw error
@@ -151,11 +133,10 @@ export const useBiomarkerStore = defineStore('biomarker', {
     // 获取筛选选项
     async getFilterOptions() {
       try {
-        const response = await api.get('/search/filters')
-        console.log('API response:', response.data)
+        const resp = await api.get('/search/filters')
         return {
           success: true,
-          data: response.data
+          data: resp.data
         }
       } catch (error) {
         console.error('获取筛选选项失败:', error)

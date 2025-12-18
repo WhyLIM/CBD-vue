@@ -1,0 +1,1 @@
+import{_ as e,c as t,o as r,a3 as i}from"./chunks/framework.BurWKwwG.js";const m=JSON.parse('{"title":"网站用户指南","description":"","frontmatter":{},"headers":[],"relativePath":"zh/3_guide.md","filePath":"zh/3_guide.md"}'),l={name:"zh/3_guide.md"};function _(h,a,s,n,o,d){return r(),t("div",null,a[0]||(a[0]=[i("",4)]))}const f=e(l,[["render",_]]);export{m as __pageData,f as default};

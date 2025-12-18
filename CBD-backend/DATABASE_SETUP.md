@@ -100,6 +100,54 @@ CREATE TABLE submissions (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+### scRNA UMAP 表
+
+用于单细胞转录组 UMAP 可视化的两张核心数据表：
+
+```sql
+-- UMAP 坐标表：每个细胞的二维坐标
+CREATE TABLE scRNA_umap_coordinates (
+  Cell VARCHAR(64) PRIMARY KEY,
+  UMAP_1 DOUBLE NOT NULL,
+  UMAP_2 DOUBLE NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 元数据表：每个细胞的注释与分组信息
+CREATE TABLE scRNA_metadata (
+  Cell VARCHAR(64) PRIMARY KEY,
+  Color VARCHAR(16),
+  Sample VARCHAR(128),
+  Dataset VARCHAR(128),
+  Patient VARCHAR(128),
+  Class VARCHAR(128),
+  SubCluster VARCHAR(256),
+  MMRstatus VARCHAR(64),
+  Position VARCHAR(128),
+  Site VARCHAR(128),
+  Grade VARCHAR(64),
+  GrandparentalCluster VARCHAR(256),
+  ParentalCluster VARCHAR(256),
+  nCount_RNA INT,
+  nFeature_RNA INT,
+  INDEX idx_subcluster (SubCluster),
+  INDEX idx_sample (Sample),
+  INDEX idx_patient (Patient),
+  INDEX idx_parental (ParentalCluster),
+  INDEX idx_grandparental (GrandparentalCluster)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 关系与联结建议：两表使用 Cell 字段进行 JOIN
+-- 示例：SELECT ... FROM scRNA_umap_coordinates c JOIN scRNA_metadata m ON m.Cell=c.Cell
+```
+
+建议为 `UMAP_1` 与 `UMAP_2` 建立联合索引以加速视窗（bbox）查询：
+
+```sql
+ALTER TABLE scRNA_umap_coordinates ADD INDEX idx_umap (UMAP_1, UMAP_2);
+```
+
+> 上述结构与后端接口 `/api/scrna/umap`、`/api/scrna/metadata/filters`、`/api/scrna/export` 一一对应。
 ```
 
 ## 🔧 常见问题解决
