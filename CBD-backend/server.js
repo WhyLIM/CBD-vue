@@ -14,7 +14,17 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    const origins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+      .split(',')
+      .map(o => o.trim())
+      .filter(Boolean)
+    if (!origin || origins.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
   credentials: true
 }));
 
@@ -51,6 +61,7 @@ app.use('/api/stats', require('./routes/stats'));
 app.use('/api/scrna', require('./routes/scrna'));
 app.use('/api/analysis', require('./routes/analysis'));
 app.use('/api/clinical', require('./routes/clinical'));
+app.use('/api/string', require('./routes/string'));
 
 // 简单登录颁发令牌
 app.post('/api/auth/login', (req, res) => {

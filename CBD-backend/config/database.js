@@ -10,7 +10,6 @@ const dbConfig = {
   database: process.env.DB_NAME || 'cbd_database',
   charset: 'utf8mb4',
   timezone: '+08:00',
-  reconnect: true,
   connectionLimit: 10,
   queueLimit: 0
 };
@@ -22,11 +21,9 @@ const pool = mysql.createPool(dbConfig);
 const testConnection = async () => {
   try {
     const connection = await pool.getConnection();
-    console.log('✅ MySQL数据库连接成功');
     connection.release();
     return true;
   } catch (error) {
-    console.error('❌ MySQL数据库连接失败:', error.message);
     return false;
   }
 };
@@ -34,15 +31,9 @@ const testConnection = async () => {
 // 执行查询 - 返回多行结果
 const query = async (sql, params = []) => {
   try {
-    console.log('执行SQL查询:', sql);
-    console.log('查询参数:', params);
     const [rows] = await pool.execute(sql, params);
-    console.log('查询结果行数:', rows?.length || 0);
     return rows;
   } catch (error) {
-    console.error('数据库查询错误:', error);
-    console.error('SQL语句:', sql);
-    console.error('参数:', params);
     throw error;
   }
 };
@@ -64,7 +55,6 @@ const run = async (sql, params = []) => {
     const [result] = await pool.execute(sql, params);
     return result;
   } catch (error) {
-    console.error('数据库执行错误:', error);
     throw error;
   }
 };
@@ -113,7 +103,7 @@ const initializeTables = async () => {
         Drugs TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        INDEX idx_biomarker (Biomarker),
+        INDEX idx_biomarker (Biomarker(255)),
         INDEX idx_category (Category),
         INDEX idx_year (Year)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

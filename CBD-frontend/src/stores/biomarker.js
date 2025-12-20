@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import api from '@/utils/api'
-import axios from 'axios'
 
 export const useBiomarkerStore = defineStore('biomarker', {
   state: () => ({
@@ -41,8 +40,8 @@ export const useBiomarkerStore = defineStore('biomarker', {
         const searchTerm = state.filters.search.toLowerCase()
         filtered = filtered.filter(b =>
           b.Biomarker?.toLowerCase().includes(searchTerm) ||
-          b.String_Name?.toLowerCase().includes(searchTerm) ||
-          b.Discription?.toLowerCase().includes(searchTerm) ||
+          b.Symbol?.toLowerCase().includes(searchTerm) ||
+          b.Description?.toLowerCase().includes(searchTerm) ||
           b.Application?.toLowerCase().includes(searchTerm)
         )
       }
@@ -83,7 +82,7 @@ export const useBiomarkerStore = defineStore('biomarker', {
 
       try {
         const resp = await api.get(`/biomarkers/${id}`)
-        this.currentBiomarker = (resp.data && resp.data.data) ? resp.data.data : resp.data
+        this.currentBiomarker = resp.data
         return resp.data
       } catch (error) {
         this.error = error.message
@@ -96,12 +95,7 @@ export const useBiomarkerStore = defineStore('biomarker', {
 
     // 高级搜索
     async advancedSearch(params) {
-      try {
-        const resp = await api.post('/search/advanced', params)
-        return resp
-      } catch (error) {
-        throw error
-      }
+      return api.post('/search/advanced', params)
     },
 
     // 快速搜索
@@ -134,10 +128,7 @@ export const useBiomarkerStore = defineStore('biomarker', {
     async getFilterOptions() {
       try {
         const resp = await api.get('/search/filters')
-        return {
-          success: true,
-          data: resp.data
-        }
+        return resp
       } catch (error) {
         console.error('获取筛选选项失败:', error)
         throw error

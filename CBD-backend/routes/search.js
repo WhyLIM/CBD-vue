@@ -2,20 +2,11 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
 
-// 检查数据库连接
-db.testConnection().then(connected => {
-  if (!connected) {
-    console.error('❌ Route search initialization failed: Unable to connect to the database');
-  } else {
-    console.log('✅ Route search initialized successfully: Database connection normal');
-  }
-});
+// 连接检查由各端点内部处理
 
 // 高级搜索接口
 router.post('/advanced', async (req, res) => {
   try {
-    console.log('Received advanced search request:', req.body);
-
     const {
       page = 1,
       limit = 20,
@@ -60,7 +51,6 @@ router.post('/advanced', async (req, res) => {
     let query = 'SELECT * FROM biomarker WHERE 1=1';
     let countQuery = 'SELECT COUNT(*) as total FROM biomarker WHERE 1=1';
     const params = [];
-    let paramIndex = 1;
 
     // 基本信息搜索条件 - 修正字段名
     if (biomarker) {
@@ -175,7 +165,7 @@ router.post('/advanced', async (req, res) => {
 
     if (female_min !== undefined && female_min !== '') {
       query += ` AND Female >= ?`;
-      countQuery += ` AND Female <= ?`;
+      countQuery += ` AND Female >= ?`;
       params.push(female_min);
     }
 
@@ -315,7 +305,6 @@ router.post('/advanced', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('高级搜索错误:', error);
     res.status(500).json({
       success: false,
       message: 'Search failed',
@@ -327,7 +316,6 @@ router.post('/advanced', async (req, res) => {
 // 快速搜索接口
 router.get('/quick', async (req, res) => {
   try {
-    console.log('Received a quick search request:', req.query);
     const { q, page = 1, limit = 10 } = req.query;
 
     if (!q) {
@@ -356,8 +344,6 @@ router.get('/quick', async (req, res) => {
 
     const searchTerm = `%${q}%`;
     const exactTerm = `${q}%`;
-    const offset = (page - 1) * limit;
-
     const params = [
       searchTerm, searchTerm, searchTerm, searchTerm, searchTerm,
       exactTerm
@@ -391,7 +377,6 @@ router.get('/quick', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Quick search error:', error);
     res.status(500).json({
       success: false,
       message: 'Search failed',
@@ -450,7 +435,6 @@ router.get('/suggestions', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Failed to retrieve search suggestions:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get suggestions',
@@ -462,29 +446,12 @@ router.get('/suggestions', async (req, res) => {
 // 获取筛选选项
 router.get('/filters', async (req, res) => {
   try {
-    console.log('Received request to retrieve filter options');
-
     // 首先检查数据库连接
     const isConnected = await db.testConnection();
     if (!isConnected) {
-      console.log('Database connection failed, returning default filter options');
-      return res.json({
-        success: true,
-        data: {
-          categories: ['Protein', 'Gene', 'MicroRNA', 'Metabolite', 'DNA', 'RNA'],
-          applications: ['Diagnosis', 'Prognosis', 'Treatment', 'Monitoring'],
-          locations: ['Colon', 'Rectum', 'Serum', 'Plasma'],
-          sources: ['Tissue', 'Blood', 'Serum', 'Plasma', 'Urine', 'Saliva'],
-          stages: ['Stage I', 'Stage II', 'Stage III', 'Stage IV'],
-          regions: ['Asia', 'Europe', 'North America', 'South America', 'Africa', 'Oceania', 'Global'],
-          clinical_uses: ['Yes', 'No'],
-          targets: ['Yes', 'No'],
-          yearRange: {
-            min: 1900,
-            max: new Date().getFullYear()
-          },
-          totalRecords: 100
-        }
+      return res.status(500).json({
+        success: false,
+        message: 'Database connection failed'
       });
     }
 
@@ -503,15 +470,8 @@ router.get('/filters', async (req, res) => {
     const results = {};
 
     for (const [key, query] of Object.entries(queries)) {
-      try {
-        console.log(`Execute query: ${query}`);
-        const rows = await db.query(query);
-        console.log(`Query results: ${key}`, rows);
-        results[key] = rows.map(row => Object.values(row)[0]).filter(value => value && value.trim() !== '');
-      } catch (queryError) {
-        console.error(`Query ${key} failed:`, queryError);
-        results[key] = [];
-      }
+      const rows = await db.query(query);
+      results[key] = rows.map(row => Object.values(row)[0]).filter(value => value && value.trim() !== '');
     }
 
     // 获取年份范围
@@ -525,7 +485,6 @@ router.get('/filters', async (req, res) => {
         };
       }
     } catch (yearError) {
-      console.error('Failed to retrieve the year range:', yearError);
       results.yearRange = {
         min: 1900,
         max: new Date().getFullYear()
@@ -538,7 +497,6 @@ router.get('/filters', async (req, res) => {
       const countResult = await db.query(countQuery);
       results.totalRecords = countResult[0].total || 0;
     } catch (countError) {
-      console.error('Failed to get the total number of records:', countError);
       results.totalRecords = 0;
     }
 
@@ -574,25 +532,10 @@ router.get('/filters', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Failed to retrieve filter options:', error);
-    // 即使出错也返回默认选项，确保前端能正常工作
-    res.json({
-      success: true,
-      data: {
-        categories: ['Protein', 'Gene', 'MicroRNA', 'Metabolite', 'DNA', 'RNA'],
-        applications: ['Diagnosis', 'Prognosis', 'Treatment', 'Monitoring'],
-        locations: ['Colon', 'Rectum', 'Serum', 'Plasma'],
-        sources: ['Tissue', 'Blood', 'Serum', 'Plasma', 'Urine', 'Saliva'],
-        stages: ['Stage I', 'Stage II', 'Stage III', 'Stage IV'],
-        regions: ['Asia', 'Europe', 'North America', 'South America', 'Africa', 'Oceania', 'Global'],
-        clinical_uses: ['Yes', 'No'],
-        targets: ['Yes', 'No'],
-        yearRange: {
-          min: 1900,
-          max: new Date().getFullYear()
-        },
-        totalRecords: 100
-      }
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve filter options',
+      error: error.message
     });
   }
 });

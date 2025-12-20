@@ -931,7 +931,6 @@ const handleSearch = async () => {
             allSearchResults.value = convertedData
           }
         } catch (error) {
-          console.warn('Failed to fetch all data for statistics:', error)
           // 如果获取所有数据失败，使用当前页数据进行统计
           allSearchResults.value = convertedData
         }
@@ -945,84 +944,17 @@ const handleSearch = async () => {
       throw new Error(response.message || 'Search failed')
     }
   } catch (error) {
-    console.error('Search failed:', error)
-    ElMessage.warning('Unable to connect to the server. Using demo data instead.')
-    const demoResults = getDemoSearchResults()
-    searchResults.value = demoResults
-    allSearchResults.value = demoResults
-    totalResults.value = demoResults.length
+    ElMessage.error('Unable to connect to the server.')
+    searchResults.value = []
+    allSearchResults.value = []
+    totalResults.value = 0
   } finally {
     loading.value = false
     initChartsIfVisible()
   }
 }
 
-// 获取演示搜索结果
-const getDemoSearchResults = () => [
-  {
-    id: 1,
-    biomarker: 'TP53',
-    category: 'Protein',
-    application: 'Diagnosis, Prognosis',
-    location: 'Colon, Rectum',
-    source: 'Tissue',
-    description: 'Tumor suppressor protein p53 is a key regulator of cell cycle and apoptosis.',
-    clinical_use: 'Yes',
-    target: 'Yes',
-    drugs: 'Chemotherapy agents',
-    reference: {
-      author: 'Smith',
-      journal: 'Nature Genetics',
-      year: 2020,
-      pmid: '12345678'
-    },
-    region: 'Asia',
-    stage: 'Stage II-III',
-    number: 120
-  },
-  {
-    id: 2,
-    biomarker: 'KRAS',
-    category: 'Protein',
-    application: 'Diagnosis, Treatment Response',
-    location: 'Colon',
-    source: 'Blood',
-    description: 'KRAS is a proto-oncogene that encodes a small GTPase involved in cellular signaling.',
-    clinical_use: 'Yes',
-    target: 'Yes',
-    drugs: 'Targeted therapy agents',
-    reference: {
-      author: 'Johnson',
-      journal: 'Cell',
-      year: 2021,
-      pmid: '23456789'
-    },
-    region: 'Europe',
-    stage: 'Stage I-IV',
-    number: 85
-  },
-  {
-    id: 3,
-    biomarker: 'miR-21',
-    category: 'MicroRNA',
-    application: 'Prognosis, Treatment Response',
-    location: 'Colon, Rectum',
-    source: 'Serum',
-    description: 'MicroRNA-21 is frequently overexpressed in colorectal cancer.',
-    clinical_use: 'No',
-    target: 'No',
-    drugs: 'Experimental agents',
-    reference: {
-      author: 'Brown',
-      journal: 'Cancer Research',
-      year: 2022,
-      pmid: '34567890'
-    },
-    region: 'North America',
-    stage: 'Stage II-IV',
-    number: 150
-  }
-]
+
 
 // 重置表单
 const handleReset = () => {
@@ -1100,7 +1032,6 @@ const loadFilterOptions = async () => {
       }
     }
   } catch (error) {
-    console.error('加载筛选选项失败:', error)
     filterOptions.value = {
       categories: [],
       sources: [],
@@ -1129,7 +1060,6 @@ onMounted(() => {
       const conditions = JSON.parse(saved)
       Object.assign(searchForm, conditions)
     } catch (error) {
-      console.error('Failed to load saved search conditions:', error)
     }
   }
 
