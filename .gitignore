@@ -148,8 +148,8 @@ cbd_upload/
 # Exclude codebuddy config
 .codebuddy
 Codebuddy*
+DEPLOYMENT_STRING_PROXY.md
 .claude
 CLAUDE.md
 .spec-workflow
 .trae
-DEPLOYMENT*
