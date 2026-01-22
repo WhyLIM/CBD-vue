@@ -17,8 +17,24 @@
     <!-- Main Content -->
     <section class="main-content">
       <div class="container">
+        <!-- Navigation Tabs -->
+        <div class="explore-nav">
+          <el-card class="nav-card">
+            <el-radio-group v-model="activeTab" @change="handleTabChange" class="nav-group">
+              <el-radio-button value="network">
+                <font-awesome-icon :icon="['fas', 'project-diagram']" />
+                Network Exploration
+              </el-radio-button>
+              <el-radio-button value="mamof">
+                <font-awesome-icon :icon="['fas', 'network-wired']" />
+                MAMOF Framework
+              </el-radio-button>
+            </el-radio-group>
+          </el-card>
+        </div>
+
         <!-- Main Layout Container -->
-        <el-row :gutter="24" class="main-container">
+        <el-row :gutter="24" class="main-container" v-show="activeTab === 'network'">
           <!-- Left Sidebar - Control Panel -->
           <el-col :xs="24" :lg="7" class="control-aside">
             <div class="control-panel">
@@ -355,13 +371,17 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import NetworkVisualization from '@/components/NetworkVisualization.vue'
 import stringApi from '@/services/stringApi'
 import { NetworkAnalyzer, EnrichmentProcessor } from '@/utils/networkAnalysis'
 import api from '@/utils/api'
 
+const router = useRouter()
+
 // Reactive data
+const activeTab = ref('network')
 const loading = ref(false)
 const downloading = ref(false)
 const loadingProteins = ref(false)
@@ -404,6 +424,12 @@ const examples = ref([
 ])
 
 // Methods
+const handleTabChange = (tab) => {
+  if (tab === 'mamof') {
+    router.push('/explore/mamof')
+  }
+}
+
 const handleInputMethodChange = () => {
   clearInput()
 }
@@ -725,6 +751,57 @@ onMounted(() => {
 
 .main-content {
   padding: 40px 0;
+}
+
+.explore-nav {
+  margin-bottom: 30px;
+}
+
+.nav-card {
+  border: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+}
+
+.nav-group {
+  display: flex;
+  justify-content: center;
+}
+
+.nav-group :deep(.el-radio-button) {
+  flex: 1;
+}
+
+.nav-group :deep(.el-radio-button__inner) {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  font-weight: 500;
+  border-radius: 8px;
+  margin: 5px;
+  border: 2px solid #e3f2fd;
+  background: white;
+  color: #1e3c72;
+  transition: all 0.3s ease;
+}
+
+.nav-group :deep(.el-radio-button__inner:hover) {
+  border-color: #1B9CFC;
+  background: #f8fbff;
+}
+
+.nav-group :deep(.el-radio-button.is-active .el-radio-button__inner) {
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  border-color: #1e3c72;
+  color: white;
+  box-shadow: 0 4px 12px rgba(30, 60, 114, 0.2);
+}
+
+.nav-group :deep(.el-radio-button__inner .fa-icon) {
+  font-size: 1.1rem;
 }
 
 .main-container {

@@ -13,143 +13,8 @@
       </div>
     </section>
 
-    <!-- Statistics Section -->
-    <section class="stats-section">
-      <div class="container">
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon">
-              <font-awesome-icon :icon="['fas', 'paper-plane']" />
-            </div>
-            <div class="stat-content">
-              <div class="stat-number">{{ stats.totalSubmissions }}</div>
-              <div class="stat-label">Total Submissions</div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon">
-              <font-awesome-icon :icon="['fas', 'check-circle']" />
-            </div>
-            <div class="stat-content">
-              <div class="stat-number">{{ stats.approvedSubmissions }}</div>
-              <div class="stat-label">Approved</div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon">
-              <font-awesome-icon :icon="['fas', 'clock']" />
-            </div>
-            <div class="stat-content">
-              <div class="stat-number">{{ stats.pendingSubmissions }}</div>
-              <div class="stat-label">Pending Review</div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon">
-              <font-awesome-icon :icon="['fas', 'users']" />
-            </div>
-            <div class="stat-content">
-              <div class="stat-number">{{ stats.contributors }}</div>
-              <div class="stat-label">Contributors</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Submission Methods Section -->
-    <section class="submission-methods-section">
-      <div class="container">
-        <div class="section-header">
-          <h2 class="section-title">
-            <font-awesome-icon :icon="['fas', 'route']" />
-            Choose Submission Method
-          </h2>
-          <p class="section-description">Select the most suitable submission method based on your data type and
-            requirements</p>
-        </div>
-
-        <div class="methods-grid">
-          <div class="method-card" @click="selectMethod('form')" :class="{ active: selectedMethod === 'form' }">
-            <div class="method-icon">
-              <font-awesome-icon :icon="['fas', 'edit']" />
-            </div>
-            <div class="method-content">
-              <h3 class="method-title">Online Form Submission</h3>
-              <p class="method-description">Fill out biomarker information step by step through web forms, suitable for
-                single or small amounts of data submission</p>
-              <div class="method-features">
-                <div class="feature-item">
-                  <font-awesome-icon :icon="['fas', 'check']" />
-                  <span>Real-time Validation</span>
-                </div>
-                <div class="feature-item">
-                  <font-awesome-icon :icon="['fas', 'check']" />
-                  <span>Guided Input</span>
-                </div>
-                <div class="feature-item">
-                  <font-awesome-icon :icon="['fas', 'check']" />
-                  <span>Instant Feedback</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="method-card" @click="selectMethod('batch')" :class="{ active: selectedMethod === 'batch' }">
-            <div class="method-icon">
-              <font-awesome-icon :icon="['fas', 'file-upload']" />
-            </div>
-            <div class="method-content">
-              <h3 class="method-title">Batch File Upload</h3>
-              <p class="method-description">Upload Excel or CSV files for batch data submission, suitable for rapid
-                import of large amounts of data</p>
-              <div class="method-features">
-                <div class="feature-item">
-                  <font-awesome-icon :icon="['fas', 'check']" />
-                  <span>Batch Processing</span>
-                </div>
-                <div class="feature-item">
-                  <font-awesome-icon :icon="['fas', 'check']" />
-                  <span>Template Download</span>
-                </div>
-                <div class="feature-item">
-                  <font-awesome-icon :icon="['fas', 'check']" />
-                  <span>Data Validation</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="method-card" @click="selectMethod('api')" :class="{ active: selectedMethod === 'api' }">
-            <div class="method-icon">
-              <font-awesome-icon :icon="['fas', 'code']" />
-            </div>
-            <div class="method-content">
-              <h3 class="method-title">API Programmatic Submission</h3>
-              <p class="method-description">Programmatic data submission through REST API, suitable for system
-                integration and automation scenarios</p>
-              <div class="method-features">
-                <div class="feature-item">
-                  <font-awesome-icon :icon="['fas', 'check']" />
-                  <span>Automation</span>
-                </div>
-                <div class="feature-item">
-                  <font-awesome-icon :icon="['fas', 'check']" />
-                  <span>System Integration</span>
-                </div>
-                <div class="feature-item">
-                  <font-awesome-icon :icon="['fas', 'check']" />
-                  <span>Efficient Processing</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- Online Form Submission -->
-    <section v-if="selectedMethod === 'form'" class="form-submission-section">
+    <section class="form-submission-section">
       <div class="container">
         <el-card class="submission-form-card">
           <template #header>
@@ -429,18 +294,10 @@ import { ElMessage } from 'element-plus'
 import api from '@/utils/api'
 
 // Reactive data
-const selectedMethod = ref('form')
 const currentStep = ref(0)
 const submitting = ref(false)
 const agreementAccepted = ref(false)
 const showAgreement = ref(false)
-
-const stats = reactive({
-  totalSubmissions: 1247,
-  approvedSubmissions: 1089,
-  pendingSubmissions: 158,
-  contributors: 342
-})
 
 const formData = reactive({
   name: '',
@@ -489,10 +346,6 @@ const applications = ref([
 ])
 
 // Methods
-const selectMethod = (method) => {
-  selectedMethod.value = method
-}
-
 const nextStep = () => {
   if (currentStep.value < 3) {
     currentStep.value++
@@ -551,169 +404,6 @@ onMounted(() => {
   background: var(--bg-secondary);
 }
 
-/* Statistics Section */
-.stats-section {
-  padding: var(--spacing-2xl) 0;
-  background: white;
-  border-bottom: 1px solid var(--border-light);
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: var(--spacing-xl);
-}
-
-.stat-card {
-  background: white;
-  border: 2px solid var(--border-light);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-xl);
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-lg);
-  transition: all var(--transition-normal);
-  box-shadow: var(--shadow-md);
-}
-
-.stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-xl);
-  border-color: var(--accent-color);
-}
-
-.stat-icon {
-  width: 60px;
-  height: 60px;
-  background: var(--accent-gradient);
-  color: white;
-  border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  flex-shrink: 0;
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-number {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--primary-color);
-  line-height: 1;
-}
-
-.stat-label {
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-  margin-top: var(--spacing-xs);
-}
-
-/* Submission Methods Section */
-.submission-methods-section {
-  padding: var(--spacing-2xl) 0;
-}
-
-.section-header {
-  text-align: center;
-  margin-bottom: var(--spacing-2xl);
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-md);
-  font-size: var(--font-size-3xl);
-  font-weight: 600;
-  color: var(--primary-color);
-  margin: 0 0 var(--spacing-md) 0;
-}
-
-.section-description {
-  font-size: var(--font-size-lg);
-  color: var(--text-secondary);
-  margin: 0;
-}
-
-.methods-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: var(--spacing-xl);
-}
-
-.method-card {
-  background: white;
-  border: 2px solid var(--border-light);
-  border-radius: var(--radius-xl);
-  padding: var(--spacing-xl);
-  cursor: pointer;
-  transition: all var(--transition-normal);
-  box-shadow: var(--shadow-md);
-}
-
-.method-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-xl);
-  border-color: var(--accent-color);
-}
-
-.method-card.active {
-  border-color: var(--accent-color);
-  background: var(--bg-tertiary);
-  box-shadow: var(--shadow-xl);
-}
-
-.method-icon {
-  width: 80px;
-  height: 80px;
-  background: var(--accent-gradient);
-  color: white;
-  border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2rem;
-  margin: 0 auto var(--spacing-lg) auto;
-}
-
-.method-content {
-  text-align: center;
-}
-
-.method-title {
-  font-size: var(--font-size-xl);
-  font-weight: 600;
-  color: var(--primary-color);
-  margin: 0 0 var(--spacing-md) 0;
-}
-
-.method-description {
-  font-size: var(--font-size-base);
-  color: var(--text-secondary);
-  line-height: var(--line-height-relaxed);
-  margin: 0 0 var(--spacing-lg) 0;
-}
-
-.method-features {
-  display: flex;
-  justify-content: center;
-  gap: var(--spacing-lg);
-  flex-wrap: wrap;
-}
-
-.feature-item {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  font-size: var(--font-size-sm);
-  color: var(--success-color);
-  font-weight: 500;
-}
-
 /* Form Submission Section */
 .form-submission-section {
   padding: var(--spacing-2xl) 0;
@@ -743,6 +433,68 @@ onMounted(() => {
 
 .form-progress {
   width: 100%;
+}
+
+.form-progress :deep(.el-steps) {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+}
+
+.form-progress :deep(.el-steps--simple) {
+  background: transparent;
+}
+
+.form-progress :deep(.el-step) {
+  flex: 1;
+  text-align: center;
+  position: relative;
+}
+
+.form-progress :deep(.el-step__head) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.form-progress :deep(.el-step__icon.is-process) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #667eea;
+  color: white;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.form-progress :deep(.el-step__icon.is-finish) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #667eea;
+  color: white;
+}
+
+.form-progress :deep(.el-step.is-process .el-step__title) {
+  color: #667eea;
+  font-weight: 600;
+}
+
+.form-progress :deep(.el-step.is-finish .el-step__title) {
+  color: #667eea;
+  font-weight: 600;
+}
+
+.form-progress :deep(.el-step__title) {
+  color: #666;
+  transition: all 0.3s ease;
+}
+
+.form-progress :deep(.el-step__line) {
+  background-color: #e0e0e0;
+  height: 3px;
+  top: 24px;
+}
+
+.form-progress :deep(.el-step__line-inner) {
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  transition: all 0.3s ease;
 }
 
 .submission-form {
@@ -841,26 +593,7 @@ onMounted(() => {
 }
 
 /* Responsive Design */
-@media (max-width: 1024px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .methods-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
 @media (max-width: 768px) {
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .method-features {
-    flex-direction: column;
-    gap: var(--spacing-sm);
-  }
-
   .preview-grid {
     grid-template-columns: 1fr;
   }
@@ -871,22 +604,6 @@ onMounted(() => {
 }
 
 @media (max-width: 480px) {
-  .section-title {
-    font-size: var(--font-size-2xl);
-    flex-direction: column;
-    gap: var(--spacing-sm);
-  }
-
-  .method-card {
-    padding: var(--spacing-lg);
-  }
-
-  .method-icon {
-    width: 60px;
-    height: 60px;
-    font-size: 1.5rem;
-  }
-
   .submission-form {
     padding: var(--spacing-md) 0;
   }
@@ -903,42 +620,6 @@ onMounted(() => {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.stat-card {
-  animation: slideInUp 0.6s ease-out;
-}
-
-.stat-card:nth-child(1) {
-  animation-delay: 0.1s;
-}
-
-.stat-card:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.stat-card:nth-child(3) {
-  animation-delay: 0.3s;
-}
-
-.stat-card:nth-child(4) {
-  animation-delay: 0.4s;
-}
-
-.method-card {
-  animation: slideInUp 0.6s ease-out;
-}
-
-.method-card:nth-child(1) {
-  animation-delay: 0.1s;
-}
-
-.method-card:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.method-card:nth-child(3) {
-  animation-delay: 0.3s;
 }
 
 .form-step {

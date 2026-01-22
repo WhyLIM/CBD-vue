@@ -67,13 +67,17 @@
                 <font-awesome-icon :icon="['fas', 'chevron-down']" class="dropdown-arrow" />
               </div>
               <div class="dropdown-menu" :class="{ show: showExploreDropdown }">
-                <router-link to="/network-explore" class="dropdown-item" @click="showExploreDropdown = false">
+                <router-link to="/network" class="dropdown-item" @click="showExploreDropdown = false">
                   <font-awesome-icon :icon="['fas', 'project-diagram']" class="dropdown-icon" />
                   <span>Network Analysis</span>
                 </router-link>
                 <router-link to="/umap" class="dropdown-item" @click="showExploreDropdown = false">
                   <font-awesome-icon :icon="['fas', 'map']" class="dropdown-icon" />
                   <span>Bulk to Single-Cell</span>
+                </router-link>
+                <router-link to="/mamof" class="dropdown-item" @click="showExploreDropdown = false">
+                  <font-awesome-icon :icon="['fas', 'network-wired']" class="dropdown-icon" />
+                  <span>MAMOF</span>
                 </router-link>
               </div>
             </li>
@@ -138,6 +142,12 @@
                   <span class="mobile-nav-text">UMAP Explorer</span>
                 </router-link>
               </li>
+              <li class="mobile-submenu-item">
+                <router-link to="/explore/mamof" class="mobile-nav-link" @click="closeMobileMenu">
+                  <font-awesome-icon :icon="['fas', 'network-wired']" class="mobile-nav-icon" />
+                  <span class="mobile-nav-text">MAMOF Framework</span>
+                </router-link>
+              </li>
             </ul>
           </li>
         </ul>
@@ -169,7 +179,7 @@ const navItems = [
 
 // Computed property to check if any explore route is active
 const isExploreActive = computed(() => {
-  return route.name === 'network-explore' || route.name === 'umap'
+  return route.name === 'network-explore' || route.name === 'umap' || route.name === 'mamof'
 })
 
 const toggleMobileMenu = () => {

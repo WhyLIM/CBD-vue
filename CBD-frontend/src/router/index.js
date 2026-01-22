@@ -13,8 +13,9 @@ const BiomarkerDetail = () => import('../views/BiomarkerDetail.vue')
 const AdvancedSearch = () => import('../views/AdvancedSearch.vue')
 const Submission = () => import('../views/Submission.vue')
 const Download = () => import('../views/Download.vue')
-const NetworkExplore = () => import('../views/NetworkExplore.vue')
-const UMAPExplorer = () => import('../views/UMAPExplorer.vue')
+const NetworkExplore = () => import('../views/Explore/NetworkExplore.vue')
+const UMAPExplorer = () => import('../views/Explore/UMAPExplorer.vue')
+const MAMOF = () => import('../views/Explore/MAMOF.vue')
 const About = () => import('../views/About.vue')
 
 const router = createRouter({
@@ -52,14 +53,19 @@ const router = createRouter({
       component: Download
     },
     {
-      path: '/network-explore',
-      name: 'network-explore',
+      path: '/network',
+      name: 'network',
       component: NetworkExplore
     },
     {
       path: '/umap',
       name: 'umap',
       component: UMAPExplorer
+    },
+    {
+      path: '/mamof',
+      name: 'mamof',
+      component: MAMOF
     },
     {
       path: '/about',
