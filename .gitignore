@@ -144,7 +144,7 @@ Thumbs.db
 
 # Upload files
 cbd_upload/
-uploads/
+CBD-backend/uploads/
 
 # Data import scripts (contain hardcoded credentials)
 CBD-backend/scripts/import_to_mysql.py
