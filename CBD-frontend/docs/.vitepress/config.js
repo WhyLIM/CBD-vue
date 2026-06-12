@@ -7,6 +7,13 @@ export default withMermaid({
   base: '/docs/',
   outDir: '../public/docs',
 
+  // 帮助文档中引用的 /biomarker 等链接是应用路由，不是文档页面
+  ignoreDeadLinks: [
+    '/biomarker', '/search', '/explore', '/explore/network',
+    '/analysis', '/clinical/survival', '/clinical/immune',
+    '/download', '/submission'
+  ],
+
   appearance: false,
 
   vite: {

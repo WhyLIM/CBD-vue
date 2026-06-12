@@ -1,74 +1,96 @@
-# CBD3 - 结直肠癌生物标记物数据库
+# CBD3 - 结直肠癌生物标志物数据库
 
 ## 🎯 项目概述
 
-CBD3 (Colorectal Cancer Biomarker Database 3) 是一个专为结直肠癌生物标记物数据设计的现代化全栈应用。它提供了数据管理、搜索、统计和下载功能，由原有的 PHP 项目重构为基于 Vue3 和 Node.js 的技术栈。
-
-## ⚡ 简明关键点（TL;DR）
-
-- 前端：Vue 3 + Vite + Vue Router + Pinia + Element Plus + ECharts；入口 `CBD-frontend/src/main.js`，路由 `CBD-frontend/src/router/index.js`，状态 `CBD-frontend/src/stores/biomarker.js`，HTTP 封装 `CBD-frontend/src/utils/api.js`。
-- 后端：Express + MySQL2；入口 `CBD-backend/server.js`，数据库封装 `CBD-backend/config/database.js`，业务路由位于 `CBD-backend/routes/*`（biomarkers/search/download/submission/stats/scrna）。
-- 端口与跨域：后端默认 `3001`；前端开发端口通常为 `5173`。请在前端 `.env` 配置 `VITE_API_BASE_URL=http://localhost:3001/api`，后端 `.env` 配置 `CORS_ORIGIN=http://localhost:5173`。
-- 文档站：位于 `CBD-frontend/docs`，使用 VitePress；构建顺序必须“先文档后主应用”（`pnpm docs:build` → `pnpm build`），产物输出到 `CBD-frontend/public/docs` 并随前端打包。
-- 目录速览：
-  - 前端：`src/views` 页面、`src/components` 组件、`src/stores` 状态、`src/router` 路由、`src/utils` 工具；`services/stringApi.js` 集成 STRING-DB；`services/scrna.js` 提供 UMAP API 封装。
-  - 后端：`server.js` 中间件与路由挂载、`routes/*` 接口实现、`config/database.js` 连接池与通用查询。
-- 建议优化：前端路由懒加载与按需资源、后端鉴权闭环（JWT）、统一数据表命名与索引优化、增加测试覆盖。
+CBD3 (Colorectal Cancer Biomarker Database 3) 是一个面向结直肠癌研究的综合数据分析平台，集成了生物标志物浏览、单细胞 RNA-seq 可视化分析、蛋白质互作网络、临床数据分析和高级搜索功能。
 
 ## ✨ 主要功能
 
-- 🔍 **生物标记物搜索与浏览**: 支持关键词快速搜索、多条件高级搜索以及分页浏览。
-- 💾 **数据下载**: 支持下载完整的生物标记物数据集，或根据筛选条件自定义导出数据 (支持 CSV 和 JSON 格式)。
-- 📝 **数据提交**: 提供在线表单，允许研究人员提交新的生物标记物数据。
-- 📊 **数据统计**: 展示数据库的宏观统计信息，如生物标记物总数、文献总数，以及按分类、年份等维度的分布图表。
-- 📖 **详细信息展示**: 为每个生物标记物提供一个包含详细研究信息的专属页面。
-- 🧬 **scRNA UMAP Explorer**: 交互式单细胞 UMAP 可视化，按元数据着色，支持筛选（SubCluster/Sample/Patient）、点大小/透明度、图例显示，以及导出 PNG/SVG/CSV。
+| 模块 | 功能说明 |
+|------|---------|
+| **Biomarker Browser** | 生物标志物浏览、搜索、详情展示 |
+| **Gene Expression Atlas** | UMAP 单细胞基因表达可视化，支持多数据集、多细胞类型、基因叠加着色 |
+| **Protein Interaction** | PPI 蛋白质互作网络（Cytoscape.js），支持缩放、拖拽、搜索 |
+| **DEGs** | 差异基因火山图（全量数据渲染），支持 Original / By Celltype / Tumor vs Normal 三种模式 |
+| **KEGG Pathway** | KEGG 通路富集气泡图 |
+| **Ridge Ranking** | 基因 Ridge 排名图 |
+| **Trajectory** | 细胞轨迹分析 + 交互式伪时间分析（支持 Gene Expression 模式） |
+| **CellChat** | 细胞通讯网络（全量数据），支持 All Interactions / Biomarker as Ligand / Receptor |
+| **Network Sensitivity** | PRS 网络敏感性分析 |
+| **Predictive Ability** | ROC 预测能力分析（Tumor vs Normal / By Celltype） |
+| **Clinical: Survival** | KM 生存曲线分析，支持基因与临床参数筛选 |
+| **Clinical: Immune** | 免疫浸润热力图（全量数据渲染） |
+| **Advanced Search** | 多条件高级搜索，支持保存/加载搜索条件 |
+| **Download / Submit** | 数据下载（CSV/JSON）与在线数据提交 |
 
 ## 🛠️ 技术栈
 
 ### 前端
-
-- **Vue 3**: 核心前端框架
-- **Vite**: 高性能构建工具
-- **Vue Router**: 路由管理
-- **Pinia**: 状态管理
-- **Element Plus**: UI 组件库
-- **ECharts**: 数据可视化图表库
-- **Axios**: HTTP 客户端
+- **Vue 3** + **Vite 7** + **Vue Router** + **Pinia**
+- **Element Plus** - UI 组件库
+- **ECharts 6** - 图表（火山图、气泡图、热力图、KM 曲线等）
+- **Cytoscape.js** - PPI 网络可视化
+- **Axios** - HTTP 客户端
 
 ### 后端
-
-- **Node.js**: JavaScript 运行时环境
-- **Express.js**: Web 应用框架
-- **MySQL2**: MySQL 数据库驱动
-- **Helmet**: 增强 HTTP 头安全性
-- **CORS**: 处理跨域资源共享
-- **express-validator**: API 参数验证
-- **express-rate-limit**: API 速率限制
+- **Node.js** + **Express 5**
+- **MySQL2** - 数据库驱动（连接池）
+- **Helmet / CORS / express-rate-limit** - 安全中间件
+- **jsonwebtoken / bcryptjs** - 认证
+- **xlsx / multer** - 数据导入导出
 
 ### 开发工具
+- **pnpm** - 包管理器
+- **ESLint + Prettier** - 代码规范
+- **VitePress** - 帮助文档站
+- **Nodemon** - 后端热重载
 
-- **PNPM**: 高性能包管理器
-- **ESLint**: 代码规范检查
-- **Prettier**: 代码格式化
-- **Nodemon**: 后端开发环境热重载
-- **VitePress**: 用于生成静态文档网站
+## 📁 项目结构
 
-## 📖 文档系统
-
-项目包含一个基于 **VitePress** 的静态文档网站，位于 `CBD-frontend/docs` 目录下。该文档系统用于提供详细的用户指南、开发文档和项目介绍。
-
-- **内容源**: 所有文档页面均为 Markdown 文件。
-- **配置**: 导航栏、侧边栏和站点信息在 `CBD-frontend/docs/.vitepress/config.js` 文件中配置。
-- **构建输出**: 文档会被构建为静态 HTML 文件，并输出到 `CBD-frontend/public/docs` 目录，以便与主应用一同部署。
+```
+CBD3-vue/
+├── CBD-frontend/                # 前端应用
+│   ├── docs/                    # VitePress 帮助文档（中英双语）
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── analysis/        # 单细胞分析组件（7 个）
+│   │   │   ├── clinical/        # 临床分析组件（2 个）
+│   │   │   ├── common/          # 通用组件
+│   │   │   └── explore/         # 探索组件（UMAP, Network）
+│   │   ├── views/               # 页面视图
+│   │   ├── services/            # API 服务层
+│   │   ├── stores/              # Pinia 状态管理
+│   │   ├── utils/               # 工具函数
+│   │   └── router/              # 路由配置
+│   ├── public/
+│   ├── .env                     # 环境变量
+│   └── vite.config.js
+└── CBD-backend/                 # 后端应用
+    ├── routes/                  # API 路由
+    │   ├── analysis.js          # 单细胞分析 API
+    │   ├── clinical.js          # 临床分析 API
+    │   ├── scrna.js             # 单细胞 UMAP API
+    │   ├── biomarkers.js        # 生物标志物 API
+    │   ├── search.js            # 搜索 API
+    │   ├── explore.js           # PPI 网络 API
+    │   ├── string.js            # STRING-DB 代理
+    │   ├── download.js          # 下载 API
+    │   ├── submission.js        # 提交 API
+    │   └── stats.js             # 统计 API
+    ├── config/
+    │   └── database.js          # MySQL 连接池
+    ├── utils/                   # 工具函数
+    ├── server.js                # 入口文件
+    └── .env                     # 环境变量
+```
 
 ## 🚀 快速开始
 
 ### 环境要求
 
-- Node.js >= 16.0.0
-- PNPM >= 8.0.0
-- MySQL
+- Node.js >= 20.19
+- pnpm >= 10.4
+- MySQL 8.0+
 
 ### 安装与运行
 
@@ -78,156 +100,134 @@ CBD3 (Colorectal Cancer Biomarker Database 3) 是一个专为结直肠癌生物�
    git clone https://github.com/WhyLIM/CBD-vue.git
    cd CBD-vue
    ```
+
 2. **安装依赖**
 
    ```bash
-   # 安装后端依赖
-   cd CBD-backend
-   pnpm install
+   # 后端
+   cd CBD-backend && pnpm install
 
-   # 安装前端依赖
-   cd ../CBD-frontend
-   pnpm install
+   # 前端
+   cd ../CBD-frontend && pnpm install
    ```
-3. **环境变量设置**：
 
-- 前后端开发环境需要设置环境变量，以便正确地进行 API 请求和跨域配置。
-  - 后端 `.env`（开发）：
-    ```env
-    PORT=3001
-    CORS_ORIGIN=http://localhost:5173
-    # 请参考 `CBD-backend/DATABASE_SETUP.md` 文件中的指引来设置 MySQL 数据库。
-    DB_HOST=localhost
-    DB_PORT=3306
-    DB_USER=your_db_user
-    DB_PASSWORD=your_db_password
-    DB_NAME=cbd_database
-    ```
-  - 前端 `.env`（开发）：
-    ```env
-    VITE_API_BASE_URL=http://localhost:3001/api
-    ```
+3. **配置环境变量**
+
+   后端 `CBD-backend/.env`：
+   ```env
+   NODE_ENV=development
+   PORT=3000
+   CORS_ORIGIN=http://localhost:5173
+   DB_HOST=localhost
+   DB_PORT=3306
+   DB_USER=your_db_user
+   DB_PASSWORD=your_db_password
+   DB_NAME=cbd
+   ```
+
+   前端 `CBD-frontend/.env`：
+   ```env
+   VITE_API_BASE_URL=/api
+   ```
+   > 使用相对路径 `/api`，开发时由 Vite proxy 代理，生产时由 Nginx 反向代理，无需区分环境。
 
 4. **启动开发服务器**
 
    ```bash
-   # 使用批处理脚本一键启动（Windows）
-   ./start.bat
-
-   # 或分别启动
+   # 后端
    cd CBD-backend && pnpm dev
-   cd ../CBD-frontend && pnpm dev
+
+   # 前端（新终端）
+   cd CBD-frontend && pnpm dev
    ```
-5. **启动文档开发服务器**
 
-   ```bash
-   # 在新终端中，进入前端目录
-   cd CBD-frontend
-   pnpm docs:dev
-   ```
-6. **访问应用与文档**
+5. **访问应用**
+   - 前端：`http://localhost:5173`
+   - 后端 API：`http://localhost:3000/api/health`
 
-  - 前端应用: `http://localhost:5173`（具体端口以终端输出为准）
-  - 后端 API: `http://localhost:3001`
-  - 文档网站: 以 VitePress 终端输出为准
+## 🔌 API 概览
 
-## 🔌 API 核心接口
+### 生物标志物
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/biomarkers` | 列表（分页、排序、筛选） |
+| GET | `/api/biomarkers/:id` | 详情 |
+| GET | `/api/biomarkers/filters/options` | 筛选选项 |
 
-以下是项目实现的核心 API 接口：
+### 搜索
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/api/search/advanced` | 高级搜索 |
+| GET | `/api/search/quick` | 快速搜索 |
+| GET | `/api/search/suggestions` | 搜索建议 |
 
-### 生物标记物 (Biomarkers)
+### 单细胞 UMAP
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/scrna/umap` | UMAP 散点数据 |
+| GET | `/api/scrna/metadata/filters` | 筛选选项 |
 
-- `GET /api/biomarkers`: 获取生物标记物列表（支持分页、排序、过滤）。
-- `GET /api/biomarkers/:id`: 获取单个生物标记物的详细信息。
-- `GET /api/biomarkers/filters/options`: 获取用于列表页筛选的选项。
+### 单细胞分析
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/analysis/degs` | DEGs 分页数据 |
+| GET | `/api/analysis/degs/chart` | DEGs 火山图全量数据 |
+| GET | `/api/analysis/degs/gene-search` | DEGs 基因搜索 |
+| GET | `/api/analysis/gene-diff/celltype` | By Celltype 分页数据 |
+| GET | `/api/analysis/gene-diff/celltype/chart` | By Celltype 全量数据 |
+| GET | `/api/analysis/gene-diff/tvsn` | Tumor vs Normal 分页数据 |
+| GET | `/api/analysis/gene-diff/tvsn/chart` | Tumor vs Normal 全量数据 |
+| GET | `/api/analysis/gene-diff/gene-search` | Gene Diff 基因搜索 |
+| GET | `/api/analysis/kegg` | KEGG 通路数据 |
+| GET | `/api/analysis/ridge` | Ridge 排名数据 |
+| GET | `/api/analysis/trajectory/files` | 轨迹文件列表 |
+| GET | `/api/analysis/cellchat` | CellChat 分页数据 |
+| GET | `/api/analysis/cellchat/chart` | CellChat 全量数据 |
+| GET | `/api/analysis/biomk-cellchat` | Biomarker CellChat 数据 |
+| GET | `/api/analysis/biomk-cellchat/gene-search` | CellChat 基因搜索 |
+| GET | `/api/analysis/prs` | Network Sensitivity 数据 |
+| GET | `/api/analysis/prs/gene-search` | PRS 基因搜索 |
+| GET | `/api/analysis/roc/tn` | ROC Tumor vs Normal |
+| GET | `/api/analysis/roc/celltype` | ROC By Celltype |
+| GET | `/api/analysis/roc/chart` | ROC 全量图表数据 |
+| GET | `/api/analysis/roc/gene-search` | ROC 基因搜索 |
+| GET | `/api/analysis/metadata/filters` | 所有筛选选项 |
 
-### 搜索 (Search)
+### 临床分析
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/clinical/survival` | 生存数据 |
+| GET | `/api/clinical/immune` | 免疫浸润分页数据 |
+| GET | `/api/clinical/immune/chart` | 免疫浸润全量数据 |
 
-- `POST /api/search/advanced`: 根据多个字段进行高级搜索。
-- `GET /api/search/quick`: 根据关键词进行快速搜索。
-- `GET /api/search/suggestions`: 获取搜索建议。
+### 其他
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/api/submission` | 数据提交 |
+| GET | `/api/download/complete` | 完整数据集下载 |
+| POST | `/api/download/custom` | 自定义导出 |
+| GET | `/api/stats` | 数据库统计 |
 
-### 数据提交 (Submission)
+## 🚀 部署
 
-- `POST /api/submission`: 提交新的生物标记物数据。
-
-### 数据下载 (Download)
-
-- `GET /api/download/complete`: 下载完整的 CSV 数据集。
-- `POST /api/download/custom`: 根据筛选条件下载自定义数据集（CSV 或 JSON）。
-
-### 单细胞转录组 UMAP (scRNA)
-
-- `GET /api/scrna/umap`: 获取 UMAP 散点数据（支持分页、`bbox` 视窗过滤、`SubCluster/Sample/Patient` 多选筛选）。
-- `GET /api/scrna/metadata/filters`: 获取各筛选字段的去重列表。
-- `GET /api/scrna/cell/:id`: 获取单细胞详情。
-- `GET /api/scrna/export`: 按当前筛选导出 CSV/JSON。
-
-### 统计 (Stats)
-
-- `GET /api/stats`: 获取数据库的概览统计数据。
-- `GET /api/stats/recent`: 获取最新添加的生物标记物。
-
-## 🚀 部署说明
-
-本项目采用前后端分离的部署策略。
-
-### 1. 构建前端应用与文档
-
-构建过程分为两步，**顺序非常重要**。必须先构建文档，再构建主应用，这样文档才能被正确地打包到最终的发布产物中。
+### 1. 构建前端
 
 ```bash
-# 进入前端项目目录
 cd CBD-frontend
-
-# 第一步：构建文档网站
-# 该命令会将文档静态文件生成到 public/docs 目录下。
-pnpm docs:build
-
-# 第二步：构建主应用
-# 该命令会打包整个应用，并自动将 public/docs 目录包含进去。
-pnpm build
+pnpm docs:build    # 先构建文档
+pnpm build          # 再构建主应用
 ```
 
-构建完成后，会在 `CBD-frontend/dist` 目录下生成所有静态文件，其中 `dist/docs` 路径下包含了完整的文档网站。
+构建产物在 `CBD-frontend/dist/`。
 
-### 2. 部署前端
+### 2. 启动后端
 
-将 `CBD-frontend/dist` 目录下的所有文件上传到您的 Web 服务器（如 Nginx, Apache, 或静态网站托管服务如 Vercel, Netlify）。
-
-**Nginx 配置示例:**
-
-您需要配置 Nginx 来托管前端文件，并将所有 API 请求反向代理到后端服务。
-
-```nginx
-server {
-    listen 80;
-    server_name your-domain.com; # 替换为您的域名
-    root /path/to/your/CBD-frontend/dist; # 替换为前端构建产物的路径
-    index index.html;
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    location /api {
-        proxy_pass http://localhost:3000; # 假设后端服务在本机的 3000 端口
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
+```bash
+cd CBD-backend
+pnpm install --prod
 ```
 
-### 3. 部署后端服务
-
-在您的服务器上，运行后端 Node.js 应用。建议使用进程管理工具（如 PM2）来确保服务的稳定运行。
-
-**a. 配置生产环境变量**
-
-在 `CBD-backend` 目录下创建一个 `.env` 文件，并配置生产环境所需变量：
-
+生产环境 `.env`：
 ```env
 NODE_ENV=production
 PORT=3001
@@ -236,76 +236,65 @@ DB_HOST=your_db_host
 DB_PORT=3306
 DB_USER=your_db_user
 DB_PASSWORD=your_db_password
-DB_NAME=cbd_database
+DB_NAME=cbd
 ```
 
-> 生产环境请确保前端 `VITE_API_BASE_URL` 指向后端实际域名与 `/api` 路径，并在反向代理（如 Nginx）将 `/api` 转发到后端服务。
-
-**b. 使用 PM2 启动服务**
-
+使用 PM2 守护：
 ```bash
-# 全局安装 PM2 (如果尚未安装)
-pnpm add -g pm2
-
-# 进入后端项目目录
-cd CBD-backend
-
-# 使用 PM2 启动服务
-pm2 start server.js --name "cbd-backend"
+pm2 start server.js --name cbd-backend
+pm2 save && pm2 startup
 ```
 
-### 附：宝塔面板部署示例
+### 3. Nginx 配置
 
-对于使用宝塔面板（BT Panel）的用户，可以参考以下步骤进行快速部署：
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name your-domain.com;
 
-**前提条件:**
+    ssl_certificate     /path/to/cert.pem;
+    ssl_certificate_key /path/to/key.pem;
 
-- 服务器已安装宝塔面板。
-- 在宝塔面板的“软件商店”中安装 **PM2管理器** 和 **Nginx**。
-- 确保服务器已安装 pnpm。
+    root /path/to/CBD-frontend/dist;
+    index index.html;
 
-**1. 上传并准备项目**
+    # Vue Router history 模式
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
 
-- 将整个项目代码上传到服务器，例如上传至 `/www/wwwroot/cbd-project` 目录。
-- 通过宝塔面板的“文件”功能或SSH终端，进入 `CBD-backend` 和 `CBD-frontend` 目录，分别执行 `pnpm install` 安装依赖。
-- 根据上面的指引，在 `CBD-backend` 目录下创建并配置好 `.env` 文件。
-- 进入 `CBD-frontend` 目录，**依次执行** `pnpm docs:build` 和 `pnpm build` 来构建前端文件。
+    # API 反向代理
+    location /api/ {
+        proxy_pass http://127.0.0.1:3001/api/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 120s;
+    }
 
-**2. 部署后端服务**
+    # STRING-DB 代理
+    location /string-api/ {
+        proxy_pass https://string-db.org/api/;
+        proxy_set_header Host string-db.org;
+    }
 
-- 打开宝塔面板的 **PM2管理器**。
-- 点击“添加项目”，并按如下配置：
-  - **项目根目录**: 选择后端项目路径，如 `/www/wwwroot/cbd-project/CBD-backend`。
-  - **启动文件**: `server.js`。
-  - **项目名称**: `cbd-backend`。
-- 点击“确定”，PM2管理器会自动启动并守护后端进程。服务默认运行在 `3000` 端口。
-
-**3. 创建网站并配置反向代理**
-
-- 进入宝塔面板的“网站” -> “添加站点”。
-- **域名**: 填入您的域名。
-- **根目录**: 选择前端构建产物的目录，即 `/www/wwwroot/cbd-project/CBD-frontend/dist`。
-- **数据库**: 无需创建。
-- 提交后，点击新创建站点的“设置”。
-- 在设置页面中，找到“反向代理” -> “添加反向代理”。
-- **代理名称**: 自定义，如 `API`。
-- **目标URL**: `http://127.0.0.1:3000`。
-- **发送域名**: `$host`。
-- **代理目录**: `/api`。
-- 提交保存。
-
-完成以上步骤后，您的网站即可通过域名访问，所有对 `/api` 的请求都会被 Nginx 自动转发到后端 Node.js 服务处理。
+    # 静态资源缓存
+    location /assets/ {
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+}
+```
 
 ## 🤝 贡献指南
 
-欢迎任何形式的贡献。
-
-1. Fork 本项目。
-2. 创建您的功能分支 (`git checkout -b feature/AmazingFeature`)。
-3. 提交您的更改 (`git commit -m 'Add some AmazingFeature'`)。
-4. 将您的分支推送到远程仓库 (`git push origin feature/AmazingFeature`)。
-5. 创建一个 Pull Request。
+1. Fork 本项目
+2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到远程 (`git push origin feature/AmazingFeature`)
+5. 创建 Pull Request
 
 ## 📄 许可证
 
-本项目采用 MIT 许可证。详情请见 [LICENSE](./LICENSE) 文件。
+MIT License. 详见 [LICENSE](./LICENSE)。

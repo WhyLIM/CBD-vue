@@ -1,7 +1,7 @@
 <template>
   <el-card class="analysis-card">
     <div class="controls">
-      <el-select v-model="cellType" placeholder="Cell Type" filterable @change="loadData">
+      <el-select v-model="cellType" placeholder="Cell Type" filterable style="width:200px" @change="loadData">
         <el-option v-for="ct in cellTypes" :key="ct" :label="ct" :value="ct" />
       </el-select>
     </div>

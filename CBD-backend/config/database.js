@@ -1,5 +1,9 @@
 const mysql = require('mysql2/promise');
-require('dotenv').config();
+const path = require('path');
+// 优先加载 .env.local（本地开发），回退到 .env（服务器）
+// override: true 确保 .env.local 的值覆盖 .env 中同名变量
+require('dotenv').config({ path: path.resolve(__dirname, '../.env.local'), override: true });
+require('dotenv').config(); // .env.local 中未定义的变量从 .env 兜底
 
 // MySQL连接配置
 const dbConfig = {
@@ -11,7 +15,9 @@ const dbConfig = {
   charset: 'utf8mb4',
   timezone: '+08:00',
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  connectTimeout: 30000,
+  waitForConnections: true
 };
 
 // 创建连接池
@@ -289,6 +295,189 @@ const initializeTables = async () => {
         INDEX idx_immune_r2 (r2),
         INDEX idx_immune_p (p_value)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    // ========== 新增：CBD3 扩展数据表 ==========
+
+    // 差异表达 - 按细胞类型
+    await run(`
+      CREATE TABLE IF NOT EXISTS analysis_gene_diff_celltype (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        p_val DOUBLE,
+        avg_log2FC DOUBLE,
+        pct_1 DOUBLE,
+        pct_2 DOUBLE,
+        p_val_adj DOUBLE,
+        celltype VARCHAR(100),
+        gene VARCHAR(100),
+        INDEX idx_ct_gene (celltype, gene),
+        INDEX idx_padj (p_val_adj),
+        INDEX idx_logfc (avg_log2FC)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=8
+    `);
+
+    // 差异表达 - Tumor vs Normal
+    await run(`
+      CREATE TABLE IF NOT EXISTS analysis_gene_diff_TvsN (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        p_val DOUBLE,
+        avg_log2FC DOUBLE,
+        pct_1 DOUBLE,
+        pct_2 DOUBLE,
+        p_val_adj DOUBLE,
+        gene VARCHAR(100),
+        celltype VARCHAR(100),
+        \`condition\` VARCHAR(50),
+        INDEX idx_ct_gene (celltype, gene),
+        INDEX idx_padj (p_val_adj),
+        INDEX idx_logfc (avg_log2FC)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=8
+    `);
+
+    // ROC - T/N 预测
+    await run(`
+      CREATE TABLE IF NOT EXISTS analysis_roc_tn (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        celltype VARCHAR(100),
+        gene VARCHAR(100),
+        auc DOUBLE,
+        p_value DOUBLE,
+        direction VARCHAR(50),
+        roc_label VARCHAR(50),
+        INDEX idx_ct_gene (celltype, gene),
+        INDEX idx_auc (auc)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=8
+    `);
+
+    // ROC - 细胞类型预测
+    await run(`
+      CREATE TABLE IF NOT EXISTS analysis_roc_celltype (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        celltype VARCHAR(100),
+        gene VARCHAR(100),
+        auc DOUBLE,
+        p_value DOUBLE,
+        direction VARCHAR(50),
+        roc_label VARCHAR(50),
+        INDEX idx_ct_gene (celltype, gene),
+        INDEX idx_auc (auc)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=8
+    `);
+
+    // 基因表达汇总（Dotplot 数据）
+    await run(`
+      CREATE TABLE IF NOT EXISTS scrna_gene_expr_summary (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        gene VARCHAR(100),
+        cell_type VARCHAR(100),
+        avg_exp DOUBLE,
+        pct_exp DOUBLE,
+        INDEX idx_gene_ct (gene, cell_type)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=8
+    `);
+
+    // 基因表达（稀疏存储，仅非零值）
+    await run(`
+      CREATE TABLE IF NOT EXISTS scrna_gene_expr (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        gene VARCHAR(100) NOT NULL,
+        cell VARCHAR(100) NOT NULL,
+        expr DOUBLE NOT NULL,
+        INDEX idx_gene (gene),
+        INDEX idx_gene_cell (gene, cell)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=8
+    `);
+
+    // 拟时序轨迹
+    await run(`
+      CREATE TABLE IF NOT EXISTS scrna_pseudotime (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        cell_type VARCHAR(100),
+        cell_id VARCHAR(200),
+        pseudotime DOUBLE,
+        state INT,
+        INDEX idx_pt_ct (cell_type),
+        INDEX idx_pt_cell (cell_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=8
+    `);
+
+    // 拟时序基因表达（仅 dual-specific 基因）
+    await run(`
+      CREATE TABLE IF NOT EXISTS scrna_pseudotime_gene_expr (
+        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+        cell_type VARCHAR(100),
+        gene VARCHAR(100),
+        cell_id VARCHAR(200),
+        expr DOUBLE,
+        INDEX idx_pge_ct_gene (cell_type, gene),
+        INDEX idx_pge_gene (gene),
+        INDEX idx_pge_cell (cell_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=8
+    `);
+
+    // Biomarker CellChat 通讯
+    await run(`
+      CREATE TABLE IF NOT EXISTS analysis_biomk_cellchat (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        gene VARCHAR(100),
+        biomark_as VARCHAR(20),
+        source VARCHAR(100),
+        target VARCHAR(100),
+        ligand VARCHAR(100),
+        receptor VARCHAR(100),
+        pathway_name VARCHAR(255),
+        prob DOUBLE,
+        pval DOUBLE,
+        interaction_name VARCHAR(255),
+        INDEX idx_gene (gene),
+        INDEX idx_as (biomark_as),
+        INDEX idx_src_tgt (source, target),
+        INDEX idx_pathway (pathway_name(50))
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=8
+    `);
+
+    // PPI 网络拓扑
+    await run(`
+      CREATE TABLE IF NOT EXISTS analysis_network_ppi (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        gene VARCHAR(100),
+        celltype VARCHAR(100),
+        degree DOUBLE,
+        betweenness DOUBLE,
+        closeness DOUBLE,
+        avg_shortest_path DOUBLE,
+        INDEX idx_ct_gene (celltype, gene)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=8
+    `);
+
+    // PRS 敏感性
+    await run(`
+      CREATE TABLE IF NOT EXISTS analysis_network_prs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        gene VARCHAR(100),
+        celltype VARCHAR(100),
+        deg DOUBLE,
+        eff DOUBLE,
+        sens DOUBLE,
+        trans DOUBLE,
+        eigenvec_centr DOUBLE,
+        closeness_centr DOUBLE,
+        INDEX idx_ct (celltype),
+        INDEX idx_gene (gene),
+        INDEX idx_sens (sens)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=8
+    `);
+
+    // PPI 边数据
+    await run(`
+      CREATE TABLE IF NOT EXISTS analysis_ppi_edge (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        node1 VARCHAR(100),
+        node2 VARCHAR(100),
+        combined_score DOUBLE,
+        INDEX idx_node1 (node1),
+        INDEX idx_node2 (node2)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=8
     `);
 
     console.log('✅ 数据库表结构初始化成功');

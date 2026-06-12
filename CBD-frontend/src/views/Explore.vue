@@ -426,7 +426,7 @@ const examples = ref([
 // Methods
 const handleTabChange = (tab) => {
   if (tab === 'mamof') {
-    router.push('/explore/mamof')
+    router.push('/mamof')
   }
 }
 

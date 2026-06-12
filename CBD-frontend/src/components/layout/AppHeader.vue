@@ -131,7 +131,7 @@
             </div>
             <ul class="mobile-submenu-items" :class="{ expanded: exploreSubmenuOpen }">
               <li class="mobile-submenu-item">
-                <router-link to="/network-explore" class="mobile-nav-link" @click="closeMobileMenu">
+                <router-link to="/network" class="mobile-nav-link" @click="closeMobileMenu">
                   <font-awesome-icon :icon="['fas', 'project-diagram']" class="mobile-nav-icon" />
                   <span class="mobile-nav-text">Network Analysis</span>
                 </router-link>
@@ -143,7 +143,7 @@
                 </router-link>
               </li>
               <li class="mobile-submenu-item">
-                <router-link to="/explore/mamof" class="mobile-nav-link" @click="closeMobileMenu">
+                <router-link to="/mamof" class="mobile-nav-link" @click="closeMobileMenu">
                   <font-awesome-icon :icon="['fas', 'network-wired']" class="mobile-nav-icon" />
                   <span class="mobile-nav-text">MAMOF Framework</span>
                 </router-link>
@@ -179,7 +179,7 @@ const navItems = [
 
 // Computed property to check if any explore route is active
 const isExploreActive = computed(() => {
-  return route.name === 'network-explore' || route.name === 'umap' || route.name === 'mamof'
+  return route.name === 'network' || route.name === 'umap' || route.name === 'mamof'
 })
 
 const toggleMobileMenu = () => {

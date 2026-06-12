@@ -1,0 +1,1 @@
+import{_ as e,c as a,o,a3 as r}from"./chunks/framework.BurWKwwG.js";const b=JSON.parse('{"title":"Navigation Overview","description":"","frontmatter":{},"headers":[],"relativePath":"3.1_nav.md","filePath":"3.1_nav.md"}'),d={name:"3.1_nav.md"};function i(n,t,l,s,h,c){return o(),a("div",null,t[0]||(t[0]=[r("",15)]))}const m=e(d,[["render",i]]);export{b as __pageData,m as default};

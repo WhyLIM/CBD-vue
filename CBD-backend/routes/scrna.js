@@ -45,19 +45,36 @@ router.get('/umap', async (req, res) => {
 
         const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : ''
 
+        // 按 colorBy 只查需要的列，减少数据传输
+        // Gene Expression 是前端虚拟模式，后端不需要查对应列
+        const realColorBy = (colorBy === 'Gene Expression' || colorBy === 'nCount_RNA' || colorBy === 'nFeature_RNA') ? 'SubCluster' : colorBy
+        const needColor = realColorBy === 'SubCluster'
+        const selectCols = [
+            'c.Cell as cell', 'c.UMAP_1 as x', 'c.UMAP_2 as y',
+            needColor ? 'm.Color as color' : 'NULL as color',
+            'm.SubCluster',
+            `m.\`${realColorBy}\` as colorByVal`
+        ]
+        // 避免重复列
+        if (realColorBy === 'SubCluster') {
+            selectCols.splice(4, 1) // 去掉重复的 SubCluster
+        }
+
         const q = `
-      SELECT c.Cell as cell, c.UMAP_1 as x, c.UMAP_2 as y,
-             m.Color as color,
-             m.Sample, m.Dataset, m.Patient, m.Class, m.SubCluster, m.MMRstatus,
-             m.Position, m.Site, m.Grade, m.GrandparentalCluster, m.ParentalCluster,
-             m.nCount_RNA, m.nFeature_RNA
+      SELECT ${selectCols.join(', ')}
       FROM scrna_umap_coordinates c
       JOIN scrna_metadata m ON m.Cell = c.Cell
       ${whereClause}
       LIMIT ${limitNum} OFFSET ${offset}
     `
         const rows = await db.query(q, params)
-        res.json({ success: true, data: rows, pagination: { page: pageNum, limit: limitNum, count: rows.length } })
+        // 把 colorByVal 映射回原始字段名，方便前端使用
+        const mapped = rows.map(r => {
+            const obj = { cell: r.cell, x: r.x, y: r.y, color: r.color, SubCluster: r.SubCluster }
+            obj[realColorBy] = r.colorByVal
+            return obj
+        })
+        res.json({ success: true, data: mapped, pagination: { page: pageNum, limit: limitNum, count: rows.length } })
     } catch (e) {
         res.status(500).json({ success: false, message: 'Failed to load UMAP', error: e.message })
     }
@@ -147,6 +164,40 @@ router.get('/export', async (req, res) => {
         }
     } catch (e) {
         res.status(500).json({ success: false, message: 'Export failed', error: e.message })
+    }
+})
+
+// 基因表达 - UMAP 单基因着色
+router.get('/gene-expr', async (req, res) => {
+    try {
+        const { gene } = req.query
+        if (!gene) return res.status(400).json({ success: false, message: 'gene parameter required' })
+        const limit = Math.min(parseInt(req.query.limit) || 50000, 200000)
+        const rows = await db.query(
+            'SELECT cell, expr FROM scrna_gene_expr WHERE gene = ? LIMIT ?',
+            [gene, limit]
+        )
+        res.json({ success: true, data: rows })
+    } catch (e) {
+        console.error('scrna/gene-expr error:', e)
+        res.status(500).json({ success: false, message: 'Failed to load gene expression', error: e.message })
+    }
+})
+
+// 基因搜索（自动补全）
+router.get('/gene-search', async (req, res) => {
+    try {
+        const { q } = req.query
+        if (!q || q.length < 1) return res.json({ success: true, data: [] })
+        const limit = Math.min(parseInt(req.query.limit) || 20, 50)
+        const rows = await db.query(
+            'SELECT DISTINCT gene FROM scrna_gene_expr_summary WHERE gene LIKE ? LIMIT ?',
+            [q.toUpperCase() + '%', limit]
+        )
+        res.json({ success: true, data: rows.map(r => r.gene) })
+    } catch (e) {
+        console.error('scrna/gene-search error:', e)
+        res.json({ success: true, data: [] })
     }
 })
 

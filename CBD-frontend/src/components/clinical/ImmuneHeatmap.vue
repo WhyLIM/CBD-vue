@@ -3,7 +3,7 @@
     <div class="controls">
 
     </div>
-    <div ref="chartRef" style="height:360px; width:100%"></div>
+    <div ref="chartRef" style="height:800px; width:100%"></div>
     <el-table :data="rows" v-loading="loading" size="small" style="margin-top:10px">
       <el-table-column prop="gene" label="Gene" />
       <el-table-column prop="immune_cell" label="Immune Cell" />
@@ -27,30 +27,35 @@ const page = ref(1)
 const limit = ref(20)
 const total = ref(0)
 const rows = ref([])
+const chartData = ref([])
 const loading = ref(false)
 const render = () => {
   if (!chartRef.value || chartRef.value.clientWidth === 0 || chartRef.value.clientHeight === 0) return
   if (chart) chart.dispose()
   chart = echarts.init(chartRef.value)
-  const genes = Array.from(new Set(rows.value.map(r => r.gene)))
-  const cells = Array.from(new Set(rows.value.map(r => r.immune_cell)))
-  const matrix = cells.map(cell => genes.map(g => { const found = rows.value.find(r => r.gene === g && r.immune_cell === cell); return Number(found?.r2 || 0) }))
+  const genes = Array.from(new Set(chartData.value.map(r => r.gene)))
+  const cells = Array.from(new Set(chartData.value.map(r => r.immune_cell)))
+  const matrix = cells.map(cell => genes.map(g => { const found = chartData.value.find(r => r.gene === g && r.immune_cell === cell); return Number(found?.r2 || 0) }))
   chart.setOption({
     tooltip: { trigger: 'item', formatter: p => `Cell: ${cells[p.value[1]]}<br/>Gene: ${genes[p.value[0]]}<br/>R2: ${p.value[2]}` },
-    xAxis: { type: 'category', data: genes }, yAxis: { type: 'category', data: cells }, grid: { top: 20, left: 80, right: 20, bottom: 60 },
+    xAxis: { type: 'category', data: genes, axisLabel: { rotate: 45 } }, yAxis: { type: 'category', data: cells }, grid: { top: 20, left: 100, right: 60, bottom: 120 },
     visualMap: { min: 0, max: 1, orient: 'vertical', right: 10, top: 'middle' },
     series: [{ type: 'heatmap', data: matrix.flatMap((row, i) => row.map((v, j) => [j, i, v])), progressive: 10000 }]
   })
 }
 const loadData = async () => {
   loading.value = true
-  const params = { gene: gene.value || undefined, page: page.value, limit: limit.value }
-  const resp = await clinicalApi.getImmune(params)
-  rows.value = resp.data || []
-  total.value = resp.pagination?.totalItems ?? (Array.isArray(resp.data) ? resp.data.length : 0)
-  await nextTick()
-  render()
-  loading.value = false
+  try {
+    const params = { page: page.value, limit: limit.value }
+    const [tableResp, chartResp] = await Promise.all([clinicalApi.getImmune(params), clinicalApi.getImmuneChart()])
+    rows.value = tableResp.data || []
+    total.value = tableResp.pagination?.totalItems ?? (Array.isArray(tableResp.data) ? tableResp.data.length : 0)
+    chartData.value = chartResp.data || []
+    await nextTick()
+    render()
+  } finally {
+    loading.value = false
+  }
 }
 const handleResize = () => { if (chart) chart.resize() }
 onMounted(() => { window.addEventListener('resize', handleResize); loadData() })

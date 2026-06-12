@@ -1,0 +1,1 @@
+import{_ as e,c as r,o as d,a3 as a}from"./chunks/framework.BurWKwwG.js";const m=JSON.parse('{"title":"导航概述","description":"","frontmatter":{},"headers":[],"relativePath":"zh/3.1_nav.md","filePath":"zh/3.1_nav.md"}'),o={name:"zh/3.1_nav.md"};function l(n,t,s,i,c,g){return d(),r("div",null,t[0]||(t[0]=[a("",10)]))}const _=e(o,[["render",l]]);export{m as __pageData,_ as default};

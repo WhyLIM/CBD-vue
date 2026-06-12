@@ -26,6 +26,12 @@
                     <el-option v-for="f in colorFields" :key="f" :label="f" :value="f" />
                   </el-select>
                 </div>
+                <div v-if="colorBy === 'Gene Expression'" class="form-group">
+                  <label class="form-label">Gene</label>
+                  <el-autocomplete v-model="gene" :fetch-suggestions="queryGeneSearch"
+                    placeholder="Enter gene symbol" clearable style="width:100%"
+                    @select="handleGeneChange" @clear="handleGeneChange" />
+                </div>
                 <div class="form-group"><label class="form-label">Point Size</label><el-slider v-model="pointSize"
                     :min="1" :max="3" :step="1" /></div>
                 <div class="form-group"><label class="form-label">Opacity</label><el-slider v-model="opacity" :min="0.1"
@@ -52,10 +58,6 @@
                 <div class="form-group">
                   <label class="form-label">Cells per load</label>
                   <el-input-number v-model="limit" :min="1000" :max="100000" :step="5000" class="param-select" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Gene Expression (Framework)</label>
-                  <el-input v-model="gene" placeholder="Enter gene (placeholder)" disabled />
                 </div>
                 <div class="action-buttons">
                   <el-button type="primary" :loading="loading" @click="refreshData"
@@ -92,9 +94,9 @@
                   <span class="legend-text">{{ item.value }} ({{ item.count }})</span>
                 </div>
               </div>
-              <div v-if="showLegend && (colorBy === 'nCount_RNA' || colorBy === 'nFeature_RNA')"
+              <div v-if="showLegend && (colorBy === 'nCount_RNA' || colorBy === 'nFeature_RNA' || colorBy === 'Gene Expression')"
                 class="continuous-legend">
-                <div class="legend-title">{{ colorBy }}</div>
+                <div class="legend-title">{{ colorBy === 'Gene Expression' ? gene + ' Expression' : colorBy }}</div>
                 <div class="gradient-bar"></div>
                 <div class="legend-scale"><span>{{ scaleMinMax.min }}</span><span>{{ scaleMinMax.max }}</span></div>
               </div>
@@ -125,6 +127,12 @@
             <el-tab-pane label="CellChat" name="cellchat" lazy>
               <CellChatNetwork />
             </el-tab-pane>
+            <el-tab-pane label="Predictive Ability" name="roc" lazy>
+              <PredictiveAbility />
+            </el-tab-pane>
+            <el-tab-pane label="Network Sensitivity" name="prs" lazy>
+              <NetworkSensitivity />
+            </el-tab-pane>
             <el-tab-pane label="Clinical: Diagnosis" name="diag" lazy>
               <DiagnosisAUC />
             </el-tab-pane>
@@ -151,6 +159,8 @@ import KeggBubble from '@/components/analysis/KeggBubble.vue'
 import RidgeRanking from '@/components/analysis/RidgeRanking.vue'
 import TrajectoryGallery from '@/components/analysis/TrajectoryGallery.vue'
 import CellChatNetwork from '@/components/analysis/CellChatNetwork.vue'
+import PredictiveAbility from '@/components/analysis/PredictiveAbility.vue'
+import NetworkSensitivity from '@/components/analysis/NetworkSensitivity.vue'
 import DiagnosisAUC from '@/components/clinical/DiagnosisAUC.vue'
 import SurvivalSignificance from '@/components/clinical/SurvivalSignificance.vue'
 import ImmuneHeatmap from '@/components/clinical/ImmuneHeatmap.vue'
@@ -161,7 +171,7 @@ let chart = null
 const loading = ref(false)
 const data = ref([])
 const page = ref(1)
-const limit = ref(30000)
+const limit = ref(10000)
 
 const colorBy = ref('ParentalCluster')
 const pointSize = ref(2)
@@ -173,7 +183,7 @@ const filters = ref({ subcluster: [], sample: [], patient: [] })
 const options = ref({ SubCluster: [], Sample: [], Patient: [] })
 
 const stats = ref(null)
-const colorFields = ['GrandparentalCluster', 'ParentalCluster', 'SubCluster', 'Sample', 'Patient', 'Class', 'Dataset']
+const colorFields = ['GrandparentalCluster', 'ParentalCluster', 'SubCluster', 'Sample', 'Patient', 'Class', 'Dataset', 'Gene Expression']
 const legendItems = ref([])
 const scaleMinMax = ref({ min: 0, max: 0 })
 const activeTab = ref('degs')
@@ -198,6 +208,18 @@ const refreshData = async () => {
     const resp = await scrnaApi.getUmap(params)
     if (resp.success) {
       data.value = resp.data || []
+
+      // Gene expression overlay
+      if (gene.value.trim()) {
+        try {
+          const geneResp = await scrnaApi.getGeneExpr({ gene: gene.value.trim(), limit: limit.value })
+          if (geneResp.success && geneResp.data?.length) {
+            const exprMap = new Map(geneResp.data.map(r => [r.cell, r.expr]))
+            data.value.forEach(r => { r._geneExpr = exprMap.get(r.cell) })
+          }
+        } catch (e) { console.warn('Gene expression overlay failed:', e) }
+      }
+
       buildStats()
       await nextTick()
       renderChart()
@@ -215,8 +237,9 @@ const refreshData = async () => {
 const buildStats = () => {
   const count = data.value.length
   const map = {}
+  const keyField = colorBy.value === 'Gene Expression' ? 'SubCluster' : colorBy.value
   data.value.forEach(r => {
-    const key = r.SubCluster || 'Unknown'
+    const key = r[keyField] || r.SubCluster || 'Unknown'
     map[key] = (map[key] || 0) + 1
   })
   const top = Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, count]) => ({ name, count }))
@@ -225,8 +248,9 @@ const buildStats = () => {
 }
 
 const buildLegend = () => {
-  if (colorBy.value === 'nCount_RNA' || colorBy.value === 'nFeature_RNA') {
-    const nums = data.value.map(r => Number(r[colorBy.value])).filter(n => isFinite(n))
+  if (colorBy.value === 'nCount_RNA' || colorBy.value === 'nFeature_RNA' || colorBy.value === 'Gene Expression') {
+    const field = colorBy.value === 'Gene Expression' ? '_geneExpr' : colorBy.value
+    const nums = data.value.map(r => Number(r[field])).filter(n => isFinite(n))
     const min = nums.length ? Math.min(...nums) : 0
     const max = nums.length ? Math.max(...nums) : 0
     scaleMinMax.value = { min, max }
@@ -252,6 +276,17 @@ const colorFor = (row) => {
   const attr = colorBy.value
   if (attr === 'SubCluster' && row.color) return row.color
 
+  if (attr === 'Gene Expression') {
+    const val = row._geneExpr
+    if (val === undefined || val === null) return '#e0e0e0'
+    const max = scaleMinMax.value.max || 1
+    const min = scaleMinMax.value.min || 0
+    const t = Math.max(0, Math.min(1, (val - min) / (max - min || 1)))
+    const r = Math.round(255 * t)
+    const b = Math.round(255 * (1 - t))
+    return `rgb(${r},0,${b})`
+  }
+
   const val = row[attr]
   if (attr === 'nCount_RNA' || attr === 'nFeature_RNA') {
     const num = Number(val)
@@ -275,7 +310,7 @@ const renderChart = () => {
   if (chart) chart.dispose()
   chart = echarts.init(chartRef.value)
 
-  const discrete = !(colorBy.value === 'nCount_RNA' || colorBy.value === 'nFeature_RNA')
+  const discrete = !(colorBy.value === 'nCount_RNA' || colorBy.value === 'nFeature_RNA' || colorBy.value === 'Gene Expression')
   let series = []
 
   if (discrete) {
@@ -339,6 +374,32 @@ const exportCSV = async () => {
   const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'
   const url = `${base}/scrna/export?${params.toString()}`
   window.open(url, '_blank')
+}
+
+const handleGeneChange = (item) => {
+  // el-autocomplete @select 传入 { value: 'GENE' }，@clear 无参数
+  if (item && item.value) gene.value = item.value
+  if (gene.value.trim()) {
+    colorBy.value = 'Gene Expression'
+  }
+  refreshData()
+}
+
+// 基因自动补全
+let geneSearchTimer = null
+const queryGeneSearch = (queryString, cb) => {
+  clearTimeout(geneSearchTimer)
+  const q = queryString.trim()
+  if (!q) { cb([]); return }
+  geneSearchTimer = setTimeout(async () => {
+    try {
+      const resp = await scrnaApi.searchGenes({ q, limit: 20 })
+      const results = (resp.data || []).map(g => ({ value: g }))
+      cb(results)
+    } catch (e) {
+      cb([])
+    }
+  }, 300)
 }
 
 onMounted(async () => { await loadFilters(); await refreshData() })

@@ -71,4 +71,15 @@ router.get('/immune', async (req, res, next) => {
     }
 })
 
+// Immune 热力图全量数据（不分页）
+router.get('/immune/chart', async (req, res) => {
+    try {
+        const rows = await query('SELECT gene, immune_cell, r2, p_value FROM clinical_immune')
+        res.json({ success: true, data: rows })
+    } catch (e) {
+        console.error('clinical/immune/chart error:', e)
+        res.json({ success: true, data: [] })
+    }
+})
+
 module.exports = router
