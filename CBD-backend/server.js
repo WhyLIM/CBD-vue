@@ -4,7 +4,6 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
-const jwt = require('jsonwebtoken');
 const { initializeTables } = require('./config/database');
 
 const app = express();
@@ -37,8 +36,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // 速率限制
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15分钟
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // 限制每个IP 100个请求
+  windowMs: 15 * 60 * 1000, // 15分钟
+  max: 100, // 限制每个IP 100个请求
   message: {
     error: 'Too many requests from this IP, please try again later.'
   }
@@ -110,13 +109,6 @@ app.use((err, req, res, next) => {
     return res.status(400).json({
       error: 'Validation failed',
       details: err.details
-    });
-  }
-
-  // JWT错误
-  if (err.name === 'JsonWebTokenError') {
-    return res.status(401).json({
-      error: 'Invalid token'
     });
   }
 

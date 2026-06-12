@@ -1,20 +1,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { query, get, run } = require('../config/database');
-const jwt = require('jsonwebtoken');
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
 
-const authenticate = (req, res, next) => {
-  const authHeader = req.headers.authorization || '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-  if (!token) return res.status(401).json({ error: 'Unauthorized' });
-  try {
-    jwt.verify(token, JWT_SECRET);
-    next();
-  } catch (e) {
-    return res.status(401).json({ error: 'Invalid token' });
-  }
-};
 const router = express.Router();
 
 // 提交新的生物标记物数据
@@ -94,7 +81,7 @@ router.post('/', [
 });
 
 // 获取提交历史（可选功能，用于管理员查看）
-router.get('/history', authenticate, async (req, res) => {
+router.get('/history', async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;

@@ -142,8 +142,12 @@ Thumbs.db
 *.backup
 *.old
 
-# Exclude cbd_upload folder
+# Upload files
 cbd_upload/
+uploads/
+
+# Data import scripts (contain hardcoded credentials)
+CBD-backend/scripts/import_to_mysql.py
 
 # Exclude codebuddy config
 .codebuddy
