@@ -75,7 +75,7 @@ const limit = ref(1)
 const total = ref(0)
 const files = ref([])
 const loading = ref(false)
-const toUrl = (p) => p.startsWith('http') ? p : `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || ''}/${p.replace(/^\//, '')}`
+const toUrl = (p) => p.startsWith('http') ? p : `${import.meta.env.VITE_API_BASE_URL}/${p.replace(/^\//, '').replace(/^uploads\//, 'uploads/')}`
 const open = (f) => window.open(toUrl(f.file_path), '_blank')
 const isGeneTraj = (pt) => String(pt || '').toLowerCase().includes('gene')
 const singleLayout = computed(() => plotType.value === 'umap_manual' || isGeneTraj(plotType.value))

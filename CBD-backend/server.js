@@ -42,13 +42,14 @@ const limiter = rateLimit({
     error: 'Too many requests from this IP, please try again later.'
   }
 });
-app.use('/api/', limiter);
-
-// 静态文件服务
-app.use('/uploads', (req, res, next) => {
+// 静态文件服务（放在 limiter 之前，避免图片请求被限流）
+app.use('/api/uploads', (req, res, next) => {
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   next();
 }, express.static('uploads'));
+
+// 速率限制
+app.use('/api/', limiter);
 
 // 路由配置
 app.use('/api/biomarkers', require('./routes/biomarkers'));
