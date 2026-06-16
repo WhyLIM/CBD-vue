@@ -148,8 +148,9 @@ class Enm():
         df['deg'] = np.diag(self.L)
         eff_orig = np.sum(self.prs_mat, axis=1)
         sens_orig = np.sum(self.prs_mat, axis=0)
+        n_eig = min(8, len(self.coll_index_sorted))
         eigvecs_df = pd.DataFrame(self.gnm.getEigvecs(
-        )[:, self.coll_index_sorted[:8]], columns=[f'eig_{i}' for i in range(8)])
+        )[:, self.coll_index_sorted[:n_eig]], columns=[f'eig_{i}' for i in range(n_eig)])
 
         df_ = df#pd.merge(df, eigvecs_df, left_index=True, right_index=True)
         df_['eff'] = eff_orig
