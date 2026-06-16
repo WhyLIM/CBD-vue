@@ -149,6 +149,9 @@ CBD-backend/uploads/
 # Data import scripts (contain hardcoded credentials)
 CBD-backend/scripts/import_to_mysql.py
 
+# Python bytecode cache
+__pycache__/
+*.pyc
 # Exclude codebuddy config
 .codebuddy
 Codebuddy*

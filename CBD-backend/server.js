@@ -62,6 +62,7 @@ app.use('/api/scrna', require('./routes/scrna'));
 app.use('/api/analysis', require('./routes/analysis'));
 app.use('/api/clinical', require('./routes/clinical'));
 app.use('/api/string', require('./routes/string'));
+app.use('/api/network', require('./routes/network'));
 
 // 简单登录颁发令牌
 app.post('/api/auth/login', (req, res) => {
