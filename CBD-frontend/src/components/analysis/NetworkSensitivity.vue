@@ -1,15 +1,35 @@
 <template>
   <el-card class="analysis-card">
-    <div class="controls">
+    <div class="mode-switch">
+      <el-radio-group v-model="mode" @change="onModeChange">
+        <el-radio-button value="database">Database</el-radio-button>
+        <el-radio-button value="custom">Custom Network</el-radio-button>
+      </el-radio-group>
+    </div>
+
+    <!-- Database 模式：从数据库浏览预计算结果 -->
+    <div v-if="mode === 'database'" class="controls">
       <el-select v-model="celltype" placeholder="Celltype" filterable clearable style="width:200px" @change="loadData">
         <el-option v-for="ct in celltypes" :key="ct" :label="ct" :value="ct" />
       </el-select>
       <el-autocomplete v-model="geneSearch" :fetch-suggestions="queryGeneSearch" placeholder="Search gene" clearable style="width:180px" @select="onGeneSelect" @clear="loadData" />
     </div>
+
+    <!-- Custom 模式：即时计算 -->
+    <div v-else class="custom-input">
+      <el-input v-model="edgeText" type="textarea" :rows="6" :disabled="loading"
+        placeholder="每行一条边，支持空格 / 制表符 / 逗号分隔（# 开头为注释）&#10;例如：&#10;TP53 MDM2&#10;MDM2&#9;UBC&#10;TP53, ATM" />
+      <div class="custom-actions">
+        <el-button type="primary" :loading="loading" @click="computeCustom">Compute PRS</el-button>
+        <span v-if="lastElapsed" class="elapsed-info">计算耗时 {{ lastElapsed }}ms · {{ nodeCount }} 节点</span>
+        <span class="hint">节点上限 500</span>
+      </div>
+    </div>
+
     <div ref="chartRef" style="height:400px; width:100%"></div>
     <el-table :data="rows" v-loading="loading" size="small" style="margin-top:10px">
       <el-table-column prop="gene" label="Gene" />
-      <el-table-column prop="celltype" label="Celltype" />
+      <el-table-column v-if="mode === 'database'" prop="celltype" label="Celltype" />
       <el-table-column prop="deg" label="Deg">
         <template #default="{ row }">{{ Number(row.deg).toFixed(4) }}</template>
       </el-table-column>
@@ -29,7 +49,7 @@
         <template #default="{ row }">{{ Number(row.closeness_centr).toFixed(4) }}</template>
       </el-table-column>
     </el-table>
-    <div class="pagination">
+    <div v-if="mode === 'database'" class="pagination">
       <el-pagination v-model:current-page="page" v-model:page-size="limit" :page-sizes="[10, 20, 50]" :total="total"
         layout="total, sizes, prev, pager, next" @current-change="loadData" @size-change="loadData" />
     </div>
@@ -37,9 +57,13 @@
 </template>
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
 import analysisApi from '@/services/analysis'
 
+const mode = ref('database')
+
+// Database 模式状态
 const chartRef = ref(null)
 let chart = null
 const celltypes = ref([])
@@ -64,6 +88,59 @@ const total = ref(0)
 const rows = ref([])
 const loading = ref(false)
 
+// Custom 模式状态
+const edgeText = ref('')
+const lastElapsed = ref('')
+const nodeCount = ref(0)
+let customRows = []
+
+const parseEdges = (text) => {
+  const edges = []
+  for (const line of (text || '').split(/\r?\n/)) {
+    const t = line.trim()
+    if (!t || t.startsWith('#')) continue
+    const parts = t.split(/[\s,\t]+/).filter(Boolean)
+    if (parts.length >= 2) edges.push([parts[0], parts[1]])
+  }
+  return edges
+}
+
+const computeCustom = async () => {
+  const edges = parseEdges(edgeText.value)
+  if (edges.length < 1) {
+    ElMessage.warning('请至少输入一条边')
+    return
+  }
+  loading.value = true
+  lastElapsed.value = ''
+  try {
+    const resp = await analysisApi.computePrsNetwork({ edges })
+    customRows = resp.data?.metrics || []
+    rows.value = customRows
+    total.value = customRows.length
+    nodeCount.value = resp.data?.nodes?.length || 0
+    const gnm = resp.data?.elapsed_ms?.gnm
+    lastElapsed.value = gnm != null ? Number(gnm).toFixed(0) : ''
+    await nextTick()
+    render()
+    if (!customRows.length) ElMessage.info('计算完成，但未返回结果')
+  } catch (e) {
+    console.error('PRS compute failed:', e)
+  } finally {
+    loading.value = false
+  }
+}
+
+const onModeChange = (m) => {
+  if (m === 'database') {
+    loadData()
+  } else {
+    rows.value = customRows
+    total.value = customRows.length
+    nextTick(() => render())
+  }
+}
+
 const render = () => {
   if (!chartRef.value || chartRef.value.clientWidth === 0 || chartRef.value.clientHeight === 0) return
   if (chart) chart.dispose()
@@ -86,23 +163,14 @@ const render = () => {
   const maxClose = Math.max(...closeValues)
   const maxEigen = eigenValues.length ? Math.max(...eigenValues) : 1
 
-  const markLines = []
-  const sensValues = data.map(d => d.value[0])
-  const sensMin = Math.min(...sensValues)
-  const sensMax = Math.max(...sensValues)
-  const thresholds = [0]
-  for (const t of thresholds) {
-    if (t >= sensMin && t <= sensMax) {
-      markLines.push({ xAxis: t, lineStyle: { type: 'dashed', color: '#999' }, label: { formatter: `sens=${t}` } })
-    }
-  }
-
   chart.setOption({
     tooltip: {
       trigger: 'item',
       formatter: (params) => {
         const r = params.data._row
-        return `<b>${r.gene}</b><br/>Celltype: ${r.celltype}<br/>Sens: ${Number(r.sens).toFixed(4)}<br/>Deg: ${Number(r.deg).toFixed(4)}<br/>Eff: ${Number(r.eff).toFixed(4)}<br/>Trans: ${Number(r.trans).toFixed(4)}`
+        return `<b>${r.gene}</b>` + (r.celltype ? `<br/>Celltype: ${r.celltype}` : '') +
+          `<br/>Sens: ${Number(r.sens).toFixed(4)}<br/>Deg: ${Number(r.deg).toFixed(4)}` +
+          `<br/>Eff: ${Number(r.eff).toFixed(4)}<br/>Trans: ${Number(r.trans).toFixed(4)}`
       }
     },
     grid: { top: 30, right: 30, bottom: 40, left: 50 },
@@ -121,8 +189,7 @@ const render = () => {
     series: [{
       type: 'scatter',
       data,
-      symbolSize: (val) => 6 + Math.min(30, Math.max(4, (val[2] / maxEigen) * 30)),
-      markLine: markLines.length ? { silent: true, data: markLines } : undefined
+      symbolSize: (val) => 6 + Math.min(30, Math.max(4, (val[2] / maxEigen) * 30))
     }]
   })
 }
@@ -172,11 +239,36 @@ onUnmounted(() => {
 })
 </script>
 <style scoped>
+.mode-switch {
+  margin-bottom: 10px;
+}
+
 .controls {
   display: flex;
   gap: 10px;
   margin-bottom: 8px;
   flex-wrap: wrap;
+}
+
+.custom-input {
+  margin-bottom: 8px;
+}
+
+.custom-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.elapsed-info {
+  color: #67c23a;
+  font-size: 12px;
+}
+
+.hint {
+  color: #909399;
+  font-size: 12px;
 }
 
 .pagination {
