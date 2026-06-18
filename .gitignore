@@ -149,6 +149,9 @@ CBD-backend/uploads/
 # Data import scripts (contain hardcoded credentials)
 CBD-backend/scripts/import_to_mysql.py
 
+# Generated STRING adjacency index (regeneratable via `node scripts/build_string_index.js`)
+CBD-backend/data/string_index.json
+
 # Python bytecode cache
 __pycache__/
 *.pyc

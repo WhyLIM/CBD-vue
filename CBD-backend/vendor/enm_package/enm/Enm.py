@@ -122,6 +122,12 @@ class Enm():
         # showCrossCorr(gnm)
         #sqf_orig = prody.calcSqFlucts(self.gnm)
         coll = prody.calcCollectivity(self.gnm)
+        # 单节点 / 单模式网络下 calcCollectivity 返回标量 numpy.float64，
+        # 而不是数组，下游 sorted(range(len(...))) 会因 len() 失败。
+        # 这里统一规整为数组（与节点数对齐），保护稀疏子网络。
+        import numpy as _np
+        if not hasattr(coll, '__len__') or _np.ndim(coll) == 0:
+            coll = _np.array([float(coll)])
         self.coll = coll
         coll_index_sorted = sorted(
             range(len(self.coll)), key=lambda k: self.coll[k], reverse=True)

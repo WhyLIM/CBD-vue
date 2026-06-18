@@ -78,6 +78,14 @@ def main():
         print(json.dumps({"success": False, "error": "没有有效边"}))
         return
 
+    # 节点数过少时 prody GNM 无法求解（特征值退化），提前拦截
+    if len(node_set) < 3:
+        print(json.dumps({
+            "success": False,
+            "error": f"网络节点数 {len(node_set)} 过少（< 3），无法进行 GNM/PRS 分析"
+        }))
+        return
+
     # 临时 tsv 文件
     import tempfile
     fd, tmp_path = tempfile.mkstemp(suffix=".tsv")

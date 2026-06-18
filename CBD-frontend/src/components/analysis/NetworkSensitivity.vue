@@ -15,14 +15,19 @@
       <el-autocomplete v-model="geneSearch" :fetch-suggestions="queryGeneSearch" placeholder="Search gene" clearable style="width:180px" @select="onGeneSelect" @clear="loadData" />
     </div>
 
-    <!-- Custom 模式：即时计算 -->
+    <!-- Custom 模式：输入基因列表，后端用 STRING 构建子网络后即时计算 -->
     <div v-else class="custom-input">
-      <el-input v-model="edgeText" type="textarea" :rows="6" :disabled="loading"
-        placeholder="每行一条边，支持空格 / 制表符 / 逗号分隔（# 开头为注释）&#10;例如：&#10;TP53 MDM2&#10;MDM2&#9;UBC&#10;TP53, ATM" />
+      <el-input v-model="geneText" type="textarea" :rows="6" :disabled="loading"
+        placeholder="输入基因 symbol（每行一个或用空格 / 逗号分隔，# 开头为注释）&#10;后端会用 STRING v12.0 全人类 PPI（combined_score ≥ 700）查找这些基因之间的相互作用，然后计算 PRS&#10;例如：&#10;TP53&#10;MDM2 ATM&#10;CHEK2, BAX, BCL2" />
       <div class="custom-actions">
         <el-button type="primary" :loading="loading" @click="computeCustom">Compute PRS</el-button>
-        <span v-if="lastElapsed" class="elapsed-info">计算耗时 {{ lastElapsed }}ms · {{ nodeCount }} 节点</span>
-        <span class="hint">节点上限 500</span>
+        <span v-if="lastElapsed" class="elapsed-info">计算耗时 {{ lastElapsed }}ms · {{ nodeCount }} 节点 · {{ edgeCount }} 边</span>
+        <span class="hint">基因上限 500；最大连通分量需 ≥ 3</span>
+      </div>
+      <div v-if="unresolvedGenes.length" class="unresolved-info">
+        <el-tooltip effect="dark" :content="unresolvedGenes.join(', ')" placement="top">
+          <span>{{ unresolvedGenes.length }} 个基因在 STRING 中未找到：{{ unresolvedGenes.slice(0, 5).join(', ') }}{{ unresolvedGenes.length > 5 ? ' ...' : '' }}</span>
+        </el-tooltip>
       </div>
     </div>
 
@@ -89,43 +94,54 @@ const rows = ref([])
 const loading = ref(false)
 
 // Custom 模式状态
-const edgeText = ref('')
+const geneText = ref('')
 const lastElapsed = ref('')
 const nodeCount = ref(0)
+const edgeCount = ref(0)
+const unresolvedGenes = ref([])
 let customRows = []
 
-const parseEdges = (text) => {
-  const edges = []
+// 解析基因列表：支持换行 / 空格 / 制表符 / 逗号；忽略 # 注释行；去重
+const parseGenes = (text) => {
+  const genes = []
+  const seen = new Set()
   for (const line of (text || '').split(/\r?\n/)) {
     const t = line.trim()
     if (!t || t.startsWith('#')) continue
-    const parts = t.split(/[\s,\t]+/).filter(Boolean)
-    if (parts.length >= 2) edges.push([parts[0], parts[1]])
+    for (const tok of t.split(/[\s,\t]+/).filter(Boolean)) {
+      const s = tok.trim().toUpperCase()
+      if (s && !seen.has(s)) { seen.add(s); genes.push(s) }
+    }
   }
-  return edges
+  return genes
 }
 
 const computeCustom = async () => {
-  const edges = parseEdges(edgeText.value)
-  if (edges.length < 1) {
-    ElMessage.warning('请至少输入一条边')
+  const genes = parseGenes(geneText.value)
+  if (genes.length < 2) {
+    ElMessage.warning('请至少输入 2 个基因')
     return
   }
   loading.value = true
   lastElapsed.value = ''
+  unresolvedGenes.value = []
   try {
-    const resp = await analysisApi.computePrsNetwork({ edges })
+    const resp = await analysisApi.computePrsByGenes({ genes })
     customRows = resp.data?.metrics || []
     rows.value = customRows
     total.value = customRows.length
-    nodeCount.value = resp.data?.nodes?.length || 0
+    nodeCount.value = resp.data?.metrics?.length || 0
+    edgeCount.value = resp.data?.meta?.edgeCount || 0
+    unresolvedGenes.value = resp.data?.meta?.unresolved || []
     const gnm = resp.data?.elapsed_ms?.gnm
     lastElapsed.value = gnm != null ? Number(gnm).toFixed(0) : ''
     await nextTick()
     render()
     if (!customRows.length) ElMessage.info('计算完成，但未返回结果')
+    else if (unresolvedGenes.value.length) ElMessage.info(`${unresolvedGenes.value.length} 个基因在 STRING 中未找到，已自动忽略`)
   } catch (e) {
-    console.error('PRS compute failed:', e)
+    const msg = e?.response?.data?.error || e?.message || '计算失败'
+    ElMessage.error(`PRS 计算失败：${msg}`)
   } finally {
     loading.value = false
   }
@@ -269,6 +285,13 @@ onUnmounted(() => {
 .hint {
   color: #909399;
   font-size: 12px;
+}
+
+.unresolved-info {
+  margin-top: 6px;
+  color: #e6a23c;
+  font-size: 12px;
+  cursor: help;
 }
 
 .pagination {
