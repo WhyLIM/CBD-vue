@@ -9,7 +9,7 @@
 
     <!-- Database 模式：从数据库浏览预计算结果 -->
     <div v-if="mode === 'database'" class="controls">
-      <el-select v-model="celltype" placeholder="Celltype" filterable clearable style="width:200px" @change="loadData">
+      <el-select v-model="celltype" placeholder="Celltype" filterable clearable style="width:200px" @change="onCelltypeChange">
         <el-option v-for="ct in celltypes" :key="ct" :label="ct" :value="ct" />
       </el-select>
       <el-autocomplete v-model="geneSearch" :fetch-suggestions="queryGeneSearch" placeholder="Search gene" clearable style="width:180px" @select="onGeneSelect" @clear="loadData" />
@@ -92,6 +92,8 @@ const limit = ref(20)
 const total = ref(0)
 const rows = ref([])
 const loading = ref(false)
+// Database 模式散点图全量数据（当前 celltype）
+const scatterRows = ref([])
 
 // Custom 模式状态
 const geneText = ref('')
@@ -157,16 +159,51 @@ const onModeChange = (m) => {
   }
 }
 
+// celltype 变化：重置分页，并刷新散点图全量数据
+const onCelltypeChange = () => {
+  page.value = 1
+  loadScatter()
+  loadData()
+}
+
+// 加载散点图全量数据（仅 Database 模式）
+const loadScatter = async () => {
+  if (mode.value !== 'database' || !celltype.value) {
+    scatterRows.value = []
+    return
+  }
+  try {
+    const resp = await analysisApi.getPrsScatter({ celltype: celltype.value })
+    scatterRows.value = resp.data || []
+  } catch {
+    scatterRows.value = []
+  }
+}
+
 const render = () => {
   if (!chartRef.value || chartRef.value.clientWidth === 0 || chartRef.value.clientHeight === 0) return
   if (chart) chart.dispose()
   chart = echarts.init(chartRef.value)
 
-  const data = rows.value.map(r => ({
-    name: r.gene,
-    value: [Number(r.sens), Number(r.deg), Number(r.eigenvec_centr), Number(r.closeness_centr)],
-    _row: r
-  })).filter(d => isFinite(d.value[0]) && isFinite(d.value[1]))
+  // Database 模式：散点图用全量数据；当前页基因正常饱和，其余降低透明度
+  // Custom 模式：用用户输入的全部基因
+  const source = mode.value === 'database' ? scatterRows.value : customRows
+  const currentGenes = new Set(rows.value.map(r => r.gene))
+
+  const data = source.map(r => {
+    const sens = Number(r.sens)
+    const deg = Number(r.deg)
+    const eigen = Number(r.eigenvec_centr)
+    const close = Number(r.closeness_centr)
+    if (!isFinite(sens) || !isFinite(deg)) return null
+    const isCurrent = mode.value !== 'database' || currentGenes.has(r.gene)
+    return {
+      name: r.gene,
+      value: [sens, deg, eigen, close],
+      _row: r,
+      itemStyle: { opacity: isCurrent ? 1 : 0.25 }
+    }
+  }).filter(Boolean)
 
   if (!data.length) {
     chart.setOption({ title: { text: 'No data', left: 'center', top: 'center', textStyle: { color: '#999', fontSize: 14 } } })
@@ -245,6 +282,7 @@ onMounted(async () => {
   } catch (e) {
     console.error('Failed to load filters:', e)
   }
+  await loadScatter()
   loadData()
 })
 

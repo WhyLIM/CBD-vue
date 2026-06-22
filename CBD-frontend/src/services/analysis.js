@@ -22,6 +22,7 @@ export default {
   searchRocGenes(params) { return api.get('/analysis/roc/gene-search', { params }) },
   getRocChart(params) { return api.get('/analysis/roc/chart', { params }) },
   getPrs(params) { return api.get('/analysis/prs', { params }) },
+  getPrsScatter(params) { return api.get('/analysis/prs/scatter', { params }) },
   searchPrsGenes(params) { return api.get('/analysis/prs/gene-search', { params }) },
   computePrsNetwork(data) { return api.post('/network/prs', data) },
   computePrsByGenes(data) { return api.post('/network/prs/genes', data) },

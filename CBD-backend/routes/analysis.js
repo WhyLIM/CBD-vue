@@ -409,6 +409,24 @@ router.get('/biomk-cellchat/gene-search', async (req, res) => {
     }
 })
 
+// PRS 网络敏感度 - 散点图全量数据（不分页，仅绘图字段）
+router.get('/prs/scatter', async (req, res, next) => {
+    try {
+        const celltype = req.query.celltype
+        if (!celltype) {
+            return res.json({ success: true, data: [] })
+        }
+        const rows = await query(
+            'SELECT gene, deg, eff, sens, trans, eigenvec_centr, closeness_centr FROM analysis_network_prs WHERE celltype = ?',
+            [celltype]
+        )
+        res.json({ success: true, data: rows })
+    } catch (e) {
+        console.error('analysis/prs/scatter error:', e)
+        res.json({ success: true, data: [] })
+    }
+})
+
 // PRS 网络敏感度
 router.get('/prs', async (req, res, next) => {
     const { page, limit, offset } = paginate(req)
