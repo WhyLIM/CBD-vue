@@ -18,15 +18,15 @@
     <!-- Custom 模式：输入基因列表，后端用 STRING 构建子网络后即时计算 -->
     <div v-else class="custom-input">
       <el-input v-model="geneText" type="textarea" :rows="6" :disabled="loading"
-        placeholder="输入基因 symbol（每行一个或用空格 / 逗号分隔，# 开头为注释）&#10;后端会用 STRING v12.0 全人类 PPI（combined_score ≥ 700）查找这些基因之间的相互作用，然后计算 PRS&#10;例如：&#10;TP53&#10;MDM2 ATM&#10;CHEK2, BAX, BCL2" />
+        placeholder="Enter gene symbols (one per line, or separated by spaces / commas; lines starting with # are comments)&#10;The backend will look up interactions among these genes using STRING v12.0 human PPI (combined_score ≥ 700), then compute PRS&#10;Example:&#10;TP53&#10;MDM2 ATM&#10;CHEK2, BAX, BCL2" />
       <div class="custom-actions">
         <el-button type="primary" :loading="loading" @click="computeCustom">Compute PRS</el-button>
-        <span v-if="lastElapsed" class="elapsed-info">计算耗时 {{ lastElapsed }}ms · {{ nodeCount }} 节点 · {{ edgeCount }} 边</span>
-        <span class="hint">基因上限 500；最大连通分量需 ≥ 3</span>
+        <span v-if="lastElapsed" class="elapsed-info">Time {{ lastElapsed }}ms · {{ nodeCount }} nodes · {{ edgeCount }} edges</span>
+        <span class="hint">Max 500 genes; largest connected component must have ≥ 3</span>
       </div>
       <div v-if="unresolvedGenes.length" class="unresolved-info">
         <el-tooltip effect="dark" :content="unresolvedGenes.join(', ')" placement="top">
-          <span>{{ unresolvedGenes.length }} 个基因在 STRING 中未找到：{{ unresolvedGenes.slice(0, 5).join(', ') }}{{ unresolvedGenes.length > 5 ? ' ...' : '' }}</span>
+          <span>{{ unresolvedGenes.length }} gene(s) not found in STRING: {{ unresolvedGenes.slice(0, 5).join(', ') }}{{ unresolvedGenes.length > 5 ? ' ...' : '' }}</span>
         </el-tooltip>
       </div>
     </div>
@@ -34,18 +34,18 @@
     <!-- 上：子网络 + 散点图（左右布局） -->
     <div class="vis-grid">
       <div class="vis-cell network-cell">
-        <div class="vis-title">STRING 子网络</div>
+        <div class="vis-title">STRING Subnetwork</div>
         <div ref="networkRef" class="cy-container"></div>
         <div v-if="networkMeta" class="vis-caption">
-          {{ networkMeta.nodeCount }} 节点 · {{ networkMeta.edgeCount }} 边
-          <span v-if="networkMeta.unresolved.length"> · {{ networkMeta.unresolved.length }} 个未解析</span>
+          {{ networkMeta.nodeCount }} nodes · {{ networkMeta.edgeCount }} edges
+          <span v-if="networkMeta.unresolved.length"> · {{ networkMeta.unresolved.length }} unresolved</span>
         </div>
       </div>
       <div class="vis-cell scatter-cell">
         <div class="vis-title">Sensitivity vs Degree</div>
         <div ref="chartRef" class="chart-container"></div>
         <div v-if="mode === 'database' && scatterRows.length" class="scatter-caption">
-          散点图：当前 celltype 全量 <b>{{ scatterRows.length }}</b> 个基因；当前页 <b>{{ rows.length }}</b> 个加粗显示
+          Scatter: <b>{{ scatterRows.length }}</b> total genes in current celltype; <b>{{ rows.length }}</b> on current page are highlighted
         </div>
       </div>
     </div>
@@ -144,7 +144,7 @@ const parseGenes = (text) => {
 const computeCustom = async () => {
   const genes = parseGenes(geneText.value)
   if (genes.length < 2) {
-    ElMessage.warning('请至少输入 2 个基因')
+    ElMessage.warning('Please enter at least 2 genes')
     return
   }
   loading.value = true
@@ -164,8 +164,8 @@ const computeCustom = async () => {
     lastElapsed.value = gnm != null ? Number(gnm).toFixed(0) : ''
     await nextTick()
     render()
-    if (!customRows.length) ElMessage.info('计算完成，但未返回结果')
-    else if (unresolvedGenes.value.length) ElMessage.info(`${unresolvedGenes.value.length} 个基因在 STRING 中未找到，已自动忽略`)
+    if (!customRows.length) ElMessage.info('Computation finished, but no results returned')
+    else if (unresolvedGenes.value.length) ElMessage.info(`${unresolvedGenes.value.length} gene(s) not found in STRING, automatically ignored`)
   } catch (e) {
     // PRS 失败时清空散点图/表格，但保留左侧子网络（STRING 数据源独立）
     customRows = []
@@ -173,8 +173,8 @@ const computeCustom = async () => {
     total.value = 0
     await nextTick()
     render()
-    const msg = e?.response?.data?.error || e?.message || '计算失败'
-    ElMessage.error(`PRS 计算失败：${msg}`)
+    const msg = e?.response?.data?.error || e?.message || 'Computation failed'
+    ElMessage.error(`PRS computation failed: ${msg}`)
   } finally {
     loading.value = false
   }
