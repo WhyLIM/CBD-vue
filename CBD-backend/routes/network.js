@@ -245,4 +245,59 @@ router.post('/prs/genes', async (req, res) => {
     }
 });
 
+// POST /api/network/prs/subnetwork
+// 输入基因列表（celltype 全量 或 Custom 输入），返回 STRING 子网络 {nodes, edges}
+// 用于 NetworkSensitivity 左侧 Cytoscape 视图
+router.post('/prs/subnetwork', async (req, res) => {
+    try {
+        const { genes, threshold = STRING_SCORE_THRESHOLD } = req.body || {};
+        if (!Array.isArray(genes) || genes.length < 1) {
+            return res.status(400).json({ success: false, error: 'genes 必须是非空数组' });
+        }
+        // 清洗 + 大小写标准化
+        const clean = [];
+        const seen = new Set();
+        for (const g of genes) {
+            const s = String(g).trim().toUpperCase();
+            if (!s || seen.has(s)) continue;
+            seen.add(s);
+            clean.push(s);
+        }
+
+        const lookup = await lookupEdges(clean, threshold);
+        const nodeSet = new Set();
+        const edgeList = [];
+        for (const [a, b, score] of lookup.edges) {
+            nodeSet.add(a);
+            nodeSet.add(b);
+            edgeList.push({ data: { id: `${a}|${b}`, source: a, target: b, score } });
+        }
+        // 包含 STRING 中不存在的输入基因（孤立节点），仍渲染为灰色
+        for (const g of clean) nodeSet.add(g);
+
+        const nodes = Array.from(nodeSet).map(g => ({
+            data: { id: g, label: g, resolved: lookup.inputCount ? !lookup.unresolved.includes(g) : true }
+        }));
+
+        // 注意：将 meta 放在 data 内，避免被前端 axios 拦截器吞进 pagination
+        res.json({
+            success: true,
+            data: {
+                nodes, edges: edgeList,
+                meta: {
+                    inputCount: lookup.inputCount,
+                    resolvedCount: lookup.resolvedCount,
+                    unresolved: lookup.unresolved,
+                    nodeCount: nodes.length,
+                    edgeCount: edgeList.length,
+                    threshold,
+                }
+            }
+        });
+    } catch (e) {
+        console.error('network/prs/subnetwork error:', e.message);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
 module.exports = router;

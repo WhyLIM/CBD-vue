@@ -31,7 +31,24 @@
       </div>
     </div>
 
-    <div ref="chartRef" style="height:400px; width:100%"></div>
+    <!-- 上：子网络 + 散点图（左右布局） -->
+    <div class="vis-grid">
+      <div class="vis-cell network-cell">
+        <div class="vis-title">STRING 子网络</div>
+        <div ref="networkRef" class="cy-container"></div>
+        <div v-if="networkMeta" class="vis-caption">
+          {{ networkMeta.nodeCount }} 节点 · {{ networkMeta.edgeCount }} 边
+          <span v-if="networkMeta.unresolved.length"> · {{ networkMeta.unresolved.length }} 个未解析</span>
+        </div>
+      </div>
+      <div class="vis-cell scatter-cell">
+        <div class="vis-title">Sensitivity vs Degree</div>
+        <div ref="chartRef" class="chart-container"></div>
+        <div v-if="mode === 'database' && scatterRows.length" class="scatter-caption">
+          散点图：当前 celltype 全量 <b>{{ scatterRows.length }}</b> 个基因；当前页 <b>{{ rows.length }}</b> 个加粗显示
+        </div>
+      </div>
+    </div>
     <el-table :data="rows" v-loading="loading" size="small" style="margin-top:10px">
       <el-table-column prop="gene" label="Gene" />
       <el-table-column v-if="mode === 'database'" prop="celltype" label="Celltype" />
@@ -64,6 +81,7 @@
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
+import cytoscape from 'cytoscape'
 import analysisApi from '@/services/analysis'
 
 const mode = ref('database')
@@ -94,6 +112,11 @@ const rows = ref([])
 const loading = ref(false)
 // Database 模式散点图全量数据（当前 celltype）
 const scatterRows = ref([])
+
+// 左侧 STRING 子网络（Database / Custom 共用）
+const networkRef = ref(null)
+let cyInstance = null
+const networkMeta = ref(null)
 
 // Custom 模式状态
 const geneText = ref('')
@@ -127,6 +150,8 @@ const computeCustom = async () => {
   loading.value = true
   lastElapsed.value = ''
   unresolvedGenes.value = []
+  // 子网络独立于 PRS 计算：只要基因有效就刷新左侧 STRING 子网络
+  loadNetwork(genes)
   try {
     const resp = await analysisApi.computePrsByGenes({ genes })
     customRows = resp.data?.metrics || []
@@ -142,6 +167,12 @@ const computeCustom = async () => {
     if (!customRows.length) ElMessage.info('计算完成，但未返回结果')
     else if (unresolvedGenes.value.length) ElMessage.info(`${unresolvedGenes.value.length} 个基因在 STRING 中未找到，已自动忽略`)
   } catch (e) {
+    // PRS 失败时清空散点图/表格，但保留左侧子网络（STRING 数据源独立）
+    customRows = []
+    rows.value = []
+    total.value = 0
+    await nextTick()
+    render()
     const msg = e?.response?.data?.error || e?.message || '计算失败'
     ElMessage.error(`PRS 计算失败：${msg}`)
   } finally {
@@ -152,17 +183,27 @@ const computeCustom = async () => {
 const onModeChange = (m) => {
   if (m === 'database') {
     loadData()
+    // 切回 Database 时刷新左侧子网络（用当前 celltype 全量基因）
+    nextTick(() => {
+      loadNetwork(scatterRows.value.map(r => r.gene))
+    })
   } else {
     rows.value = customRows
     total.value = customRows.length
-    nextTick(() => render())
+    nextTick(() => {
+      render()
+      // Custom 模式未计算前清空子网络
+      loadNetwork([])
+    })
   }
 }
 
-// celltype 变化：重置分页，并刷新散点图全量数据
+// celltype 变化：重置分页，并刷新散点图全量数据 + 左侧子网络
 const onCelltypeChange = () => {
   page.value = 1
-  loadScatter()
+  loadScatter().then(() => {
+    loadNetwork(scatterRows.value.map(r => r.gene))
+  })
   loadData()
 }
 
@@ -178,6 +219,54 @@ const loadScatter = async () => {
   } catch {
     scatterRows.value = []
   }
+}
+
+// 加载 STRING 子网络（两种模式共用）
+// Database 模式：用当前 celltype 的全量基因；Custom 模式：用 parseGenes 后的基因
+const loadNetwork = async (genes) => {
+  if (!genes || genes.length < 1) {
+    networkMeta.value = null
+    renderNetwork({ nodes: [], edges: [] })
+    return
+  }
+  try {
+    const resp = await analysisApi.getPrsSubnetwork({ genes })
+    const d = resp.data || {}
+    networkMeta.value = d.meta || null
+    renderNetwork({ nodes: d.nodes || [], edges: d.edges || [] })
+  } catch (e) {
+    networkMeta.value = null
+    renderNetwork({ nodes: [], edges: [] })
+  }
+}
+
+// Cytoscape 渲染
+const renderNetwork = ({ nodes, edges }) => {
+  if (!networkRef.value || networkRef.value.clientWidth === 0) return
+  if (cyInstance) {
+    cyInstance.destroy()
+    cyInstance = null
+  }
+  if (!nodes.length) return
+  cyInstance = cytoscape({
+    container: networkRef.value,
+    elements: [...nodes, ...edges],
+    style: [
+      { selector: 'node', style: {
+        'background-color': '#5B8FF9', 'label': 'data(label)',
+        'width': 14, 'height': 14, 'font-size': '8px',
+        'text-valign': 'bottom', 'text-halign': 'center', 'color': '#444',
+        'border-width': 1, 'border-color': '#fff'
+      } },
+      { selector: 'node[!resolved]', style: { 'background-color': '#ccc' } },
+      { selector: 'edge', style: {
+        'width': 1, 'line-color': '#bbb', 'opacity': 0.6,
+        'curve-style': 'bezier'
+      } },
+      { selector: ':selected', style: { 'background-color': '#F6BD16', 'line-color': '#F6BD16' } }
+    ],
+    layout: { name: 'cose', animate: false, nodeRepulsion: 8000, idealEdgeLength: 50 }
+  })
 }
 
 const render = () => {
@@ -201,7 +290,10 @@ const render = () => {
       name: r.gene,
       value: [sens, deg, eigen, close],
       _row: r,
-      itemStyle: { opacity: isCurrent ? 1 : 0.25 }
+      itemStyle: isCurrent
+        ? { opacity: 1, borderColor: '#101010', borderWidth: 1 }
+        : { opacity: 0.35 },
+      emphasis: isCurrent ? { focus: 'self' } : { disabled: true }
     }
   }).filter(Boolean)
 
@@ -283,6 +375,8 @@ onMounted(async () => {
     console.error('Failed to load filters:', e)
   }
   await loadScatter()
+  // 初始化左侧 STRING 子网络
+  loadNetwork(scatterRows.value.map(r => r.gene))
   loadData()
 })
 
@@ -290,11 +384,52 @@ onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
   if (ro && chartRef.value) ro.unobserve(chartRef.value)
   if (chart) chart.dispose()
+  if (cyInstance) { cyInstance.destroy(); cyInstance = null }
 })
 </script>
 <style scoped>
 .mode-switch {
   margin-bottom: 10px;
+}
+.vis-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.vis-cell {
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  padding: 8px;
+  background: #fff;
+}
+.vis-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #606266;
+  margin-bottom: 6px;
+}
+.cy-container {
+  height: 400px;
+  width: 100%;
+  background: #fafbfc;
+  border-radius: 3px;
+}
+.chart-container {
+  height: 400px;
+  width: 100%;
+}
+.vis-caption {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #888;
+  text-align: center;
+}
+.scatter-caption {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #888;
+  text-align: center;
 }
 
 .controls {

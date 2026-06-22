@@ -26,6 +26,7 @@ export default {
   searchPrsGenes(params) { return api.get('/analysis/prs/gene-search', { params }) },
   computePrsNetwork(data) { return api.post('/network/prs', data) },
   computePrsByGenes(data) { return api.post('/network/prs/genes', data) },
+  getPrsSubnetwork(data) { return api.post('/network/prs/subnetwork', data) },
   getBiomkCellchat(params) { return api.get('/analysis/biomk-cellchat', { params }) },
   searchBiomkCellchatGenes(params) { return api.get('/analysis/biomk-cellchat/gene-search', { params }) },
   getBiomkCellchatNetwork(params) { return api.get('/analysis/biomk-cellchat/network', { params }) },
