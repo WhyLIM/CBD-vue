@@ -8,8 +8,9 @@ import scipy.cluster.hierarchy as sch
 import copy
 from tqdm import tqdm
 
-from .visualize import plot_network_spring,heatmap_annotated
-from .utils import query_goatools
+# visualize.py（matplotlib/seaborn）和 utils.py（goatools）改为懒加载，
+# 仅在实际调用绘图 / GO 富集方法时才 import，
+# 这样 PRS 计算路径（gnm_analysis / cluster_matrix）不需要这些重型依赖。
 
 
 class Enm():
@@ -251,6 +252,8 @@ class Enm():
         df.loc[:,col_name] = df['orf_name'].map(dd)
         go_terms = {}
         for i in df.loc[pd.isna(df[col_name])==False,col_name].unique():
+            # 懒加载：仅当实际需要 GO 富集时才引入 goatools
+            from .utils import query_goatools
             go_terms[i] = query_goatools(df.loc[df[col_name]==i,:], goea, geneid2name)
         df['go_group'] = None
         if sensors:
@@ -363,6 +366,8 @@ class Enm():
     def plot_network_spring(self, **kwargs):
         """Plot network with spring layout
         """
+        # 懒加载：matplotlib + seaborn
+        from .visualize import plot_network_spring
         Gc = self.graph_gc
         if nx.get_node_attributes(Gc, 'pos') == {}:
             self.spring_pos()
@@ -390,6 +395,8 @@ class Enm():
     def heatmap_annotated(self, **kwargs):
         """Plot PRS heatmap with clustering dendrograms
         """
+        # 懒加载：matplotlib + seaborn
+        from .visualize import heatmap_annotated
         if self.prs_mat_cl is None:
             self.cluster_matrix(self.prs_mat, **kwargs)
         return heatmap_annotated(self.prs_mat, self.prs_mat_cl, self.figure_path, self.row_linkage, self.col_linkage, **kwargs)
