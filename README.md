@@ -38,6 +38,8 @@ CBD3 (Colorectal Cancer Biomarker Database 3) 是一个面向结直肠癌研究�
 - **Helmet / CORS / express-rate-limit** - 安全中间件
 - **jsonwebtoken / bcryptjs** - 认证
 - **xlsx / multer** - 数据导入导出
+- **Python 3.10+**（通过 `child_process.spawn` 调用）- PRS 网络敏感性即时计算
+  - 依赖：`prody` / `pandas` / `networkx` / `tqdm`（详见 `CBD-backend/vendor/enm_package/requirements.txt`）
 
 ### 开发工具
 - **pnpm** - 包管理器
@@ -73,10 +75,23 @@ CBD3-vue/
     │   ├── biomarkers.js        # 生物标志物 API
     │   ├── search.js            # 搜索 API
     │   ├── explore.js           # PPI 网络 API
+    │   ├── network.js           # Network Sensitivity API（PRS 计算 + STRING 子网络）
     │   ├── string.js            # STRING-DB 代理
     │   ├── download.js          # 下载 API
     │   ├── submission.js        # 提交 API
     │   └── stats.js             # 统计 API
+    ├── scripts/                 # 数据/计算脚本
+    │   ├── prs_compute.py       # PRS 即时计算入口（由 Node spawn 调用）
+    │   ├── build_string_index.js# 生成 STRING 邻接索引
+    │   ├── rebuild_db_prs.js    # 重建预计算 PRS 数据库
+    │   └── import_db_prs.js     # 数据导入
+    ├── src/
+    │   └── stringIndex.js       # STRING 邻接索引懒加载模块
+    ├── data/                    # 运行时数据文件（生产部署必须上传）
+    │   ├── string_index.json    # STRING 邻接表（~13MB，可由 build_string_index.js 重建）
+    │   └── db_prs_rebuild.csv   # 预计算 PRS 数据库
+    ├── vendor/
+    │   └── enm_package/         # 第三方 Python 包（PRS 计算核心）
     ├── config/
     │   └── database.js          # MySQL 连接池
     ├── utils/                   # 工具函数
@@ -91,6 +106,7 @@ CBD3-vue/
 - Node.js >= 20.19
 - pnpm >= 10.4
 - MySQL 8.0+
+- Python >= 3.10（仅 Network Sensitivity Custom 模式需要）
 
 ### 安装与运行
 
@@ -200,6 +216,14 @@ CBD3-vue/
 | GET | `/api/clinical/immune` | 免疫浸润分页数据 |
 | GET | `/api/clinical/immune/chart` | 免疫浸润全量数据 |
 
+### Network Sensitivity（PRS）
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/analysis/prs` | 预计算 PRS 分页数据 |
+| GET | `/api/analysis/prs/gene-search` | PRS 基因搜索 |
+| POST | `/api/network/prs/genes` | Custom 基因列表即时计算 PRS（spawn Python） |
+| POST | `/api/network/prs/subnetwork` | STRING 子网络查询（Cytoscape 渲染用） |
+
 ### 其他
 | 方法 | 路径 | 说明 |
 |------|------|------|
@@ -227,6 +251,24 @@ cd CBD-backend
 pnpm install --prod
 ```
 
+**安装 Python 运行时依赖**（Network Sensitivity Custom 模式必需）：
+
+```bash
+# 系统已有 Python 3.10+ 后执行
+pip install prody pandas networkx tqdm
+# 或：pip install -r CBD-backend/vendor/enm_package/requirements.txt
+```
+
+**上传关键数据文件**（这些不在 git 仓库里，需手动上传到服务器）：
+
+| 路径 | 用途 | 重建方式 |
+|------|------|---------|
+| `CBD-backend/data/string_index.json` | STRING 邻接索引（~13MB） | `node scripts/build_string_index.js` |
+| `CBD-backend/data/db_prs_rebuild.csv` | 预计算 PRS 数据库 | `node scripts/rebuild_db_prs.js` |
+| `CBD-backend/vendor/enm_package/` | PRS 计算 Python 包 | 必须完整上传（含 `enm/Enm.py` 等） |
+
+> ⚠️ `vendor/enm_package/enm/__pycache__/` 不要上传，Python 会自动重新编译。
+
 生产环境 `.env`：
 ```env
 NODE_ENV=production
@@ -237,6 +279,8 @@ DB_PORT=3306
 DB_USER=your_db_user
 DB_PASSWORD=your_db_password
 DB_NAME=cbd
+# Python 解释器路径（服务器上若 python 命令不可用，需显式指定，如 /usr/bin/python3）
+PYTHON_BIN=python3
 ```
 
 使用 PM2 守护：
