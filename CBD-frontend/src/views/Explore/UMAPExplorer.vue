@@ -259,22 +259,29 @@ const buildLegend = () => {
   }
 
   const counter = new Map()
+  const colorByKey = new Map()
+  // 三个聚类层级都使用 DB 预定义颜色
+  const useDbColor = ['SubCluster', 'ParentalCluster', 'GrandparentalCluster'].includes(colorBy.value)
   data.value.forEach(r => {
     const key = r[colorBy.value] || 'Unknown'
     counter.set(key, (counter.get(key) || 0) + 1)
+    if (useDbColor && r.color && !colorByKey.has(key)) {
+      colorByKey.set(key, r.color)
+    }
   })
 
   const items = Array.from(counter.entries())
     .sort((a, b) => b[1] - a[1])
     .slice(0, 50)
-    .map(([value, count]) => ({ value, count, color: colorFor({ [colorBy.value]: value, color: null }) }))
+    .map(([value, count]) => ({ value, count, color: colorFor({ [colorBy.value]: value, color: colorByKey.get(value) || null }) }))
 
   legendItems.value = items
 }
 
 const colorFor = (row) => {
   const attr = colorBy.value
-  if (attr === 'SubCluster' && row.color) return row.color
+  // 三个聚类层级都优先使用 DB 预定义 Color
+  if (['SubCluster', 'ParentalCluster', 'GrandparentalCluster'].includes(attr) && row.color) return row.color
 
   if (attr === 'Gene Expression') {
     const val = row._geneExpr
@@ -325,7 +332,7 @@ const renderChart = () => {
       type: 'scatter',
       symbolSize: pointSize.value,
       progressive: 10000,
-      itemStyle: { opacity: opacity.value, color: colorFor({ [colorBy.value]: name, color: null }) },
+      itemStyle: { opacity: opacity.value, color: colorFor({ [colorBy.value]: name, color: rows[0]?.color || null }) },
       data: rows.map(r => [r.x, r.y])
     }))
   } else {

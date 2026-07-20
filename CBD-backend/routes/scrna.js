@@ -48,7 +48,9 @@ router.get('/umap', async (req, res) => {
         // 按 colorBy 只查需要的列，减少数据传输
         // Gene Expression 是前端虚拟模式，后端不需要查对应列
         const realColorBy = (colorBy === 'Gene Expression' || colorBy === 'nCount_RNA' || colorBy === 'nFeature_RNA') ? 'SubCluster' : colorBy
-        const needColor = realColorBy === 'SubCluster'
+        // 三个聚类层级都使用 DB 预定义 Color（同 parent 下 SubCluster 颜色一致，
+        // 因此 ParentalCluster/GrandparentalCluster 视图直接复用 SubCluster 的 Color 即可）
+        const needColor = ['SubCluster', 'ParentalCluster', 'GrandparentalCluster'].includes(realColorBy)
         const selectCols = [
             'c.Cell as cell', 'c.UMAP_1 as x', 'c.UMAP_2 as y',
             needColor ? 'm.Color as color' : 'NULL as color',
