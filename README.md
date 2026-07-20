@@ -10,11 +10,11 @@ CBD3 (Colorectal Cancer Biomarker Database 3) 是一个面向结直肠癌研究�
 |------|---------|
 | **Biomarker Browser** | 生物标志物浏览、搜索、详情展示 |
 | **Gene Expression Atlas** | UMAP 单细胞基因表达可视化，支持多数据集、多细胞类型、基因叠加着色 |
-| **Protein Interaction** | PPI 蛋白质互作网络（Cytoscape.js），支持缩放、拖拽、搜索 |
+| **Protein Interaction** | PPI 蛋白质互作网络（Cytoscape.js） |
 | **DEGs** | 差异基因火山图（全量数据渲染），支持 Original / By Celltype / Tumor vs Normal 三种模式 |
 | **KEGG Pathway** | KEGG 通路富集气泡图 |
 | **Ridge Ranking** | 基因 Ridge 排名图 |
-| **Trajectory** | 细胞轨迹分析 + 交互式伪时间分析（支持 Gene Expression 模式） |
+| **Trajectory** | 细胞轨迹分析 + 交互式伪时间分析 |
 | **CellChat** | 细胞通讯网络（全量数据），支持 All Interactions / Biomarker as Ligand / Receptor |
 | **Network Sensitivity** | PRS 网络敏感性分析 |
 | **Predictive Ability** | ROC 预测能力分析（Tumor vs Normal / By Celltype） |
@@ -36,7 +36,6 @@ CBD3 (Colorectal Cancer Biomarker Database 3) 是一个面向结直肠癌研究�
 - **Node.js** + **Express 5**
 - **MySQL2** - 数据库驱动（连接池）
 - **Helmet / CORS / express-rate-limit** - 安全中间件
-- **jsonwebtoken / bcryptjs** - 认证
 - **xlsx / multer** - 数据导入导出
 - **Python 3.10+**（通过 `child_process.spawn` 调用）- PRS 网络敏感性即时计算
   - 依赖：`prody` / `pandas` / `networkx` / `tqdm`（详见 `CBD-backend/vendor/enm_package/requirements.txt`）
@@ -44,7 +43,7 @@ CBD3 (Colorectal Cancer Biomarker Database 3) 是一个面向结直肠癌研究�
 ### 开发工具
 - **pnpm** - 包管理器
 - **ESLint + Prettier** - 代码规范
-- **VitePress** - 帮助文档站
+- **VitePress** - 帮助文档
 - **Nodemon** - 后端热重载
 
 ## 📁 项目结构
@@ -259,16 +258,6 @@ pip install prody pandas networkx tqdm
 # 或：pip install -r CBD-backend/vendor/enm_package/requirements.txt
 ```
 
-**上传关键数据文件**（这些不在 git 仓库里，需手动上传到服务器）：
-
-| 路径 | 用途 | 重建方式 |
-|------|------|---------|
-| `CBD-backend/data/string_index.json` | STRING 邻接索引（~13MB） | `node scripts/build_string_index.js` |
-| `CBD-backend/data/db_prs_rebuild.csv` | 预计算 PRS 数据库 | `node scripts/rebuild_db_prs.js` |
-| `CBD-backend/vendor/enm_package/` | PRS 计算 Python 包 | 必须完整上传（含 `enm/Enm.py` 等） |
-
-> ⚠️ `vendor/enm_package/enm/__pycache__/` 不要上传，Python 会自动重新编译。
-
 生产环境 `.env`：
 ```env
 NODE_ENV=production
@@ -283,53 +272,27 @@ DB_NAME=cbd
 PYTHON_BIN=python3
 ```
 
-使用 PM2 守护：
-```bash
-pm2 start server.js --name cbd-backend
-pm2 save && pm2 startup
-```
+### 宝塔部署流程示例
 
-### 3. Nginx 配置
+#### 前端部署
 
-```nginx
-server {
-    listen 443 ssl http2;
-    server_name your-domain.com;
+1. 在 `/www/wwwroot/` 下创建 `CBD` 文件夹
 
-    ssl_certificate     /path/to/cert.pem;
-    ssl_certificate_key /path/to/key.pem;
+2. 本地构建前端 dist 后上传到 `/www/wwwroot/CBD`  文件夹
 
-    root /path/to/CBD-frontend/dist;
-    index index.html;
+3. 网站 -> PHP 项目 -> 添加站点
 
-    # Vue Router history 模式
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
+4. 添加域名，网站根目录指定为 `/www/wwwroot/CBD/dist`
+5. 设置 ->反向代理 -> 添加反向代理 -> 打开高级功能 -> 代理目录设置为 `/api/` -> 目标 URL 设置为 `http://localhost:3001/api` -> 发送域名设置为 `localhost`
 
-    # API 反向代理
-    location /api/ {
-        proxy_pass http://127.0.0.1:3001/api/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_read_timeout 120s;
-    }
+#### 后端部署
 
-    # STRING-DB 代理
-    location /string-api/ {
-        proxy_pass https://string-db.org/api/;
-        proxy_set_header Host string-db.org;
-    }
-
-    # 静态资源缓存
-    location /assets/ {
-        expires 30d;
-        add_header Cache-Control "public, immutable";
-    }
-}
-```
+1. 上传后端文件夹到 `/www/wwwroot/CBD`  文件夹
+2. 网站 -> Node 项目 -> 添加站点，使用默认项目即可
+3. 项目目录设置为 `/www/wwwroot/CBD/CBD-backend`，一般会自动识别到启动选项，如识别不到请手动设置为 `start:node server.js`
+4. node 版本设置为 `v24.12.0`，18 以上应该都是可以的
+5. 包管理器设置为 `pnpm`
+6. 项目端口设置为 `3001`
 
 ## 🤝 贡献指南
 
