@@ -1,17 +1,50 @@
 import api from '@/utils/api'
+import axios from 'axios'
+
+// 浏览器直连 STRING：访客网络出网正常时首选。
+// STRING API 返回 Access-Control-Allow-Origin: *，支持跨域；
+// 直连使用原始 axios（简单 GET、无自定义头），不会触发 CORS 预检。
+// 后端代理作为回落通道：部分部署环境（如某些云主机）出网会被
+// string-db.org 的 Cloudflare 拦截，此时代理同样不可用，但访客直连不受影响。
+const STRING_DIRECT_BASE = 'https://string-db.org/api'
 
 class StringApiService {
   constructor() {
-    // 使用后端代理，动态适配基础路径
+    // 后端代理基础路径（直连失败时的回落通道），动态适配基础路径
     const apiBase = import.meta.env.VITE_API_BASE_URL || ''
     this.baseUrl = apiBase.endsWith('/api') ? '/string' : '/api/string'
     this.stableAddress = null
   }
 
+  // identifiers 数组 → STRING 的 %0d 分隔形式（与后端代理保持一致）
+  joinIdentifiers(identifiers) {
+    return identifiers
+      .map(v => String(v).trim())
+      .filter(v => v.length > 0)
+      .join('%0d')
+  }
+
+  // 直连请求。返回 { success, data } 形状，与 api 实例响应拦截器的解包结果一致，
+  // 保证直连与代理回落两条路径的返回结构完全相同
+  async directGet(path, params) {
+    const response = await axios.get(`${STRING_DIRECT_BASE}${path}`, { params, timeout: 30000 })
+    return { success: true, data: response.data }
+  }
+
+  // 直连优先、后端代理兜底
+  async stringGet(path, params) {
+    try {
+      return await this.directGet(path, params)
+    } catch (directError) {
+      console.warn(`STRING direct access failed, falling back to server proxy: ${directError?.message}`)
+      return api.get(`${this.baseUrl}${path}`, { params })
+    }
+  }
+
   // 获取STRING版本信息（失败时降级为默认地址，不阻塞网络分析流程）
   async getStringVersion() {
     try {
-      const response = await api.get(`${this.baseUrl}/version`)
+      const response = await this.stringGet('/json/version')
       if (response.data && response.data.length > 0) {
         this.stableAddress = response.data[0].stable_address
         return this.stableAddress
@@ -26,8 +59,31 @@ class StringApiService {
 
   // 输入蛋白 ID 解析/映射报告（返回 matched 映射与 unmatched 清单）
   async resolveNs(identifiers, species = '9606') {
-    const response = await api.post(`${this.baseUrl}/resolve`, { identifiers, species })
-    return response.data
+    try {
+      const response = await this.directGet('/json/get_string_ids', {
+        identifiers: this.joinIdentifiers(identifiers),
+        species,
+        limit: 1
+      })
+      const rows = Array.isArray(response.data) ? response.data : []
+      const mappings = rows.map(r => ({
+        queryIndex: r.queryIndex,
+        query: r.queryItem,
+        stringId: r.stringId,
+        preferredName: r.preferredName,
+        annotation: r.annotation || ''
+      }))
+      const matchedQueries = new Set(mappings.map(m => String(m.query).trim().toUpperCase()))
+      const unmatched = identifiers
+        .map(v => String(v).trim())
+        .filter((v, i, arr) => v && arr.indexOf(v) === i)
+        .filter(v => !matchedQueries.has(v.toUpperCase()))
+      return { success: true, mappings, unmatched, requested: identifiers.length, matched: mappings.length }
+    } catch (directError) {
+      console.warn('STRING resolve direct failed, falling back to server proxy:', directError?.message)
+      const response = await api.post(`${this.baseUrl}/resolve`, { identifiers, species })
+      return { success: true, ...(response.data || {}) }
+    }
   }
 
   // 一阶邻居扩展（人源走本地索引，其他物种走 STRING API）
@@ -44,11 +100,20 @@ class StringApiService {
 
   // 蛋白功能注释（STRING functional_annotation）
   async getAnnotations(identifiers, species = '9606') {
-    const response = await api.post(`${this.baseUrl}/annotations`, { identifiers, species })
-    return response.data
+    try {
+      const response = await this.directGet('/json/functional_annotation', {
+        identifiers: this.joinIdentifiers(identifiers),
+        species
+      })
+      return Array.isArray(response.data) ? response.data : []
+    } catch (directError) {
+      console.warn('STRING annotations direct failed, falling back to server proxy:', directError?.message)
+      const response = await api.post(`${this.baseUrl}/annotations`, { identifiers, species })
+      return response.data || []
+    }
   }
 
-  // 相互作用对的支撑文献（Europe PMC 标题/摘要共现检索）
+  // 相互作用对的支撑文献（Europe PMC 标题/摘要共现检索，走后端、不经过 STRING）
   async getAbstracts(proteinA, proteinB) {
     const response = await api.post(`${this.baseUrl}/abstracts`, { identifiers: [proteinA, proteinB] })
     return response.data
@@ -68,7 +133,17 @@ class StringApiService {
 
   // 获取蛋白质网络数据
   async getProteinNetwork(identifiers, species = '9606', requiredScore = 400, networkType = 'functional') {
+    const params = {
+      identifiers: this.joinIdentifiers(identifiers),
+      species,
+      required_score: requiredScore,
+      network_type: networkType
+    }
     try {
+      const response = await this.directGet('/json/network', params)
+      return response.data
+    } catch (directError) {
+      console.warn('STRING network direct failed, falling back to server proxy:', directError?.message)
       const response = await api.post(`${this.baseUrl}/network`, {
         identifiers,
         species,
@@ -76,37 +151,32 @@ class StringApiService {
         network_type: networkType
       })
       return response.data
-    } catch (error) {
-      console.error('Failed to get protein network:', error)
-      throw error
     }
   }
 
   // 获取网络统计信息
   async getNetworkStats(identifiers, species = '9606') {
+    const params = { identifiers: this.joinIdentifiers(identifiers), species }
     try {
-      const response = await api.post(`${this.baseUrl}/stats`, {
-        identifiers,
-        species
-      })
+      const response = await this.directGet('/json/stats', params)
       return response.data
-    } catch (error) {
-      console.error('Failed to get network stats:', error)
-      throw error
+    } catch (directError) {
+      console.warn('STRING stats direct failed, falling back to server proxy:', directError?.message)
+      const response = await api.post(`${this.baseUrl}/stats`, { identifiers, species })
+      return response.data
     }
   }
 
   // 获取功能富集分析
   async getEnrichmentAnalysis(identifiers, species = '9606') {
+    const params = { identifiers: this.joinIdentifiers(identifiers), species }
     try {
-      const response = await api.post(`${this.baseUrl}/enrichment`, {
-        identifiers,
-        species
-      })
+      const response = await this.directGet('/json/enrichment', params)
       return response.data
-    } catch (error) {
-      console.error('Failed to get enrichment analysis:', error)
-      throw error
+    } catch (directError) {
+      console.warn('STRING enrichment direct failed, falling back to server proxy:', directError?.message)
+      const response = await api.post(`${this.baseUrl}/enrichment`, { identifiers, species })
+      return response.data
     }
   }
 
