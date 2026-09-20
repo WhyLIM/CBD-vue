@@ -1,0 +1,30 @@
+﻿# CBD3 - 结直肠癌生物标志物数据库
+
+> 只读的结直肠癌（CRC）生物标志物数据库：收录带文献参考的标志物记录，以及 2 万+ 细胞的人源 CRC 单细胞 RNA-seq 分析（UMAP、差异表达、预测能力 ROC、细胞通讯/CellChat、网络敏感性、临床证据）。
+
+站点提供公共只读 JSON API，并为可执行页面 JavaScript 的 AI Agent 注册 WebMCP 工具。机器可读文档：[/docs/zh/api](https://cbd.biomarkerdb.cn/docs/zh/api)（简体中文 API 文档）、[/docs/api](https://cbd.biomarkerdb.cn/docs/api)（English）。
+
+## 文档
+
+- [公共 API 参考](https://cbd.biomarkerdb.cn/docs/zh/api)：端点、认证、限流、curl/Python/JavaScript 示例
+- [Public API reference (English)](https://cbd.biomarkerdb.cn/docs/api): 英文版 API 文档
+
+## API
+
+除 POST /search/advanced 外均为 GET，返回 JSON 结构 `{ success, data, pagination }`。基础地址：https://cbd.biomarkerdb.cn/api
+
+- [数据库统计](https://cbd.biomarkerdb.cn/api/stats)：全库记录计数
+- [标志物列表](https://cbd.biomarkerdb.cn/api/biomarkers?category=Protein&limit=5)：分页记录；筛选参数 search/category/source/region/stage，page/limit
+- [快速搜索](https://cbd.biomarkerdb.cn/api/search/quick?q=TP53)：跨记录关键词搜索
+- [基因表达](https://cbd.biomarkerdb.cn/api/scrna/gene-expr?gene=TP53,KRAS&limit=20000)：一个或多个基因的逐细胞表达（多基因返回细胞平均值）
+- [细胞通讯](https://cbd.biomarkerdb.cn/api/analysis/cellchat-raw?pathway_name=TGFb&limit=20)：CellChat 互作，含通路注释与证据（KEGG/PMID）
+- [差异表达](https://cbd.biomarkerdb.cn/api/analysis/gene-diff/celltype?gene=TP53)：按细胞类型；另有 /api/analysis/gene-diff/tvsn（肿瘤vs正常）与 /api/analysis/degs
+- [预测能力](https://cbd.biomarkerdb.cn/api/analysis/roc/tn?min_auc=0.7)：基因 ROC AUC（肿瘤vs正常 / 细胞类型）
+- [临床生存](https://cbd.biomarkerdb.cn/api/clinical/survival?gene=TP53)：按基因的生存分析；另有 /api/clinical/diagnosis 与 /api/clinical/immune
+- [筛选项](https://cbd.biomarkerdb.cn/api/analysis/metadata/filters)：全部有效细胞类型 / 样本 / 患者
+
+## 可选
+
+- 认证可选：携带 `X-API-Key: cbd_...`（向维护者免费申请，见 /docs/zh/5_cite）可获得 6000 次 / 15 分钟额度（匿名 1000 次 / 15 分钟 / IP）。下载、提交、PRS 计算与 STRING 代理不享受密钥提权。
+- WebMCP：在支持该规范的浏览器/扩展中打开站点，会通过 document.modelContext 暴露结构化工具（search-biomarkers、get-gene-expression、get-cellchat-interactions、get-clinical-evidence 等）。
+- 批量下载（CSV）请使用网站的 Download 页面，而非遍历 API。

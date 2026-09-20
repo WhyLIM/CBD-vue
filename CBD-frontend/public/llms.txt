@@ -8,6 +8,7 @@ The site exposes a public read-only JSON API and registers WebMCP tools for AI a
 
 - [Public API reference](https://cbd.biomarkerdb.cn/docs/api): endpoints, authentication, rate limits, curl/Python/JavaScript examples
 - [Public API reference (Chinese)](https://cbd.biomarkerdb.cn/docs/zh/api): Chinese version of the API docs
+- [Chinese version of this file](https://cbd.biomarkerdb.cn/llms-zh.txt): 本文件的简体中文版本
 
 ## API
 
