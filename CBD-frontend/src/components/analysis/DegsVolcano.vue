@@ -13,13 +13,21 @@
         <el-select v-model="gdCelltype" placeholder="Celltype" filterable clearable style="width:200px" @change="loadData">
           <el-option v-for="ct in gdCelltypes" :key="ct" :label="ct" :value="ct" />
         </el-select>
-        <el-autocomplete v-model="geneSearch" :fetch-suggestions="queryGeneSearch" placeholder="Search gene" clearable style="width:180px" @select="onGeneSelect" @clear="loadData" />
+        <el-select v-model="geneSearch" multiple filterable remote allow-create default-first-option clearable
+          reserve-keyword placeholder="Search gene(s)" style="width:220px"
+          :remote-method="queryGeneSearch" :loading="geneSearchLoading" @change="onGeneChange">
+          <el-option v-for="g in geneOptions" :key="g" :label="g" :value="g" />
+        </el-select>
       </template>
       <template v-if="activeTab === 'tvsn'">
         <el-select v-model="tvsnCelltype" placeholder="Celltype" filterable clearable style="width:200px" @change="loadData">
           <el-option v-for="ct in tvsnCelltypes" :key="ct" :label="ct" :value="ct" />
         </el-select>
-        <el-autocomplete v-model="geneSearch" :fetch-suggestions="queryGeneSearch" placeholder="Search gene" clearable style="width:180px" @select="onGeneSelect" @clear="loadData" />
+        <el-select v-model="geneSearch" multiple filterable remote allow-create default-first-option clearable
+          reserve-keyword placeholder="Search gene(s)" style="width:220px"
+          :remote-method="queryGeneSearch" :loading="geneSearchLoading" @change="onGeneChange">
+          <el-option v-for="g in geneOptions" :key="g" :label="g" :value="g" />
+        </el-select>
       </template>
     </div>
     <div ref="chartRef" style="height:360px; width:100%"></div>
@@ -53,7 +61,9 @@ const rows = ref([])
 const chartData = ref([])
 const loading = ref(false)
 const sort = ref('neg_log10_padj_desc')
-const geneSearch = ref('')
+const geneSearch = ref([])
+const geneOptions = ref([])
+const geneSearchLoading = ref(false)
 
 // Original tab filters
 const cellTypes = ref([])
@@ -67,21 +77,30 @@ const gdCelltype = ref('')
 const tvsnCelltypes = ref([])
 const tvsnCelltype = ref('')
 
-// 基因自动补全
+// 基因自动补全（远程搜索，多选）
 let _geneTimer = null
-const queryGeneSearch = (qs, cb) => {
+const queryGeneSearch = (queryString) => {
+  const q = String(queryString || '').trim()
+  if (!q) { geneOptions.value = []; return }
+  geneSearchLoading.value = true
   clearTimeout(_geneTimer)
-  const q = qs.trim()
-  if (!q) { cb([]); return }
   _geneTimer = setTimeout(async () => {
     try {
-      const api = activeTab.value === 'original' ? analysisApi.searchDegsGenes : analysisApi.searchGeneDiffGenes
-      const resp = await api({ q, limit: 20 })
-      cb((resp.data || []).map(g => ({ value: g })))
-    } catch { cb([]) }
+      // 基因搜索框只存在于 By Celltype / Tumor vs Normal 两个标签页，统一走 gene-diff 的搜索
+      const resp = await analysisApi.searchGeneDiffGenes({ q, limit: 20 })
+      geneOptions.value = resp.data || []
+    } catch { geneOptions.value = [] }
+    geneSearchLoading.value = false
   }, 300)
 }
-const onGeneSelect = (item) => { if (item?.value) { geneSearch.value = item.value; loadData() } }
+const onGeneChange = (vals) => {
+  // 支持粘贴逗号/分号/空格/换行分隔的批量基因（如 "TP53, KRAS" 或一行一个的列表）
+  const flat = (vals || []).flatMap(v => String(v).split(/[,;\s]+/)).filter(Boolean)
+  const uniq = Array.from(new Set(flat))
+  if (uniq.length !== (vals || []).length) geneSearch.value = uniq
+  page.value = 1
+  loadData()
+}
 
 // Computed column props per tab
 const fcProp = computed(() => activeTab.value === 'original' ? 'logFC' : 'avg_log2FC')
@@ -107,31 +126,44 @@ const render = () => {
     })
   }
   const xName = activeTab.value === 'original' ? 'logFC' : 'avg_log2FC'
+  // 选中的基因在火山图上高亮显示（橙色）
+  const selected = new Set(geneSearch.value)
   chart.setOption({
     tooltip: { trigger: 'item', formatter: p => `Gene: ${p.data[2]}<br/>${xName}: ${p.data[0]}<br/>-log10(padj): ${p.data[1]}` },
     xAxis: { name: xName }, yAxis: { name: '-log10(padj)' }, grid: { top: 20, left: 40, right: 20, bottom: 30 },
-    series: [{ type: 'scatter', data, symbolSize: 8, itemStyle: { color: p => (p.data[3] < 0.05 && Math.abs(p.data[0]) > 1) ? '#d62728' : '#1f77b4' } }]
+    series: [{
+      type: 'scatter', data, symbolSize: 8,
+      itemStyle: {
+        color: p => selected.has(p.data[2]) ? '#ff7f0e'
+          : ((p.data[3] < 0.05 && Math.abs(p.data[0]) > 1) ? '#d62728' : '#1f77b4')
+      }
+    }]
   })
 }
 
+// 请求序号守卫：连续触发时只采纳最新一次请求的结果
+let reqSeq = 0
 const loadData = async () => {
+  const seq = ++reqSeq
   loading.value = true
   try {
     let tableReq, chartReq
+    const geneParam = geneSearch.value.length ? geneSearch.value.join(',') : undefined
     if (activeTab.value === 'original') {
       const common = { cell_type: cellType.value || undefined }
-      tableReq = analysisApi.getDegs({ ...common, gene: geneSearch.value || undefined, page: page.value, limit: limit.value, sort: sort.value })
+      tableReq = analysisApi.getDegs({ ...common, gene: geneParam, page: page.value, limit: limit.value, sort: sort.value })
       chartReq = analysisApi.getDegsChart(common)
     } else if (activeTab.value === 'celltype') {
       const common = { celltype: gdCelltype.value || undefined }
-      tableReq = analysisApi.getGeneDiffCelltype({ ...common, gene: geneSearch.value || undefined, page: page.value, limit: limit.value, sort: sort.value })
+      tableReq = analysisApi.getGeneDiffCelltype({ ...common, gene: geneParam, page: page.value, limit: limit.value, sort: sort.value })
       chartReq = analysisApi.getGeneDiffCelltypeChart(common)
     } else {
       const common = { celltype: tvsnCelltype.value || undefined }
-      tableReq = analysisApi.getGeneDiffTvsN({ ...common, gene: geneSearch.value || undefined, page: page.value, limit: limit.value, sort: sort.value })
+      tableReq = analysisApi.getGeneDiffTvsN({ ...common, gene: geneParam, page: page.value, limit: limit.value, sort: sort.value })
       chartReq = analysisApi.getGeneDiffTvsNChart(common)
     }
     const [tableResp, chartResp] = await Promise.all([tableReq, chartReq])
+    if (seq !== reqSeq) return
     // 表格数据（分页）
     const raw = tableResp.data || []
     if (activeTab.value !== 'original') {
@@ -143,9 +175,10 @@ const loadData = async () => {
     // 图表数据（全量）
     chartData.value = chartResp.data || []
     await nextTick()
+    if (seq !== reqSeq) return
     render()
   } finally {
-    loading.value = false
+    if (seq === reqSeq) loading.value = false
   }
 }
 

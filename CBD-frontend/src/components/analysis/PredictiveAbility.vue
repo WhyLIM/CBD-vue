@@ -8,7 +8,11 @@
       <el-select v-model="celltype" placeholder="Celltype" filterable clearable style="width:200px" @change="loadData">
         <el-option v-for="ct in celltypeOptions" :key="ct" :label="ct" :value="ct" />
       </el-select>
-      <el-input v-model="geneSearch" placeholder="Search gene" clearable style="width:180px" @clear="loadData" @keyup.enter="loadData" />
+      <el-select v-model="geneSearch" multiple filterable remote allow-create default-first-option clearable
+        reserve-keyword placeholder="Search gene(s)" style="width:220px"
+        :remote-method="queryGeneSearch" :loading="geneSearchLoading" @change="onGeneChange">
+        <el-option v-for="g in geneOptions" :key="g" :label="g" :value="g" />
+      </el-select>
       <div style="display:flex;align-items:center;gap:8px;min-width:260px">
         <span style="white-space:nowrap">AUC ≥ {{ minAuc.toFixed(2) }}</span>
         <el-slider v-model="minAuc" :min="0.5" :max="1" :step="0.01" style="flex:1" @change="loadData" />
@@ -59,20 +63,31 @@ const chartData = ref([])
 const loading = ref(false)
 const sort = ref('auc_desc')
 const celltype = ref('')
-const geneSearch = ref('')
+const geneSearch = ref([])
+const geneOptions = ref([])
+const geneSearchLoading = ref(false)
 let _geneTimer = null
-const queryGeneSearch = (qs, cb) => {
+const queryGeneSearch = (queryString) => {
+  const q = String(queryString || '').trim()
+  if (!q) { geneOptions.value = []; return }
+  geneSearchLoading.value = true
   clearTimeout(_geneTimer)
-  const q = qs.trim()
-  if (!q) { cb([]); return }
   _geneTimer = setTimeout(async () => {
     try {
       const resp = await analysisApi.searchRocGenes({ q, limit: 20 })
-      cb((resp.data || []).map(g => ({ value: g })))
-    } catch { cb([]) }
+      geneOptions.value = resp.data || []
+    } catch { geneOptions.value = [] }
+    geneSearchLoading.value = false
   }, 300)
 }
-const onGeneSelect = (item) => { if (item?.value) { geneSearch.value = item.value; loadData() } }
+const onGeneChange = (vals) => {
+  // 支持粘贴逗号/分号/空格/换行分隔的批量基因（如 "TP53, KRAS" 或一行一个的列表）
+  const flat = (vals || []).flatMap(v => String(v).split(/[,;\s]+/)).filter(Boolean)
+  const uniq = Array.from(new Set(flat))
+  if (uniq.length !== (vals || []).length) geneSearch.value = uniq
+  page.value = 1
+  loadData()
+}
 const minAuc = ref(0.5)
 
 const tnCelltypes = ref([])
@@ -132,12 +147,16 @@ const render = () => {
   })
 }
 
+// 请求序号守卫：连续触发时只采纳最新一次请求的结果
+let reqSeq = 0
 const loadData = async () => {
+  const seq = ++reqSeq
   loading.value = true
   try {
+    const geneParam = geneSearch.value.length ? geneSearch.value.join(',') : undefined
     const params = {
       celltype: celltype.value || undefined,
-      gene: geneSearch.value || undefined,
+      gene: geneParam,
       min_auc: minAuc.value > 0.5 ? minAuc.value : undefined,
       page: page.value,
       limit: limit.value,
@@ -146,18 +165,20 @@ const loadData = async () => {
     const chartParams = {
       tab: activeTab.value,
       celltype: celltype.value || undefined,
-      gene: geneSearch.value || undefined,
+      gene: geneParam,
       min_auc: minAuc.value > 0.5 ? minAuc.value : undefined
     }
     const apiCall = activeTab.value === 'tn' ? analysisApi.getRocTn : analysisApi.getRocCelltype
     const [tableResp, chartResp] = await Promise.all([apiCall(params), analysisApi.getRocChart(chartParams)])
+    if (seq !== reqSeq) return
     rows.value = tableResp.data || []
     total.value = tableResp.pagination?.totalItems ?? (Array.isArray(tableResp.data) ? tableResp.data.length : 0)
     chartData.value = chartResp.data || []
     await nextTick()
+    if (seq !== reqSeq) return
     render()
   } finally {
-    loading.value = false
+    if (seq === reqSeq) loading.value = false
   }
 }
 

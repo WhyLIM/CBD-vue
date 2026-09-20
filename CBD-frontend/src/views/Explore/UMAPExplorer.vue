@@ -27,10 +27,12 @@
                   </el-select>
                 </div>
                 <div v-if="colorBy === 'Gene Expression'" class="form-group">
-                  <label class="form-label">Gene</label>
-                  <el-autocomplete v-model="gene" :fetch-suggestions="queryGeneSearch"
-                    placeholder="Enter gene symbol" clearable style="width:100%"
-                    @select="handleGeneChange" @clear="handleGeneChange" />
+                  <label class="form-label">Gene(s)</label>
+                  <el-select v-model="genes" multiple filterable remote allow-create default-first-option clearable
+                    reserve-keyword placeholder="Enter one or more genes" style="width:100%"
+                    :remote-method="queryGeneSearch" :loading="geneSearchLoading" @change="onGenesChange">
+                    <el-option v-for="g in geneOptions" :key="g" :label="g" :value="g" />
+                  </el-select>
                 </div>
                 <div class="form-group"><label class="form-label">Point Size</label><el-slider v-model="pointSize"
                     :min="1" :max="3" :step="1" /></div>
@@ -96,7 +98,7 @@
               </div>
               <div v-if="showLegend && (colorBy === 'nCount_RNA' || colorBy === 'nFeature_RNA' || colorBy === 'Gene Expression')"
                 class="continuous-legend">
-                <div class="legend-title">{{ colorBy === 'Gene Expression' ? gene + ' Expression' : colorBy }}</div>
+                <div class="legend-title">{{ colorBy === 'Gene Expression' ? geneLegendTitle : colorBy }}</div>
                 <div class="gradient-bar"></div>
                 <div class="legend-scale"><span>{{ scaleMinMax.min }}</span><span>{{ scaleMinMax.max }}</span></div>
               </div>
@@ -150,7 +152,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import scrnaApi from '@/services/scrna'
 import { ElMessage } from 'element-plus'
@@ -177,13 +179,20 @@ const colorBy = ref('ParentalCluster')
 const pointSize = ref(2)
 const opacity = ref(0.8)
 const showLegend = ref(true)
-const gene = ref('')
+const genes = ref([])
+const geneOptions = ref([])
+const geneSearchLoading = ref(false)
 
 const filters = ref({ subcluster: [], sample: [], patient: [] })
 const options = ref({ SubCluster: [], Sample: [], Patient: [] })
 
 const stats = ref(null)
 const colorFields = ['GrandparentalCluster', 'ParentalCluster', 'SubCluster', 'Sample', 'Patient', 'Class', 'Dataset', 'Gene Expression']
+// 多基因时图例标题：3 个以内列出基因名，更多则显示数量
+const geneLegendTitle = computed(() => {
+  if (!genes.value.length) return 'Expression'
+  return genes.value.length <= 3 ? genes.value.join(' / ') + ' Expression' : `${genes.value.length}-gene Expression`
+})
 const legendItems = ref([])
 const scaleMinMax = ref({ min: 0, max: 0 })
 const activeTab = ref('degs')
@@ -198,21 +207,24 @@ const loadFilters = async () => {
   }
 }
 
+// 请求序号守卫：进行中又有新触发时，旧结果作废、以最新一次为准
+let umapReqSeq = 0
 const refreshData = async () => {
-  if (loading.value) return // 防止重复请求
-
+  const seq = ++umapReqSeq
   loading.value = true
   const params = { page: page.value, limit: limit.value, subcluster: filters.value.subcluster, sample: filters.value.sample, patient: filters.value.patient, colorBy: colorBy.value }
 
   try {
     const resp = await scrnaApi.getUmap(params)
+    if (seq !== umapReqSeq) return
     if (resp.success) {
       data.value = resp.data || []
 
-      // Gene expression overlay
-      if (gene.value.trim()) {
+      // Gene expression overlay（多基因时后端返回按细胞的平均表达）
+      if (genes.value.length) {
         try {
-          const geneResp = await scrnaApi.getGeneExpr({ gene: gene.value.trim(), limit: limit.value })
+          const geneResp = await scrnaApi.getGeneExpr({ gene: genes.value.join(','), limit: limit.value })
+          if (seq !== umapReqSeq) return
           if (geneResp.success && geneResp.data?.length) {
             const exprMap = new Map(geneResp.data.map(r => [r.cell, r.expr]))
             data.value.forEach(r => { r._geneExpr = exprMap.get(r.cell) })
@@ -222,15 +234,17 @@ const refreshData = async () => {
 
       buildStats()
       await nextTick()
+      if (seq !== umapReqSeq) return
       renderChart()
     } else {
       ElMessage.error('Failed to load UMAP')
     }
   } catch (error) {
     console.error('UMAP refresh error:', error)
-    ElMessage.error('Network error')
+    // 过期请求的网络错误不提示，避免误导（最新的请求会给出真实状态）
+    if (seq === umapReqSeq) ElMessage.error('Network error')
   } finally {
-    loading.value = false
+    if (seq === umapReqSeq) loading.value = false
   }
 }
 
@@ -383,29 +397,30 @@ const exportCSV = async () => {
   window.open(url, '_blank')
 }
 
-const handleGeneChange = (item) => {
-  // el-autocomplete @select 传入 { value: 'GENE' }，@clear 无参数
-  if (item && item.value) gene.value = item.value
-  if (gene.value.trim()) {
-    colorBy.value = 'Gene Expression'
-  }
+const onGenesChange = (vals) => {
+  // 支持粘贴逗号/分号/空格分隔的批量基因（如 "TP53, KRAS BRAF"）
+  const flat = (vals || []).flatMap(v => String(v).split(/[,;\s]+/)).filter(Boolean)
+  const uniq = Array.from(new Set(flat))
+  if (uniq.length !== (vals || []).length) genes.value = uniq
+  colorBy.value = uniq.length ? 'Gene Expression' : 'ParentalCluster'
   refreshData()
 }
 
-// 基因自动补全
+// 基因自动补全（远程搜索）
 let geneSearchTimer = null
-const queryGeneSearch = (queryString, cb) => {
+const queryGeneSearch = (queryString) => {
+  const q = String(queryString || '').trim()
+  if (!q) { geneOptions.value = []; return }
+  geneSearchLoading.value = true
   clearTimeout(geneSearchTimer)
-  const q = queryString.trim()
-  if (!q) { cb([]); return }
   geneSearchTimer = setTimeout(async () => {
     try {
       const resp = await scrnaApi.searchGenes({ q, limit: 20 })
-      const results = (resp.data || []).map(g => ({ value: g }))
-      cb(results)
-    } catch (e) {
-      cb([])
+      geneOptions.value = resp.data || []
+    } catch {
+      geneOptions.value = []
     }
+    geneSearchLoading.value = false
   }, 300)
 }
 

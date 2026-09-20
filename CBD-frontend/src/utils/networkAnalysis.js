@@ -275,6 +275,7 @@ export class EnrichmentProcessor {
       'InterPro': 'https://www.ebi.ac.uk/interpro/entry/',
       'Pfam': 'https://pfam.xfam.org/family/',
       'PMID': 'https://pubmed.ncbi.nlm.nih.gov/',
+      'PMC': 'https://pmc.ncbi.nlm.nih.gov/articles/',
       'RCTM': 'https://reactome.org/content/detail/R-',
       'WikiPathways': 'https://www.wikipathways.org/index.php/Pathway:',
       'HPO': 'https://monarchinitiative.org/phenotype/',
@@ -294,6 +295,7 @@ export class EnrichmentProcessor {
       'InterPro': '#2daec1',
       'Pfam': '#8854d0',
       'PMID': '#20558a',
+      'PMC': '#16a085',
       'RCTM': '#778beb',
       'WikiPathways': '#a5b1c2',
       'HPO': '#4b6584',
@@ -337,6 +339,30 @@ export class EnrichmentProcessor {
         url: null
       }
     })
+  }
+
+  // 将 evidence 字符串解析为带类别颜色与链接的列表，颜色与 URL 复用
+  // categoryColors / urlTemplates，与 Functional Enrichment 保持一致。
+  // 兼容写法："KEGG: hsa04350; PMID: 26893264; PMC: 4393358"，
+  // 以及分号内逗号连接的多条文献："PMID: 16118203, 21072714" / "PMID: 8892633,PMID: 21084621"
+  parseEvidence(evidence) {
+    if (!evidence) return []
+    const parseToken = (token) => {
+      const kegg = token.match(/^KEGG\s*:?\s*(\S+)$/i)
+      if (kegg) return { category: 'KEGG', label: token, url: this.urlTemplates['KEGG'] + kegg[1], color: this.categoryColors['KEGG'] }
+      const pmid = token.match(/^PMID\s*:?\s*(\d+)$/i)
+      if (pmid) return { category: 'PMID', label: `PMID: ${pmid[1]}`, url: this.urlTemplates['PMID'] + pmid[1], color: this.categoryColors['PMID'] }
+      const pmc = token.match(/^PMC\s*:?\s*(\d+)$/i)
+      if (pmc) return { category: 'PMC', label: `PMC: ${pmc[1]}`, url: this.urlTemplates['PMC'] + 'PMC' + pmc[1], color: this.categoryColors['PMC'] }
+      if (/^\d+$/.test(token)) return { category: 'PMID', label: `PMID: ${token}`, url: this.urlTemplates['PMID'] + token, color: this.categoryColors['PMID'] }
+      return { category: null, label: token, url: null, color: '#666' }
+    }
+    return String(evidence)
+      .split(';')
+      .flatMap(t => t.split(','))
+      .map(t => t.trim())
+      .filter(Boolean)
+      .map(parseToken)
   }
 
   // 按类别分组富集结果

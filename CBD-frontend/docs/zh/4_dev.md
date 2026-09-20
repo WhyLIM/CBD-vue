@@ -34,8 +34,10 @@ CBD3-vue/
 │   ├── package.json
 │   └── vite.config.js
 └── CBD-backend/            # 后端应用
-    ├── routes/             # API 路由（analysis.js, clinical.js, scrna.js 等）
-    ├── utils/              # 工具函数
+    ├── routes/             # API 路由（biomarkers、search、string、network、scrna、analysis、clinical 等）
+    ├── src/                # 内部模块（本地 STRING 索引等）
+    ├── scripts/            # 工具脚本（索引构建、数据导入）
+    ├── data/               # 运行时数据文件（STRING 索引、物种列表）
     ├── .env                # 环境变量
     ├── server.js           # 入口文件
     └── package.json
@@ -45,7 +47,7 @@ CBD3-vue/
 
 | 表名 | 说明 |
 |------|------|
-| biomarker_main | 生物标志物主表 |
+| biomarker | 生物标志物主表 |
 | scrna_gene_expr_summary | 单细胞基因表达摘要 |
 | scrna_pseudotime_trajectory | 伪时间轨迹数据 |
 | scrna_pseudotime_gene_expr | 伪时间基因表达数据 |

@@ -8,7 +8,7 @@ class StringApiService {
     this.stableAddress = null
   }
 
-  // 获取STRING版本信息
+  // 获取STRING版本信息（失败时降级为默认地址，不阻塞网络分析流程）
   async getStringVersion() {
     try {
       const response = await api.get(`${this.baseUrl}/version`)
@@ -18,9 +18,52 @@ class StringApiService {
       }
       return 'https://string-db.org'
     } catch (error) {
-      console.error('Failed to get STRING version:', error)
-      throw error
+      console.warn('STRING version unavailable, using default address:', error?.message)
+      this.stableAddress = 'https://string-db.org'
+      return this.stableAddress
     }
+  }
+
+  // 输入蛋白 ID 解析/映射报告（返回 matched 映射与 unmatched 清单）
+  async resolveNs(identifiers, species = '9606') {
+    const response = await api.post(`${this.baseUrl}/resolve`, { identifiers, species })
+    return response.data
+  }
+
+  // 一阶邻居扩展（人源走本地索引，其他物种走 STRING API）
+  async expandNetwork(identifiers, { species = '9606', addPartners = 10, requiredScore = 400, networkType = 'functional' } = {}) {
+    const response = await api.post(`${this.baseUrl}/expand`, {
+      identifiers,
+      species,
+      add_partners: addPartners,
+      required_score: requiredScore,
+      network_type: networkType
+    })
+    return response.data
+  }
+
+  // 蛋白功能注释（STRING functional_annotation）
+  async getAnnotations(identifiers, species = '9606') {
+    const response = await api.post(`${this.baseUrl}/annotations`, { identifiers, species })
+    return response.data
+  }
+
+  // 相互作用对的支撑文献（Europe PMC 标题/摘要共现检索）
+  async getAbstracts(proteinA, proteinB) {
+    const response = await api.post(`${this.baseUrl}/abstracts`, { identifiers: [proteinA, proteinB] })
+    return response.data
+  }
+
+  // STRING 支持的物种列表 { source, count, species: [{id, name, domain}] }
+  async getSpecies() {
+    const response = await api.get(`${this.baseUrl}/species`)
+    return response.data
+  }
+
+  // 标志物集网络邻近性/凝聚度检验（本地人源索引，度匹配随机化）
+  async getProximity(seeds, permutations = 500) {
+    const response = await api.post(`${this.baseUrl}/proximity`, { seeds, permutations })
+    return response.data
   }
 
   // 获取蛋白质网络数据

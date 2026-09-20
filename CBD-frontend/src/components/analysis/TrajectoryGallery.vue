@@ -48,9 +48,11 @@
           <el-option label="By Pseudotime" value="pseudotime" />
           <el-option label="Gene Expression" value="gene_expr" />
         </el-select>
-        <el-autocomplete v-if="plotMode === 'gene_expr'" v-model="ptGene" :fetch-suggestions="queryGeneSearch"
-          placeholder="Gene symbol" clearable style="width: 180px"
-          @select="onGeneSelect" @clear="loadPseudotime" />
+        <el-select v-if="plotMode === 'gene_expr'" v-model="ptGenes" multiple filterable remote allow-create
+          default-first-option clearable reserve-keyword placeholder="Gene(s)" style="width: 220px"
+          :remote-method="queryGeneSearch" :loading="geneSearchLoading" @change="onGeneChange">
+          <el-option v-for="g in geneOptions" :key="g" :label="g" :value="g" />
+        </el-select>
       </div>
       <div ref="ptChartRef" v-loading="ptLoading" style="height: 480px; width: 100%"></div>
     </template>
@@ -104,7 +106,9 @@ const loadData = async () => {
 // --- Interactive Pseudotime state ---
 const pseudotimeCellTypes = ref([])
 const ptCellType = ref('')
-const ptGene = ref('')
+const ptGenes = ref([])
+const geneOptions = ref([])
+const geneSearchLoading = ref(false)
 const plotMode = ref('state')
 const ptLoading = ref(false)
 const ptTrajectory = ref([])
@@ -222,48 +226,65 @@ const renderPtChart = () => {
   }
 }
 
+// 请求序号守卫：连续触发时只采纳最新一次请求的结果，避免晚到的旧响应覆盖新数据
+let ptReqSeq = 0
 const loadPseudotime = async () => {
   if (!ptCellType.value) return
+  const seq = ++ptReqSeq
   ptLoading.value = true
   try {
-    const fetchExpr = plotMode.value === 'gene_expr' && ptGene.value
+    const fetchExpr = plotMode.value === 'gene_expr' && ptGenes.value.length
     const [trajResp, exprResp] = await Promise.all([
       analysisApi.getPseudotimeTrajectory({ cell_type: ptCellType.value }),
       fetchExpr
-        ? analysisApi.getPseudotimeGeneExpr({ cell_type: ptCellType.value, gene: ptGene.value })
+        ? analysisApi.getPseudotimeGeneExpr({ cell_type: ptCellType.value, gene: ptGenes.value.join(',') })
         : Promise.resolve({ data: [] })
     ])
+    if (seq !== ptReqSeq) return
     ptTrajectory.value = trajResp.data || []
     ptGeneExpr.value = exprResp.data || []
     await nextTick()
+    if (seq !== ptReqSeq) return
     renderPtChart()
   } catch (e) {
     console.error('[PT] loadPseudotime error', e)
   } finally {
-    ptLoading.value = false
+    if (seq === ptReqSeq) ptLoading.value = false
   }
+}
+
+// 基因连续选择时防抖，合并为一次请求
+let ptLoadTimer = null
+const debouncedLoadPseudotime = () => {
+  clearTimeout(ptLoadTimer)
+  ptLoadTimer = setTimeout(loadPseudotime, 400)
 }
 
 const onPlotModeChange = () => {
   loadPseudotime()
 }
 
-const onGeneSelect = (item) => {
-  if (item && item.value) ptGene.value = item.value
-  loadPseudotime()
+const onGeneChange = (vals) => {
+  // 支持粘贴逗号/分号/空格/换行分隔的批量基因
+  const flat = (vals || []).flatMap(v => String(v).split(/[,;\s]+/)).filter(Boolean)
+  const uniq = Array.from(new Set(flat))
+  if (uniq.length !== (vals || []).length) ptGenes.value = uniq
+  debouncedLoadPseudotime()
 }
 
-// 基因自动补全
+// 基因自动补全（远程搜索）
 let _geneSearchTimer = null
-const queryGeneSearch = (queryString, cb) => {
+const queryGeneSearch = (queryString) => {
+  const q = String(queryString || '').trim()
+  if (!q) { geneOptions.value = []; return }
+  geneSearchLoading.value = true
   clearTimeout(_geneSearchTimer)
-  const q = queryString.trim()
-  if (!q) { cb([]); return }
   _geneSearchTimer = setTimeout(async () => {
     try {
       const resp = await analysisApi.searchPseudotimeGenes({ q, limit: 20 })
-      cb((resp.data || []).map(g => ({ value: g })))
-    } catch (e) { cb([]) }
+      geneOptions.value = resp.data || []
+    } catch { geneOptions.value = [] }
+    geneSearchLoading.value = false
   }, 300)
 }
 

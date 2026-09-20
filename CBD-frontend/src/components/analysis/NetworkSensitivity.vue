@@ -12,7 +12,11 @@
       <el-select v-model="celltype" placeholder="Celltype" filterable clearable style="width:200px" @change="onCelltypeChange">
         <el-option v-for="ct in celltypes" :key="ct" :label="ct" :value="ct" />
       </el-select>
-      <el-autocomplete v-model="geneSearch" :fetch-suggestions="queryGeneSearch" placeholder="Search gene" clearable style="width:180px" @select="onGeneSelect" @clear="loadData" />
+      <el-select v-model="geneSearch" multiple filterable remote allow-create default-first-option clearable
+        reserve-keyword placeholder="Search gene(s)" style="width:220px"
+        :remote-method="queryGeneSearch" :loading="geneSearchLoading" @change="onGeneChange">
+        <el-option v-for="g in geneOptions" :key="g" :label="g" :value="g" />
+      </el-select>
     </div>
 
     <!-- Custom 模式：输入基因列表，后端用 STRING 构建子网络后即时计算 -->
@@ -22,7 +26,8 @@
       <div class="custom-actions">
         <el-button type="primary" :loading="loading" @click="computeCustom">Compute PRS</el-button>
         <span v-if="lastElapsed" class="elapsed-info">Time {{ lastElapsed }}ms · {{ nodeCount }} nodes · {{ edgeCount }} edges</span>
-        <span class="hint">Max 500 genes; largest connected component must have ≥ 3</span>
+        <span v-if="queueHint" class="queue-hint">Waiting in compute queue… (server runs at most 2 tasks concurrently)</span>
+        <span class="hint">Max 500 genes; largest connected component must have ≥ 3. Compute tasks are queued server-side (max 2 concurrent, queue up to 30).</span>
       </div>
       <div v-if="unresolvedGenes.length" class="unresolved-info">
         <el-tooltip effect="dark" :content="unresolvedGenes.join(', ')" placement="top">
@@ -91,25 +96,37 @@ const chartRef = ref(null)
 let chart = null
 const celltypes = ref([])
 const celltype = ref('')
-const geneSearch = ref('')
+const geneSearch = ref([])
+const geneOptions = ref([])
+const geneSearchLoading = ref(false)
 let _geneTimer = null
-const queryGeneSearch = (qs, cb) => {
+const queryGeneSearch = (queryString) => {
+  const q = String(queryString || '').trim()
+  if (!q) { geneOptions.value = []; return }
+  geneSearchLoading.value = true
   clearTimeout(_geneTimer)
-  const q = qs.trim()
-  if (!q) { cb([]); return }
   _geneTimer = setTimeout(async () => {
     try {
       const resp = await analysisApi.searchPrsGenes({ q, limit: 20 })
-      cb((resp.data || []).map(g => ({ value: g })))
-    } catch { cb([]) }
+      geneOptions.value = resp.data || []
+    } catch { geneOptions.value = [] }
+    geneSearchLoading.value = false
   }, 300)
 }
-const onGeneSelect = (item) => { if (item?.value) { geneSearch.value = item.value; loadData() } }
+const onGeneChange = (vals) => {
+  // 支持粘贴逗号/分号/空格/换行分隔的批量基因
+  const flat = (vals || []).flatMap(v => String(v).split(/[,;\s]+/)).filter(Boolean)
+  const uniq = Array.from(new Set(flat))
+  if (uniq.length !== (vals || []).length) geneSearch.value = uniq
+  page.value = 1
+  loadData()
+}
 const page = ref(1)
 const limit = ref(20)
 const total = ref(0)
 const rows = ref([])
 const loading = ref(false)
+const queueHint = ref(false)
 // Database 模式散点图全量数据（当前 celltype）
 const scatterRows = ref([])
 
@@ -150,6 +167,9 @@ const computeCustom = async () => {
   loading.value = true
   lastElapsed.value = ''
   unresolvedGenes.value = []
+  // 超过 2 秒未返回时提示"可能正在排队"（服务器最多同时跑 2 个计算任务）
+  queueHint.value = false
+  const queueTimer = setTimeout(() => { queueHint.value = true }, 2000)
   // 子网络独立于 PRS 计算：只要基因有效就刷新左侧 STRING 子网络
   loadNetwork(genes)
   try {
@@ -176,6 +196,8 @@ const computeCustom = async () => {
     const msg = e?.response?.data?.error || e?.message || 'Computation failed'
     ElMessage.error(`PRS computation failed: ${msg}`)
   } finally {
+    clearTimeout(queueTimer)
+    queueHint.value = false
     loading.value = false
   }
 }
@@ -339,22 +361,27 @@ const render = () => {
   })
 }
 
+// 请求序号守卫：连续触发时只采纳最新一次请求的结果
+let reqSeq = 0
 const loadData = async () => {
+  const seq = ++reqSeq
   loading.value = true
   try {
     const params = {
       celltype: celltype.value || undefined,
-      gene: geneSearch.value || undefined,
+      gene: geneSearch.value.length ? geneSearch.value.join(',') : undefined,
       page: page.value,
       limit: limit.value
     }
     const resp = await analysisApi.getPrs(params)
+    if (seq !== reqSeq) return
     rows.value = resp.data || []
     total.value = resp.pagination?.totalItems ?? (Array.isArray(resp.data) ? resp.data.length : 0)
     await nextTick()
+    if (seq !== reqSeq) return
     render()
   } finally {
-    loading.value = false
+    if (seq === reqSeq) loading.value = false
   }
 }
 
@@ -457,6 +484,11 @@ onUnmounted(() => {
 
 .hint {
   color: #909399;
+  font-size: 12px;
+}
+
+.queue-hint {
+  color: #e6a23c;
   font-size: 12px;
 }
 

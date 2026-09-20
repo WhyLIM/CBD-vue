@@ -8,19 +8,18 @@ CBD3 (Colorectal Cancer Biomarker Database, 3rd Edition) is a comprehensive plat
 
 - **Biomarker Database**: Curated colorectal cancer biomarkers mined from PubMed literature and manually validated by domain experts
 - **Gene Expression Atlas**: Interactive UMAP-based single-cell gene expression visualization
-- **Protein Interaction Networks**: Protein-protein interaction (PPI) networks sourced from the STRING database
-- **Single-Cell Analyses**: Seven analysis modules including DEGs, KEGG pathway enrichment, ridge ranking, trajectory analysis, CellChat cell communication, network sensitivity, and predictive ROC analysis
-- **Clinical Analyses**: Survival analysis with Kaplan-Meier curves and immune infiltration heatmaps
+- **Protein Interaction Networks**: PPI networks sourced from the STRING database, with expansion, module detection, proximity testing, enrichment analysis and reproducible exports
+- **MAMOF Framework**: Multi-Ancestry Multi-Omics Framework for identifying universal and population-specific biomarkers
 - **Advanced Search**: Multi-condition search across the biomarker database with save/load support
 
 ## Quick Start
 
-1. **Browse Biomarkers**: Visit the [Biomarker](/biomarker) page to explore curated biomarker records
-2. **Search**: Use the homepage search bar or the [Advanced Search](/search) page for complex queries
-3. **Explore Expression**: Open the [Gene Expression Atlas](/explore) to visualize scRNA-seq UMAP plots
-4. **Analyze**: Navigate to [Single-Cell Analyses](/analysis) for DEG, pathway, trajectory, and cell communication analysis
-5. **Clinical Insights**: Check [Survival](/clinical/survival) and [Immune](/clinical/immune) analyses
-6. **Download**: Export data from the [Download](/download) page
+1. **Browse Biomarkers**: Visit the <a href="/biomarkers">Biomarkers</a> page to explore curated biomarker records
+2. **Search**: Use the homepage search bar or the <a href="/advanced">Advanced Search</a> page for complex queries
+3. **Explore Expression**: Open the <a href="/umap">UMAP Explorer</a> to visualize scRNA-seq UMAP plots
+4. **Analyze Networks**: Open <a href="/network">Network Analysis</a> to build, expand and statistically analyze PPI networks
+5. **Learn the Framework**: Read about the <a href="/mamof">MAMOF Framework</a>
+6. **Download**: Export data from the <a href="/download">Download</a> page
 
 ## Data Sources
 

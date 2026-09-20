@@ -255,9 +255,33 @@ const initializeTables = async () => {
         prob DOUBLE,
         pval DOUBLE,
         pathway_name VARCHAR(255),
+        annotation VARCHAR(100) DEFAULT NULL,
+        evidence VARCHAR(255) DEFAULT NULL,
         INDEX idx_cellchat_src_tgt (source, target),
         INDEX idx_cellchat_pathway (pathway_name),
         INDEX idx_cellchat_prob (prob)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    // CellChat 原始全量互作（df.net，含通路注释与证据来源）
+    await run(`
+      CREATE TABLE IF NOT EXISTS analysis_cellchat_raw (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        source VARCHAR(100),
+        target VARCHAR(100),
+        ligand VARCHAR(100),
+        receptor VARCHAR(100),
+        prob DOUBLE,
+        pval DOUBLE,
+        interaction_name VARCHAR(255),
+        interaction_name_2 VARCHAR(255),
+        pathway_name VARCHAR(255),
+        annotation VARCHAR(100),
+        evidence VARCHAR(255),
+        INDEX idx_cellchat_raw_src_tgt (source, target),
+        INDEX idx_cellchat_raw_pathway (pathway_name(50)),
+        INDEX idx_cellchat_raw_annotation (annotation),
+        INDEX idx_cellchat_raw_prob (prob)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
@@ -429,6 +453,7 @@ const initializeTables = async () => {
         prob DOUBLE,
         pval DOUBLE,
         interaction_name VARCHAR(255),
+        annotation VARCHAR(100), evidence VARCHAR(255),
         INDEX idx_gene (gene),
         INDEX idx_as (biomark_as),
         INDEX idx_src_tgt (source, target),
@@ -479,6 +504,19 @@ const initializeTables = async () => {
         INDEX idx_node2 (node2)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=8
     `);
+
+    // 兼容旧库：为已存在的表补充 annotation/evidence 列（新部署由上方 DDL 直接创建）
+    const addColumnIfMissing = async (table, columnDef) => {
+      try {
+        await run('ALTER TABLE `' + table + '` ADD COLUMN ' + columnDef)
+      } catch (e) {
+        if (e.code !== 'ER_DUP_FIELDNAME') throw e
+      }
+    }
+    await addColumnIfMissing('analysis_cellchat', 'annotation VARCHAR(100) DEFAULT NULL')
+    await addColumnIfMissing('analysis_cellchat', 'evidence VARCHAR(255) DEFAULT NULL')
+    await addColumnIfMissing('analysis_biomk_cellchat', 'annotation VARCHAR(100) DEFAULT NULL')
+    await addColumnIfMissing('analysis_biomk_cellchat', 'evidence VARCHAR(255) DEFAULT NULL')
 
     console.log('✅ 数据库表结构初始化成功');
     return true;

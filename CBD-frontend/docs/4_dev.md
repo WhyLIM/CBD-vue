@@ -38,12 +38,10 @@ CBD3-vue/
 │   ├── package.json
 │   └── vite.config.js
 └── CBD-backend/            # Backend application
-    ├── routes/             # API route modules
-    │   ├── analysis.js     # Single-cell analysis endpoints
-    │   ├── clinical.js     # Clinical data endpoints
-    │   ├── scrna.js        # scRNA-seq data endpoints
-    │   └── ...
-    ├── utils/              # Utility functions
+    ├── routes/             # API route modules (biomarkers, search, string, network, scrna, analysis, clinical, ...)
+    ├── src/                # Internal modules (local STRING index, etc.)
+    ├── scripts/            # Utility scripts (index building, data import)
+    ├── data/               # Runtime data files (STRING index, species list)
     ├── .env                # Environment variables (DB config, etc.)
     ├── server.js           # Express entry point
     └── package.json
@@ -55,7 +53,7 @@ Key tables in the MySQL database:
 
 | Table | Description |
 |-------|-------------|
-| `biomarker_main` | Core biomarker records |
+| `biomarker` | Core biomarker records |
 | `scrna_gene_expr_summary` | Single-cell gene expression summary |
 | `scrna_pseudotime_trajectory` | Pseudotime trajectory data |
 | `scrna_pseudotime_gene_expr` | Pseudotime gene expression |

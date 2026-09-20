@@ -1,22 +1,64 @@
 <template>
   <el-card class="analysis-card">
     <el-tabs v-model="activeTab" @tab-change="onTabChange">
-      <el-tab-pane label="All Interactions" name="all" />
+      <el-tab-pane label="Full Interactions" name="full" />
+      <el-tab-pane label="Dual-specific Biomarker Interactions" name="all" />
       <el-tab-pane label="Biomarker as Ligand" name="ligand" />
       <el-tab-pane label="Biomarker as Receptor" name="receptor" />
     </el-tabs>
-    <div v-if="activeTab !== 'all'" class="biomk-filters">
-      <el-autocomplete v-model="biomkGene" :fetch-suggestions="queryGeneSearch" clearable placeholder="All genes" style="width:220px" @select="onGeneSelect" @clear="onGeneChange" />
+    <div v-if="activeTab === 'ligand' || activeTab === 'receptor'" class="biomk-filters">
+      <el-select v-model="biomkGene" multiple filterable remote allow-create default-first-option clearable
+        reserve-keyword placeholder="All genes" style="width:260px"
+        :remote-method="queryGeneSearch" :loading="geneSearchLoading" @change="onGeneChange">
+        <el-option v-for="g in geneOptions" :key="g" :label="g" :value="g" />
+      </el-select>
+    </div>
+    <div v-else-if="activeTab === 'full'" class="biomk-filters raw-filters">
+      <el-select v-model="rawFilters.source" clearable filterable placeholder="All sources" style="width:150px" @change="onRawFilterChange">
+        <el-option v-for="s in rawMeta.sources" :key="s" :label="s" :value="s" />
+      </el-select>
+      <el-select v-model="rawFilters.target" clearable filterable placeholder="All targets" style="width:150px" @change="onRawFilterChange">
+        <el-option v-for="t in rawMeta.targets" :key="t" :label="t" :value="t" />
+      </el-select>
+      <el-select v-model="rawFilters.pathway_name" clearable filterable placeholder="All pathways" style="width:150px" @change="onRawFilterChange">
+        <el-option v-for="p in rawMeta.pathways" :key="p" :label="p" :value="p" />
+      </el-select>
+      <el-select v-model="rawFilters.annotation" clearable filterable placeholder="All annotations" style="width:170px" @change="onRawFilterChange">
+        <el-option v-for="a in rawMeta.annotations" :key="a" :label="a" :value="a" />
+      </el-select>
+      <el-input v-model="rawFilters.gene" clearable placeholder="Ligand / receptor genes (comma sep.)" style="width:220px"
+        @keyup.enter="onRawFilterChange" @clear="onRawFilterChange" />
+      <el-button @click="onRawReset">Reset</el-button>
     </div>
     <div ref="chartRef" style="height:520px; width:100%"></div>
     <div v-if="!displayRows.length" class="empty-hint">No interactions for current filters</div>
-    <el-table v-if="activeTab === 'all'" :data="rows" v-loading="loading" size="small" style="margin-top:10px">
+    <el-table v-if="activeTab === 'full'" :data="rawRows" v-loading="loading" size="small" style="margin-top:10px">
+      <el-table-column prop="source" label="Source" />
+      <el-table-column prop="target" label="Target" />
+      <el-table-column prop="ligand" label="Ligand" />
+      <el-table-column prop="receptor" label="Receptor" />
+      <el-table-column prop="pathway_name" label="Pathway" />
+      <el-table-column prop="annotation" label="Annotation" />
+      <el-table-column prop="prob" label="Prob" />
+      <el-table-column prop="pval" label="P-value" />
+      <el-table-column label="Evidence" width="150">
+        <template #default="{ row }">
+          <EvidenceLinks :evidence="row.evidence" />
+        </template>
+      </el-table-column>
+    </el-table>
+    <el-table v-else-if="activeTab === 'all'" :data="rows" v-loading="loading" size="small" style="margin-top:10px">
       <el-table-column prop="source" label="Source" />
       <el-table-column prop="target" label="Target" />
       <el-table-column prop="ligand" label="Ligand" />
       <el-table-column prop="receptor" label="Receptor" />
       <el-table-column prop="prob" label="Prob" />
       <el-table-column prop="pathway_name" label="Pathway" />
+      <el-table-column label="Evidence" width="150">
+        <template #default="{ row }">
+          <EvidenceLinks :evidence="row.evidence" />
+        </template>
+      </el-table-column>
     </el-table>
     <el-table v-else :data="biomkRows" v-loading="loading" size="small" style="margin-top:10px">
       <el-table-column prop="gene" label="Gene" />
@@ -28,6 +70,11 @@
       <el-table-column prop="pathway_name" label="Pathway" />
       <el-table-column prop="prob" label="Prob" />
       <el-table-column prop="pvalue" label="P-value" />
+      <el-table-column label="Evidence" width="150">
+        <template #default="{ row }">
+          <EvidenceLinks :evidence="row.evidence" />
+        </template>
+      </el-table-column>
     </el-table>
     <div class="pagination">
       <el-pagination v-model:current-page="page" v-model:page-size="limit" :page-sizes="[10, 20, 50]" :total="total"
@@ -39,12 +86,13 @@
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import analysisApi from '@/services/analysis'
+import EvidenceLinks from './EvidenceLinks.vue'
 
 const chartRef = ref(null)
 let chart = null
 let resizeObserver = null
 
-const activeTab = ref('all')
+const activeTab = ref('full')
 const loading = ref(false)
 const page = ref(1)
 const limit = ref(20)
@@ -52,24 +100,44 @@ const total = ref(0)
 
 const rows = ref([])
 const chartAllData = ref([])
+const rawRows = ref([])
+const rawNetwork = ref({ nodes: [], edges: [] })
+const rawMeta = ref({ sources: [], targets: [], pathways: [], annotations: [] })
+let rawMetaLoaded = false
+const rawFilters = ref({ source: '', target: '', pathway_name: '', annotation: '', gene: '' })
 const biomkRows = ref([])
 const biomkNetwork = ref({ nodes: [], edges: [] })
-const biomkGene = ref('')
+const biomkGene = ref([])
+const geneOptions = ref([])
+const geneSearchLoading = ref(false)
 let _geneTimer = null
-const queryGeneSearch = (qs, cb) => {
+const queryGeneSearch = (queryString) => {
+  const q = String(queryString || '').trim()
+  if (!q) { geneOptions.value = []; return }
+  geneSearchLoading.value = true
   clearTimeout(_geneTimer)
-  const q = qs.trim()
-  if (!q) { cb([]); return }
   _geneTimer = setTimeout(async () => {
     try {
       const resp = await analysisApi.searchBiomkCellchatGenes({ q, limit: 20 })
-      cb((resp.data || []).map(g => ({ value: g })))
-    } catch { cb([]) }
+      geneOptions.value = resp.data || []
+    } catch { geneOptions.value = [] }
+    geneSearchLoading.value = false
   }, 300)
 }
-const onGeneSelect = (item) => { if (item?.value) { biomkGene.value = item.value; onGeneChange() } }
+const onGeneChange = (vals) => {
+  // 支持粘贴逗号/分号/空格/换行分隔的批量基因
+  const flat = (vals || []).flatMap(v => String(v).split(/[,;\s]+/)).filter(Boolean)
+  const uniq = Array.from(new Set(flat))
+  if (uniq.length !== (vals || []).length) biomkGene.value = uniq
+  page.value = 1
+  loadBiomkData()
+}
 
-const displayRows = computed(() => activeTab.value === 'all' ? rows.value : biomkRows.value)
+const displayRows = computed(() => {
+  if (activeTab.value === 'all') return rows.value
+  if (activeTab.value === 'full') return rawRows.value
+  return biomkRows.value
+})
 
 const renderChart = (nodeNames, links) => {
   if (!chartRef.value || chartRef.value.clientWidth === 0 || chartRef.value.clientHeight === 0) return
@@ -117,8 +185,7 @@ const renderAll = () => {
   renderChart(nodeNames, links)
 }
 
-const renderBiomk = () => {
-  const { nodes, edges } = biomkNetwork.value
+const renderNetworkData = ({ nodes, edges }) => {
   const nodeNames = nodes.map(n => n.id)
   const agg = new Map()
   for (const e of edges) {
@@ -132,59 +199,109 @@ const renderBiomk = () => {
   renderChart(nodeNames, links)
 }
 
+// 请求序号守卫：三个标签页共用一个序号，连续触发或切换标签时旧请求的结果作废
+let reqSeq = 0
+
 const loadData = async () => {
+  const seq = ++reqSeq
   loading.value = true
   const params = { page: page.value, limit: limit.value }
   const [tableResp, chartResp] = await Promise.all([
     analysisApi.getCellChat(params),
     analysisApi.getCellChatChart()
   ])
+  if (seq !== reqSeq) return
   rows.value = tableResp.data || []
   total.value = tableResp.pagination?.totalItems ?? (Array.isArray(tableResp.data) ? tableResp.data.length : 0)
   chartAllData.value = chartResp.data || []
   await nextTick()
+  if (seq !== reqSeq) return
   renderAll()
   loading.value = false
 }
 
 const loadBiomkData = async () => {
+  const seq = ++reqSeq
   loading.value = true
   const biomark_as = activeTab.value
-  const gene = biomkGene.value || undefined
+  const gene = biomkGene.value.length ? biomkGene.value.join(',') : undefined
   try {
     const [tableResp, netResp] = await Promise.all([
       analysisApi.getBiomkCellchat({ gene, biomark_as, page: page.value, limit: limit.value }),
       analysisApi.getBiomkCellchatNetwork({ gene, biomark_as })
     ])
+    if (seq !== reqSeq) return
     biomkRows.value = tableResp.data || []
     total.value = tableResp.pagination?.totalItems ?? (Array.isArray(tableResp.data) ? tableResp.data.length : 0)
     biomkNetwork.value = netResp.data || { nodes: [], edges: [] }
   } catch {
+    if (seq !== reqSeq) return
     biomkRows.value = []
     biomkNetwork.value = { nodes: [], edges: [] }
     total.value = 0
   }
   await nextTick()
-  renderBiomk()
+  if (seq !== reqSeq) return
+  renderNetworkData(biomkNetwork.value)
   loading.value = false
 }
 
-const loadCurrentData = () => activeTab.value === 'all' ? loadData() : loadBiomkData()
+const loadRawData = async () => {
+  const seq = ++reqSeq
+  loading.value = true
+  try {
+    if (!rawMetaLoaded) {
+      const metaResp = await analysisApi.getCellChatRawMeta()
+      rawMeta.value = metaResp.data || rawMeta.value
+      rawMetaLoaded = true
+    }
+    const filters = { ...rawFilters.value }
+    Object.keys(filters).forEach(k => { if (!filters[k]) delete filters[k] })
+    const [tableResp, netResp] = await Promise.all([
+      analysisApi.getCellChatRaw({ ...filters, page: page.value, limit: limit.value }),
+      analysisApi.getCellChatRawNetwork(filters)
+    ])
+    if (seq !== reqSeq) return
+    rawRows.value = tableResp.data || []
+    total.value = tableResp.pagination?.totalItems ?? (Array.isArray(tableResp.data) ? tableResp.data.length : 0)
+    rawNetwork.value = netResp.data || { nodes: [], edges: [] }
+  } catch {
+    if (seq !== reqSeq) return
+    rawRows.value = []
+    rawNetwork.value = { nodes: [], edges: [] }
+    total.value = 0
+  }
+  await nextTick()
+  if (seq !== reqSeq) return
+  renderNetworkData(rawNetwork.value)
+  loading.value = false
+}
+
+const loadCurrentData = () => {
+  if (activeTab.value === 'all') return loadData()
+  if (activeTab.value === 'full') return loadRawData()
+  return loadBiomkData()
+}
+
+const onRawFilterChange = () => {
+  page.value = 1
+  loadRawData()
+}
+
+const onRawReset = () => {
+  rawFilters.value = { source: '', target: '', pathway_name: '', annotation: '', gene: '' }
+  onRawFilterChange()
+}
 
 const onTabChange = () => {
   page.value = 1
   loadCurrentData()
 }
 
-const onGeneChange = () => {
-  page.value = 1
-  loadBiomkData()
-}
-
 onMounted(() => {
   resizeObserver = new ResizeObserver(() => { if (chart) chart.resize() })
   if (chartRef.value) resizeObserver.observe(chartRef.value)
-  loadData()
+  loadCurrentData()
 })
 onUnmounted(() => {
   if (resizeObserver) resizeObserver.disconnect()
@@ -205,5 +322,12 @@ onUnmounted(() => {
 
 .biomk-filters {
   margin-bottom: 10px
+}
+
+.raw-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center
 }
 </style>

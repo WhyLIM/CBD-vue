@@ -9,8 +9,7 @@ export default withMermaid({
 
   // 帮助文档中引用的 /biomarker 等链接是应用路由，不是文档页面
   ignoreDeadLinks: [
-    '/biomarker', '/search', '/explore', '/explore/network',
-    '/analysis', '/clinical/survival', '/clinical/immune',
+    '/biomarkers', '/advanced', '/network', '/umap', '/mamof', '/about',
     '/download', '/submission'
   ],
 
@@ -71,6 +70,7 @@ export default withMermaid({
               { text: 'Navigation Overview', link: '/3.1_nav' },
               { text: 'Search Functionality', link: '/3.2_search' },
               { text: 'Browse & Analysis', link: '/3.3_browse' },
+              { text: 'Network Analysis', link: '/3.5_network' },
               { text: 'Data Submission', link: '/3.4_submit' }
             ]
           },
@@ -138,6 +138,7 @@ export default withMermaid({
               { text: '导航概述', link: '/zh/3.1_nav' },
               { text: '搜索功能', link: '/zh/3.2_search' },
               { text: '浏览与分析', link: '/zh/3.3_browse' },
+              { text: '网络分析', link: '/zh/3.5_network' },
               { text: '数据提交', link: '/zh/3.4_submit' }
             ]
           },

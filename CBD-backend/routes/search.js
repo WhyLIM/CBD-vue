@@ -67,9 +67,14 @@ router.post('/advanced', async (req, res) => {
     }
 
     if (string_name) {
-      query += ` AND Symbol LIKE ?`;
-      countQuery += ` AND Symbol LIKE ?`;
-      params.push(`%${string_name}%`);
+      // 支持逗号分隔的多个基因，任一命中即可（去重避免重复条件）
+      const symbols = [...new Set(String(string_name).split(',').map(s => s.trim()).filter(Boolean))];
+      const symbolLikes = symbols.map(() => 'Symbol LIKE ?').join(' OR ');
+      query += ` AND (${symbolLikes})`;
+      countQuery += ` AND (${symbolLikes})`;
+      symbols.forEach(s => {
+        params.push(`%${s}%`);
+      });
     }
 
     if (description) {

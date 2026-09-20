@@ -50,8 +50,40 @@ function cacheSet(key, value) {
     cache.set(key, { value, ts: Date.now() });
 }
 
-function runPrsScript(payload) {
-    return new Promise((resolve, reject) => {
+// PRS 计算并发闸门：2 核服务器上最多同时运行 PRS_MAX_CONCURRENT 个 Python 进程，
+// 其余请求排队（上限 PRS_MAX_QUEUE），队列满则直接拒绝，避免拖垮 Node/MySQL
+const PRS_MAX_CONCURRENT = 2;
+const PRS_MAX_QUEUE = 30;
+const prsSlots = { active: 0, queue: [] };
+
+function acquirePrsSlot() {
+    if (prsSlots.active < PRS_MAX_CONCURRENT) {
+        prsSlots.active += 1;
+        return Promise.resolve();
+    }
+    if (prsSlots.queue.length >= PRS_MAX_QUEUE) {
+        const err = new Error('计算任务排队已满，请稍后再试 / Compute queue is full, please try again later');
+        err.status = 503;
+        return Promise.reject(err);
+    }
+    return new Promise((resolve) => {
+        prsSlots.queue.push(resolve);
+    });
+}
+
+function releasePrsSlot() {
+    const next = prsSlots.queue.shift();
+    if (next) {
+        next();
+    } else if (prsSlots.active > 0) {
+        prsSlots.active -= 1;
+    }
+}
+
+async function runPrsScript(payload) {
+    await acquirePrsSlot();
+    try {
+        return await new Promise((resolve, reject) => {
         const body = Buffer.from(JSON.stringify(payload));
         const proc = spawn(PYTHON_BIN, [PRS_SCRIPT], {
             stdio: ['pipe', 'pipe', 'pipe'],
@@ -100,7 +132,10 @@ function runPrsScript(payload) {
 
         proc.stdin.write(body);
         proc.stdin.end();
-    });
+        });
+    } finally {
+        releasePrsSlot();
+    }
 }
 
 // 校验 edges 输入并提取节点数
@@ -151,7 +186,7 @@ router.post('/prs', async (req, res) => {
         res.json({ success: true, data, cached: false });
     } catch (e) {
         console.error('network/prs error:', e.message);
-        res.status(500).json({ success: false, error: e.message });
+        res.status(e.status || 500).json({ success: false, error: e.message });
     }
 });
 
@@ -241,7 +276,7 @@ router.post('/prs/genes', async (req, res) => {
         res.json({ success: true, data, cached: false });
     } catch (e) {
         console.error('network/prs/genes error:', e.message);
-        res.status(500).json({ success: false, error: e.message });
+        res.status(e.status || 500).json({ success: false, error: e.message });
     }
 });
 
@@ -296,7 +331,7 @@ router.post('/prs/subnetwork', async (req, res) => {
         });
     } catch (e) {
         console.error('network/prs/subnetwork error:', e.message);
-        res.status(500).json({ success: false, error: e.message });
+        res.status(e.status || 500).json({ success: false, error: e.message });
     }
 });
 

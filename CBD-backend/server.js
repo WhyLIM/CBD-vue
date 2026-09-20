@@ -37,7 +37,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // 速率限制
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15分钟
-  max: 100, // 限制每个IP 100个请求
+  max: 1000, // 每个IP 1000个请求（50 并发场景下一个活跃会话约 50-150 请求，共享出口 IP 的团队共用额度）
+  // STRING 代理/计算路由在 routes/string.js 内单独放宽（一次完整分析会产生 6-10 个请求）
+  skip: (req) => /^\/api\/string(\/|$)/.test(req.originalUrl),
   message: {
     error: 'Too many requests from this IP, please try again later.'
   }

@@ -42,7 +42,7 @@
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="Symbol">
-                  <el-input v-model="searchForm.string_name" placeholder="Enter gene symbol" clearable />
+                  <el-input v-model="searchForm.string_name" placeholder="Enter gene symbol(s), comma separated" clearable />
                 </el-form-item>
               </el-col>
               <el-col :span="12">

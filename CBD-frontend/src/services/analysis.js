@@ -10,6 +10,9 @@ export default {
   getCellChat(params) { return api.get('/analysis/cellchat', { params }) },
   getCellChatChart() { return api.get('/analysis/cellchat/chart') },
   getCellChatNetwork(params) { return api.get('/analysis/cellchat/network', { params }) },
+  getCellChatRawMeta() { return api.get('/analysis/cellchat-raw/meta') },
+  getCellChatRaw(params) { return api.get('/analysis/cellchat-raw', { params }) },
+  getCellChatRawNetwork(params) { return api.get('/analysis/cellchat-raw/network', { params }) },
   getFilters() { return api.get('/analysis/metadata/filters') },
   // CBD3 新增
   getGeneDiffCelltype(params) { return api.get('/analysis/gene-diff/celltype', { params }) },

@@ -28,13 +28,28 @@ importers:
         version: 3.1.1(@fortawesome/fontawesome-svg-core@7.0.0)(vue@3.5.18)
       axios:
         specifier: ^1.11.0
-        version: 1.11.0(debug@4.4.3)
+        version: 1.11.0
+      cytoscape:
+        specifier: ^3.33.1
+        version: 3.33.1
+      cytoscape-cose-bilkent:
+        specifier: ^4.1.0
+        version: 4.1.0(cytoscape@3.33.1)
+      cytoscape-svg:
+        specifier: ^0.4.0
+        version: 0.4.0(cytoscape@3.33.1)
       echarts:
         specifier: ^6.0.0
         version: 6.0.0
       element-plus:
         specifier: ^2.10.5
         version: 2.10.5(vue@3.5.18)
+      graphology:
+        specifier: ^0.26.0
+        version: 0.26.0(graphology-types@0.24.8)
+      graphology-communities-louvain:
+        specifier: ^2.0.2
+        version: 2.0.2(graphology-types@0.24.8)
       lodash-es:
         specifier: ^4.17.21
         version: 4.17.21
@@ -63,18 +78,9 @@ importers:
       '@vue/eslint-config-prettier':
         specifier: ^10.2.0
         version: 10.2.0(eslint@9.32.0)(prettier@3.6.2)
-      cytoscape:
-        specifier: ^3.33.1
-        version: 3.33.1
-      cytoscape-cose-bilkent:
-        specifier: ^4.1.0
-        version: 4.1.0(cytoscape@3.33.1)
       dayjs:
         specifier: ^1.11.19
         version: 1.11.19
-      debug:
-        specifier: ^4.4.3
-        version: 4.4.3
       eslint:
         specifier: ^9.31.0
         version: 9.32.0
@@ -104,10 +110,10 @@ importers:
         version: 8.0.0(vite@7.0.6)(vue@3.5.18)
       vitepress:
         specifier: 2.0.0-alpha.12
-        version: 2.0.0-alpha.12(async-validator@4.2.5)(axios@1.11.0(debug@4.4.3))(postcss@8.5.6)
+        version: 2.0.0-alpha.12(async-validator@4.2.5)(axios@1.11.0)(postcss@8.5.6)
       vitepress-plugin-mermaid:
         specifier: ^2.0.17
-        version: 2.0.17(mermaid@11.12.2)(vitepress@2.0.0-alpha.12(async-validator@4.2.5)(axios@1.11.0(debug@4.4.3))(postcss@8.5.6))
+        version: 2.0.17(mermaid@11.12.2)(vitepress@2.0.0-alpha.12(async-validator@4.2.5)(axios@1.11.0)(postcss@8.5.6))
 
 packages:
 
@@ -1177,6 +1183,11 @@ packages:
     peerDependencies:
       cytoscape: ^3.2.0
 
+  cytoscape-svg@0.4.0:
+    resolution: {integrity: sha512-omqIzfPd1Vy9mk6lHTiR2wTbjxELxb9GXSQ2pE6W+GwAe/6/yvOUQ2h5ApFf2QhCBnpMwLkCTq5DZXxBCgUpDw==}
+    peerDependencies:
+      cytoscape: ^3.2.0
+
   cytoscape@3.33.1:
     resolution: {integrity: sha512-iJc4TwyANnOGR1OmWhsS9ayRS3s+XQ185FmuHObThD+5AeJCakAAbWv8KimMTt08xCCLNgneQwFp+JRJOr9qGQ==}
     engines: {node: '>=0.10'}
@@ -1497,6 +1508,10 @@ packages:
     resolution: {integrity: sha512-kVscqXk4OCp68SZ0dkgEKVi6/8ij300KBWTJq32P/dYeWTSwK41WyTxalN1eRmA5Z9UU/LX9D7FWSmV9SAYx6g==}
     engines: {node: '>=0.10.0'}
 
+  events@3.3.0:
+    resolution: {integrity: sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==}
+    engines: {node: '>=0.8.x'}
+
   execa@9.6.0:
     resolution: {integrity: sha512-jpWzZ1ZhwUmeWRhS7Qv3mhpOhLfwI+uAX4e5fOcXqwMR7EcJ0pj2kV1CVzHVMX/LphnKWD3LObjZCoJ71lKpHw==}
     engines: {node: ^18.19.0 || >=20.5.0}
@@ -1611,6 +1626,29 @@ packages:
 
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
+
+  graphology-communities-louvain@2.0.2:
+    resolution: {integrity: sha512-zt+2hHVPYxjEquyecxWXoUoIuN/UvYzsvI7boDdMNz0rRvpESQ7+e+Ejv6wK7AThycbZXuQ6DkG8NPMCq6XwoA==}
+    peerDependencies:
+      graphology-types: '>=0.19.0'
+
+  graphology-indices@0.17.0:
+    resolution: {integrity: sha512-A7RXuKQvdqSWOpn7ZVQo4S33O0vCfPBnUSf7FwE0zNCasqwZVUaCXePuWo5HBpWw68KJcwObZDHpFk6HKH6MYQ==}
+    peerDependencies:
+      graphology-types: '>=0.20.0'
+
+  graphology-types@0.24.8:
+    resolution: {integrity: sha512-hDRKYXa8TsoZHjgEaysSRyPdT6uB78Ci8WnjgbStlQysz7xR52PInxNsmnB7IBOM1BhikxkNyCVEFgmPKnpx3Q==}
+
+  graphology-utils@2.5.2:
+    resolution: {integrity: sha512-ckHg8MXrXJkOARk56ZaSCM1g1Wihe2d6iTmz1enGOz4W/l831MBCKSayeFQfowgF8wd+PQ4rlch/56Vs/VZLDQ==}
+    peerDependencies:
+      graphology-types: '>=0.23.0'
+
+  graphology@0.26.0:
+    resolution: {integrity: sha512-8SSImzgUUYC89Z042s+0r/vMibY7GX/Emz4LDO5e7jYXhuoWfHISPFJYjpRLUSJGq6UQ6xlenvX1p/hJdfXuXg==}
+    peerDependencies:
+      graphology-types: '>=0.24.0'
 
   hachure-fill@0.5.2:
     resolution: {integrity: sha512-3GKBOn+m2LX9iq+JC1064cSFprJY4jL1jCXTcpnfER5HYE2l/4EfWSGzkPa/ZDBmYI0ZOEj5VHV/eKnPGkHuOg==}
@@ -1855,6 +1893,9 @@ packages:
   mlly@1.8.0:
     resolution: {integrity: sha512-l8D9ODSRWLe2KHJSifWGwBqpTZXIXTeo8mlKjY+E2HAakaTeNpqAyBZ8GSqLzHgw4XmHmC8whvpjJNMbFZN7/g==}
 
+  mnemonist@0.39.8:
+    resolution: {integrity: sha512-vyWo2K3fjrUw8YeeZ1zF0fy6Mu59RHokURlld8ymdUPjMlD9EC9ov1/YPqTgqRvUN9nTr3Gqfz29LYAmu0PHPQ==}
+
   mrmime@2.0.1:
     resolution: {integrity: sha512-Y3wQdFg2Va6etvQ5I82yUhGdsKrcYox6p7FfL1LbK2J4V01F9TGlepTIhnK24t7koZibmg82KGglhA1XK5IsLQ==}
     engines: {node: '>=10'}
@@ -1891,6 +1932,9 @@ packages:
   nth-check@2.1.1:
     resolution: {integrity: sha512-lqjrjmaOoAnWfMmBPL+XNnynZh2+swxiX3WUE0s4yEHI6m+AwrK2UZOimIRl3X/4QctVqS8AiZjFqyOGrMXb/w==}
 
+  obliterator@2.0.5:
+    resolution: {integrity: sha512-42CPE9AhahZRsMNslczq0ctAEtqk8Eka26QofnqC346BZdHDySk3LWka23LI7ULIw11NmltpiLagIq8gBozxTw==}
+
   ohash@2.0.11:
     resolution: {integrity: sha512-RdR9FQrFwNBNXAr4GixM8YaRZRJ5PUWbKYbE5eOsrwAjJW0q2REGcf79oYPsLyskQCZG1PLN+S/K1V00joZAoQ==}
 
@@ -1918,6 +1962,9 @@ packages:
 
   package-manager-detector@1.6.0:
     resolution: {integrity: sha512-61A5ThoTiDG/C8s8UMZwSorAGwMJ0ERVGj2OjoW5pAalsNOg15+iQiPzrLJ4jhZ1HJzmC2PIHT2oEiH3R5fzNA==}
+
+  pandemonium@2.4.1:
+    resolution: {integrity: sha512-wRqjisUyiUfXowgm7MFH2rwJzKIr20rca5FsHXCMNm1W5YPP1hCtrZfgmQ62kP7OZ7Xt+cR858aB28lu5NX55g==}
 
   parent-module@1.0.1:
     resolution: {integrity: sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g==}
@@ -3317,14 +3364,14 @@ snapshots:
       - '@vue/composition-api'
       - vue
 
-  '@vueuse/integrations@13.8.0(async-validator@4.2.5)(axios@1.11.0(debug@4.4.3))(focus-trap@7.6.5)(vue@3.5.18)':
+  '@vueuse/integrations@13.8.0(async-validator@4.2.5)(axios@1.11.0)(focus-trap@7.6.5)(vue@3.5.18)':
     dependencies:
       '@vueuse/core': 13.8.0(vue@3.5.18)
       '@vueuse/shared': 13.8.0(vue@3.5.18)
       vue: 3.5.18
     optionalDependencies:
       async-validator: 4.2.5
-      axios: 1.11.0(debug@4.4.3)
+      axios: 1.11.0
       focus-trap: 7.6.5
 
   '@vueuse/metadata@13.8.0': {}
@@ -3367,9 +3414,9 @@ snapshots:
 
   asynckit@0.4.0: {}
 
-  axios@1.11.0(debug@4.4.3):
+  axios@1.11.0:
     dependencies:
-      follow-redirects: 1.15.11(debug@4.4.3)
+      follow-redirects: 1.15.11
       form-data: 4.0.4
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
@@ -3483,6 +3530,10 @@ snapshots:
   cytoscape-fcose@2.2.0(cytoscape@3.33.1):
     dependencies:
       cose-base: 2.2.0
+      cytoscape: 3.33.1
+
+  cytoscape-svg@0.4.0(cytoscape@3.33.1):
+    dependencies:
       cytoscape: 3.33.1
 
   cytoscape@3.33.1: {}
@@ -3873,6 +3924,8 @@ snapshots:
 
   esutils@2.0.3: {}
 
+  events@3.3.0: {}
+
   execa@9.6.0:
     dependencies:
       '@sindresorhus/merge-streams': 4.0.0
@@ -3928,9 +3981,7 @@ snapshots:
     dependencies:
       tabbable: 6.2.0
 
-  follow-redirects@1.15.11(debug@4.4.3):
-    optionalDependencies:
-      debug: 4.4.3
+  follow-redirects@1.15.11: {}
 
   form-data@4.0.4:
     dependencies:
@@ -3987,6 +4038,31 @@ snapshots:
   gopd@1.2.0: {}
 
   graceful-fs@4.2.11: {}
+
+  graphology-communities-louvain@2.0.2(graphology-types@0.24.8):
+    dependencies:
+      graphology-indices: 0.17.0(graphology-types@0.24.8)
+      graphology-types: 0.24.8
+      graphology-utils: 2.5.2(graphology-types@0.24.8)
+      mnemonist: 0.39.8
+      pandemonium: 2.4.1
+
+  graphology-indices@0.17.0(graphology-types@0.24.8):
+    dependencies:
+      graphology-types: 0.24.8
+      graphology-utils: 2.5.2(graphology-types@0.24.8)
+      mnemonist: 0.39.8
+
+  graphology-types@0.24.8: {}
+
+  graphology-utils@2.5.2(graphology-types@0.24.8):
+    dependencies:
+      graphology-types: 0.24.8
+
+  graphology@0.26.0(graphology-types@0.24.8):
+    dependencies:
+      events: 3.3.0
+      graphology-types: 0.24.8
 
   hachure-fill@0.5.2: {}
 
@@ -4229,6 +4305,10 @@ snapshots:
       pkg-types: 1.3.1
       ufo: 1.6.1
 
+  mnemonist@0.39.8:
+    dependencies:
+      obliterator: 2.0.5
+
   mrmime@2.0.1: {}
 
   ms@2.1.3: {}
@@ -4254,6 +4334,8 @@ snapshots:
   nth-check@2.1.1:
     dependencies:
       boolbase: 1.0.0
+
+  obliterator@2.0.5: {}
 
   ohash@2.0.11: {}
 
@@ -4290,6 +4372,10 @@ snapshots:
       p-limit: 3.1.0
 
   package-manager-detector@1.6.0: {}
+
+  pandemonium@2.4.1:
+    dependencies:
+      mnemonist: 0.39.8
 
   parent-module@1.0.1:
     dependencies:
@@ -4629,14 +4715,14 @@ snapshots:
     optionalDependencies:
       fsevents: 2.3.3
 
-  vitepress-plugin-mermaid@2.0.17(mermaid@11.12.2)(vitepress@2.0.0-alpha.12(async-validator@4.2.5)(axios@1.11.0(debug@4.4.3))(postcss@8.5.6)):
+  vitepress-plugin-mermaid@2.0.17(mermaid@11.12.2)(vitepress@2.0.0-alpha.12(async-validator@4.2.5)(axios@1.11.0)(postcss@8.5.6)):
     dependencies:
       mermaid: 11.12.2
-      vitepress: 2.0.0-alpha.12(async-validator@4.2.5)(axios@1.11.0(debug@4.4.3))(postcss@8.5.6)
+      vitepress: 2.0.0-alpha.12(async-validator@4.2.5)(axios@1.11.0)(postcss@8.5.6)
     optionalDependencies:
       '@mermaid-js/mermaid-mindmap': 9.3.0
 
-  vitepress@2.0.0-alpha.12(async-validator@4.2.5)(axios@1.11.0(debug@4.4.3))(postcss@8.5.6):
+  vitepress@2.0.0-alpha.12(async-validator@4.2.5)(axios@1.11.0)(postcss@8.5.6):
     dependencies:
       '@docsearch/css': 4.0.0-beta.8
       '@docsearch/js': 4.0.0-beta.8
@@ -4649,7 +4735,7 @@ snapshots:
       '@vue/devtools-api': 8.0.1
       '@vue/shared': 3.5.18
       '@vueuse/core': 13.8.0(vue@3.5.18)
-      '@vueuse/integrations': 13.8.0(async-validator@4.2.5)(axios@1.11.0(debug@4.4.3))(focus-trap@7.6.5)(vue@3.5.18)
+      '@vueuse/integrations': 13.8.0(async-validator@4.2.5)(axios@1.11.0)(focus-trap@7.6.5)(vue@3.5.18)
       focus-trap: 7.6.5
       mark.js: 8.11.1
       minisearch: 7.1.2

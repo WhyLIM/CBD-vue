@@ -7,4 +7,5 @@ This section provides comprehensive instructions for using all features of the C
 - [Navigation Overview](3.1_nav.md) - Understanding the platform layout and navigation
 - [Search Functionality](3.2_search.md) - How to effectively search for biomarkers and data
 - [Browse & Explore](3.3_browse.md) - Browsing biomarkers and exploring datasets
+- [Network Analysis](3.5_network.md) - PPI network building, expansion, statistics and exports
 - [Data Submission](3.4_submit.md) - Contributing data to the database

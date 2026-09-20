@@ -21,12 +21,12 @@ features:
     details: Includes colorectal cancer biomarkers curated from selected medical literature and manually validated, with detailed clinical correlations and survival analysis.
     link: /1_overview
   - icon: 🔬
-    title: Single-Cell RNA Analysis
-    details: Bulk to Single Cell Resolution Explorer (B2SCR) provides interactive visualization and analysis of TCGA clinical data and GEO single-cell data.
+    title: Single-Cell Expression Atlas
+    details: Interactive UMAP visualization of single-cell gene expression - pick a dataset, filter cell types and overlay gene expression levels.
     link: /3.3_browse
   - icon: 🧬
     title: Protein Interaction Networks
-    details: Explore protein-protein interaction networks using STRING database integration, supporting KEGG and Reactome pathway analysis.
+    details: Build, expand and statistically analyze protein-protein interaction networks with STRING integration - module detection, proximity testing, enrichment analysis and reproducible exports.
     link: /3.3_browse
   - icon: 📈
     title: Data Browse & Analysis

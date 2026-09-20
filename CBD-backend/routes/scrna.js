@@ -169,15 +169,22 @@ router.get('/export', async (req, res) => {
     }
 })
 
-// 基因表达 - UMAP 单基因着色
+// 基因表达 - UMAP 着色，支持单基因或多基因（多基因时按细胞取平均表达）
+// gene 参数支持逗号分隔（如 gene=TP53,KRAS），多基因上限 50
 router.get('/gene-expr', async (req, res) => {
     try {
-        const { gene } = req.query
-        if (!gene) return res.status(400).json({ success: false, message: 'gene parameter required' })
+        if (!req.query.gene) return res.status(400).json({ success: false, message: 'gene parameter required' })
+        const genes = [...new Set([].concat(req.query.gene)
+            .flatMap(g => String(g).split(','))
+            .map(g => g.trim())
+            .filter(Boolean))]
+        if (!genes.length) return res.status(400).json({ success: false, message: 'gene parameter required' })
+        if (genes.length > 50) return res.status(400).json({ success: false, message: 'Too many genes (max 50)' })
         const limit = Math.min(parseInt(req.query.limit) || 50000, 200000)
+        const placeholders = genes.map(() => '?').join(',')
         const rows = await db.query(
-            'SELECT cell, expr FROM scrna_gene_expr WHERE gene = ? LIMIT ?',
-            [gene, limit]
+            `SELECT cell, AVG(expr) AS expr FROM scrna_gene_expr WHERE gene IN (${placeholders}) GROUP BY cell LIMIT ?`,
+            [...genes, limit]
         )
         res.json({ success: true, data: rows })
     } catch (e) {

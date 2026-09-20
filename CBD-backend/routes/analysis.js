@@ -20,13 +20,68 @@ const respond = (rows, page, limit, total) => ({
     }
 })
 
+// 基因过滤：支持逗号分隔的多个基因（如 gene=TP53,KRAS）
+const geneInFilter = (raw) => {
+    const genes = [...new Set([].concat(raw).flatMap(g => String(g).split(',')).map(g => g.trim()).filter(Boolean))]
+    return genes.length ? { sql: `gene IN (${genes.map(() => '?').join(',')})`, params: genes } : null
+}
+
+// ===== 静态图表响应缓存 =====
+// 全量 chart 接口的底层数据是静态的（仅重跑数据导入才会变化），
+// 多用户共享同一份响应，避免每个用户都触发全表查询与 JSON 序列化。
+const CHART_CACHE_TTL_MS = 10 * 60 * 1000
+const CHART_CACHE_MAX_ENTRIES = 30
+const CHART_CACHE_MAX_BYTES = 40 * 1024 * 1024
+const CHART_CACHE_MAX_ENTRY_BYTES = 4 * 1024 * 1024
+let chartCacheBytes = 0
+const chartCache = new Map()
+
+const chartCacheMiddleware = (req, res, next) => {
+    const key = req.originalUrl
+    const hit = chartCache.get(key)
+    if (hit && Date.now() - hit.at < CHART_CACHE_TTL_MS) {
+        chartCache.delete(key)
+        chartCache.set(key, hit) // 刷新 LRU 位置
+        res.set('X-Cache', 'hit')
+        res.type('application/json').send(hit.body)
+        return
+    }
+    if (hit) {
+        chartCacheBytes -= hit.bytes
+        chartCache.delete(key)
+    }
+    const originalJson = res.json.bind(res)
+    res.json = (body) => {
+        const str = JSON.stringify(body)
+        if (!res.locals.noCache && res.statusCode === 200 && body && body.success && str.length <= CHART_CACHE_MAX_ENTRY_BYTES) {
+            const prev = chartCache.get(key)
+            if (prev) chartCacheBytes -= prev.bytes
+            chartCache.set(key, { at: Date.now(), bytes: str.length, body: str })
+            chartCacheBytes += str.length
+            while (chartCache.size > CHART_CACHE_MAX_ENTRIES || chartCacheBytes > CHART_CACHE_MAX_BYTES) {
+                const oldestKey = chartCache.keys().next().value
+                const oldest = chartCache.get(oldestKey)
+                chartCacheBytes -= oldest.bytes
+                chartCache.delete(oldestKey)
+                if (!chartCache.size) break
+            }
+        }
+        res.set('X-Cache', 'miss')
+        res.type('application/json').send(str)
+    }
+    next()
+}
+
+// 底层为静态数据的全量接口，统一挂缓存中间件（数据重导后重启后端即可刷新）
+router.get(['/degs/chart', '/gene-diff/celltype/chart', '/gene-diff/tvsn/chart', '/cellchat/chart', '/roc/chart'], chartCacheMiddleware)
+
 router.get('/degs', async (req, res, next) => {
     const { page, limit, offset } = paginate(req)
     try {
         const where = []
         const params = []
         if (req.query.cell_type) { where.push('cell_type = ?'); params.push(req.query.cell_type) }
-        if (req.query.gene) { where.push('gene = ?'); params.push(req.query.gene) }
+        if (req.query.gene) { const gs = geneInFilter(req.query.gene); if (gs) { where.push(gs.sql); params.push(...gs.params) } }
         const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : ''
         let order = 'ORDER BY neg_log10_padj DESC'
         const sort = (req.query.sort || '').toLowerCase()
@@ -52,6 +107,7 @@ router.get('/degs/chart', async (req, res, next) => {
         res.json({ success: true, data: rows })
     } catch (e) {
         console.error('analysis/degs/chart error:', e)
+        res.locals.noCache = true // 错误兜底的空结果不进缓存
         res.json({ success: true, data: [] })
     }
 })
@@ -67,6 +123,7 @@ router.get('/gene-diff/celltype/chart', async (req, res, next) => {
         res.json({ success: true, data: rows })
     } catch (e) {
         console.error('analysis/gene-diff/celltype/chart error:', e)
+        res.locals.noCache = true // 错误兜底的空结果不进缓存
         res.json({ success: true, data: [] })
     }
 })
@@ -82,6 +139,7 @@ router.get('/gene-diff/tvsn/chart', async (req, res, next) => {
         res.json({ success: true, data: rows })
     } catch (e) {
         console.error('analysis/gene-diff/tvsn/chart error:', e)
+        res.locals.noCache = true // 错误兜底的空结果不进缓存
         res.json({ success: true, data: [] })
     }
 })
@@ -99,6 +157,7 @@ router.get('/degs/gene-search', async (req, res) => {
         res.json({ success: true, data: rows.map(r => r.gene) })
     } catch (e) {
         console.error('analysis/degs/gene-search error:', e)
+        res.locals.noCache = true // 错误兜底的空结果不进缓存
         res.json({ success: true, data: [] })
     }
 })
@@ -118,6 +177,7 @@ router.get('/gene-diff/gene-search', async (req, res) => {
         res.json({ success: true, data: genes })
     } catch (e) {
         console.error('analysis/gene-diff/gene-search error:', e)
+        res.locals.noCache = true // 错误兜底的空结果不进缓存
         res.json({ success: true, data: [] })
     }
 })
@@ -187,6 +247,7 @@ router.get('/cellchat/chart', async (req, res) => {
         res.json({ success: true, data: rows })
     } catch (e) {
         console.error('analysis/cellchat/chart error:', e)
+        res.locals.noCache = true // 错误兜底的空结果不进缓存
         res.json({ success: true, data: [] })
     }
 })
@@ -204,7 +265,7 @@ router.get('/cellchat', async (req, res, next) => {
         if (req.query.min_prob) { where.push('prob >= ?'); params.push(parseFloat(req.query.min_prob)) }
         const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : ''
         const totalRows = await query(`SELECT COUNT(*) as c FROM analysis_cellchat ${whereSql}`, params)
-        const rows = await query(`SELECT source, target, ligand, receptor, prob, pval, pathway_name FROM analysis_cellchat ${whereSql} ORDER BY prob DESC LIMIT ${limit} OFFSET ${offset}`, params)
+        const rows = await query(`SELECT source, target, ligand, receptor, prob, pval, pathway_name, annotation, evidence FROM analysis_cellchat ${whereSql} ORDER BY prob DESC LIMIT ${limit} OFFSET ${offset}`, params)
         res.json(respond(rows, page, limit, totalRows[0]?.c || 0))
     } catch (e) {
         console.error('analysis/cellchat error:', e)
@@ -224,6 +285,87 @@ router.get('/cellchat/network', async (req, res, next) => {
         const nodes = Array.from(nodeSet).map(id => ({ id, type: 'cell' }))
         res.json({ success: true, data: { nodes, edges } })
     } catch (e) { next(e) }
+})
+
+// ===== CellChat 原始全量（analysis_cellchat_raw，含 annotation/evidence）=====
+
+// 公共 WHERE 构造：表格与网络图共用同一套筛选
+const cellchatRawWhere = (q) => {
+    const where = []
+    const params = []
+    if (q.source) { where.push('source = ?'); params.push(q.source) }
+    if (q.target) { where.push('target = ?'); params.push(q.target) }
+    if (q.pathway_name) { where.push('pathway_name = ?'); params.push(q.pathway_name) }
+    if (q.annotation) { where.push('annotation = ?'); params.push(q.annotation) }
+    if (q.gene) {
+        // 支持逗号分隔的多个基因，任一命中即返回
+        const genes = [...new Set(String(q.gene).split(',').map(g => g.trim()).filter(Boolean))]
+        if (genes.length) {
+            where.push('(' + genes.map(() => '(ligand LIKE ? OR receptor LIKE ?)').join(' OR ') + ')')
+            genes.forEach(g => { params.push(`%${g}%`, `%${g}%`) })
+        }
+    }
+    if (q.min_prob) { where.push('prob >= ?'); params.push(parseFloat(q.min_prob)) }
+    return { whereSql: where.length ? `WHERE ${where.join(' AND ')}` : '', params }
+}
+
+// 筛选项元数据（细胞类型 / 通路 / 通讯类别）
+router.get('/cellchat-raw/meta', async (req, res) => {
+    try {
+        const [sources, targets, pathways, annotations] = await Promise.all([
+            query('SELECT DISTINCT source FROM analysis_cellchat_raw ORDER BY source'),
+            query('SELECT DISTINCT target FROM analysis_cellchat_raw ORDER BY target'),
+            query('SELECT DISTINCT pathway_name FROM analysis_cellchat_raw WHERE pathway_name IS NOT NULL ORDER BY pathway_name'),
+            query('SELECT DISTINCT annotation FROM analysis_cellchat_raw WHERE annotation IS NOT NULL ORDER BY annotation')
+        ])
+        res.json({
+            success: true,
+            data: {
+                sources: sources.map(r => r.source),
+                targets: targets.map(r => r.target),
+                pathways: pathways.map(r => r.pathway_name),
+                annotations: annotations.map(r => r.annotation)
+            }
+        })
+    } catch (e) {
+        console.error('analysis/cellchat-raw/meta error:', e)
+        res.json({ success: true, data: { sources: [], targets: [], pathways: [], annotations: [] } })
+    }
+})
+
+router.get('/cellchat-raw', async (req, res, next) => {
+    const { page, limit, offset } = paginate(req)
+    try {
+        const { whereSql, params } = cellchatRawWhere(req.query)
+        const totalRows = await query(`SELECT COUNT(*) as c FROM analysis_cellchat_raw ${whereSql}`, params)
+        const rows = await query(
+            `SELECT source, target, ligand, receptor, interaction_name, interaction_name_2, pathway_name, annotation, evidence, prob, pval
+             FROM analysis_cellchat_raw ${whereSql} ORDER BY prob DESC LIMIT ${limit} OFFSET ${offset}`,
+            params
+        )
+        res.json(respond(rows, page, limit, totalRows[0]?.c || 0))
+    } catch (e) {
+        console.error('analysis/cellchat-raw error:', e)
+        return res.json(respond([], page, limit, 0))
+    }
+})
+
+// 网络图数据：按 source-target 聚合 prob（服务端聚合，避免全量传输）
+router.get('/cellchat-raw/network', async (req, res, next) => {
+    try {
+        const { whereSql, params } = cellchatRawWhere(req.query)
+        const edges = await query(
+            `SELECT source, target, SUM(prob) as prob FROM analysis_cellchat_raw ${whereSql} GROUP BY source, target`,
+            params
+        )
+        const nodeSet = new Set()
+        edges.forEach(e => { nodeSet.add(e.source); nodeSet.add(e.target) })
+        const nodes = Array.from(nodeSet).map(id => ({ id, type: 'cell' }))
+        res.json({ success: true, data: { nodes, edges } })
+    } catch (e) {
+        console.error('analysis/cellchat-raw/network error:', e)
+        res.json({ success: true, data: { nodes: [], edges: [] } })
+    }
 })
 
 router.get('/ppi', async (req, res, next) => {
@@ -251,7 +393,7 @@ router.get('/gene-diff/celltype', async (req, res, next) => {
         const where = []
         const params = []
         if (req.query.celltype) { where.push('celltype = ?'); params.push(req.query.celltype) }
-        if (req.query.gene) { where.push('gene = ?'); params.push(req.query.gene) }
+        if (req.query.gene) { const gs = geneInFilter(req.query.gene); if (gs) { where.push(gs.sql); params.push(...gs.params) } }
         if (req.query.min_logfc) { where.push('ABS(avg_log2FC) >= ?'); params.push(parseFloat(req.query.min_logfc)) }
         if (req.query.max_padj) { where.push('p_val_adj <= ?'); params.push(parseFloat(req.query.max_padj)) }
         const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : ''
@@ -275,7 +417,7 @@ router.get('/gene-diff/tvsn', async (req, res, next) => {
         const where = []
         const params = []
         if (req.query.celltype) { where.push('celltype = ?'); params.push(req.query.celltype) }
-        if (req.query.gene) { where.push('gene = ?'); params.push(req.query.gene) }
+        if (req.query.gene) { const gs = geneInFilter(req.query.gene); if (gs) { where.push(gs.sql); params.push(...gs.params) } }
         if (req.query.condition) { where.push('`condition` = ?'); params.push(req.query.condition) }
         if (req.query.min_logfc) { where.push('ABS(avg_log2FC) >= ?'); params.push(parseFloat(req.query.min_logfc)) }
         if (req.query.max_padj) { where.push('p_val_adj <= ?'); params.push(parseFloat(req.query.max_padj)) }
@@ -299,7 +441,7 @@ router.get('/roc/tn', async (req, res, next) => {
         const where = []
         const params = []
         if (req.query.celltype) { where.push('celltype = ?'); params.push(req.query.celltype) }
-        if (req.query.gene) { where.push('gene = ?'); params.push(req.query.gene) }
+        if (req.query.gene) { const gs = geneInFilter(req.query.gene); if (gs) { where.push(gs.sql); params.push(...gs.params) } }
         if (req.query.min_auc) { where.push('auc >= ?'); params.push(parseFloat(req.query.min_auc)) }
         if (req.query.direction) { where.push('direction = ?'); params.push(req.query.direction) }
         const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : ''
@@ -322,7 +464,7 @@ router.get('/roc/celltype', async (req, res, next) => {
         const where = []
         const params = []
         if (req.query.celltype) { where.push('celltype = ?'); params.push(req.query.celltype) }
-        if (req.query.gene) { where.push('gene = ?'); params.push(req.query.gene) }
+        if (req.query.gene) { const gs = geneInFilter(req.query.gene); if (gs) { where.push(gs.sql); params.push(...gs.params) } }
         if (req.query.min_auc) { where.push('auc >= ?'); params.push(parseFloat(req.query.min_auc)) }
         if (req.query.direction) { where.push('direction = ?'); params.push(req.query.direction) }
         const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : ''
@@ -344,7 +486,7 @@ router.get('/roc/chart', async (req, res) => {
         const where = []
         const params = []
         if (req.query.celltype) { where.push('celltype = ?'); params.push(req.query.celltype) }
-        if (req.query.gene) { where.push('gene = ?'); params.push(req.query.gene) }
+        if (req.query.gene) { const gs = geneInFilter(req.query.gene); if (gs) { where.push(gs.sql); params.push(...gs.params) } }
         if (req.query.min_auc) { where.push('auc >= ?'); params.push(parseFloat(req.query.min_auc)) }
         const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : ''
         const table = req.query.tab === 'celltype' ? 'analysis_roc_celltype' : 'analysis_roc_tn'
@@ -352,6 +494,7 @@ router.get('/roc/chart', async (req, res) => {
         res.json({ success: true, data: rows })
     } catch (e) {
         console.error('analysis/roc/chart error:', e)
+        res.locals.noCache = true // 错误兜底的空结果不进缓存
         res.json({ success: true, data: [] })
     }
 })
@@ -369,6 +512,7 @@ router.get('/prs/gene-search', async (req, res) => {
         res.json({ success: true, data: rows.map(r => r.gene) })
     } catch (e) {
         console.error('analysis/prs/gene-search error:', e)
+        res.locals.noCache = true // 错误兜底的空结果不进缓存
         res.json({ success: true, data: [] })
     }
 })
@@ -388,6 +532,7 @@ router.get('/roc/gene-search', async (req, res) => {
         res.json({ success: true, data: genes })
     } catch (e) {
         console.error('analysis/roc/gene-search error:', e)
+        res.locals.noCache = true // 错误兜底的空结果不进缓存
         res.json({ success: true, data: [] })
     }
 })
@@ -405,6 +550,7 @@ router.get('/biomk-cellchat/gene-search', async (req, res) => {
         res.json({ success: true, data: rows.map(r => r.gene) })
     } catch (e) {
         console.error('analysis/biomk-cellchat/gene-search error:', e)
+        res.locals.noCache = true // 错误兜底的空结果不进缓存
         res.json({ success: true, data: [] })
     }
 })
@@ -423,6 +569,7 @@ router.get('/prs/scatter', async (req, res, next) => {
         res.json({ success: true, data: rows })
     } catch (e) {
         console.error('analysis/prs/scatter error:', e)
+        res.locals.noCache = true // 错误兜底的空结果不进缓存
         res.json({ success: true, data: [] })
     }
 })
@@ -434,7 +581,7 @@ router.get('/prs', async (req, res, next) => {
         const where = []
         const params = []
         if (req.query.celltype) { where.push('celltype = ?'); params.push(req.query.celltype) }
-        if (req.query.gene) { where.push('gene = ?'); params.push(req.query.gene) }
+        if (req.query.gene) { const gs = geneInFilter(req.query.gene); if (gs) { where.push(gs.sql); params.push(...gs.params) } }
         const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : ''
         const totalRows = await query(`SELECT COUNT(*) as c FROM analysis_network_prs ${whereSql}`, params)
         const rows = await query(`SELECT gene, celltype, deg, eff, sens, trans, eigenvec_centr, closeness_centr FROM analysis_network_prs ${whereSql} ORDER BY sens DESC LIMIT ${limit} OFFSET ${offset}`, params)
@@ -451,13 +598,13 @@ router.get('/biomk-cellchat', async (req, res, next) => {
     try {
         const where = []
         const params = []
-        if (req.query.gene) { where.push('gene = ?'); params.push(req.query.gene) }
+        if (req.query.gene) { const gs = geneInFilter(req.query.gene); if (gs) { where.push(gs.sql); params.push(...gs.params) } }
         if (req.query.biomark_as) { where.push('biomark_as = ?'); params.push(req.query.biomark_as) }
         if (req.query.source) { where.push('source = ?'); params.push(req.query.source) }
         if (req.query.target) { where.push('target = ?'); params.push(req.query.target) }
         const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : ''
         const totalRows = await query(`SELECT COUNT(*) as c FROM analysis_biomk_cellchat ${whereSql}`, params)
-        const rows = await query(`SELECT gene, biomark_as, source, target, ligand, receptor, pathway_name, prob, pval, interaction_name FROM analysis_biomk_cellchat ${whereSql} ORDER BY prob DESC LIMIT ${limit} OFFSET ${offset}`, params)
+        const rows = await query(`SELECT gene, biomark_as, source, target, ligand, receptor, pathway_name, prob, pval, interaction_name, annotation, evidence FROM analysis_biomk_cellchat ${whereSql} ORDER BY prob DESC LIMIT ${limit} OFFSET ${offset}`, params)
         res.json(respond(rows, page, limit, totalRows[0]?.c || 0))
     } catch (e) {
         console.error('analysis/biomk-cellchat error:', e)
@@ -470,7 +617,7 @@ router.get('/biomk-cellchat/network', async (req, res, next) => {
     try {
         const where = []
         const params = []
-        if (req.query.gene) { where.push('gene = ?'); params.push(req.query.gene) }
+        if (req.query.gene) { const gs = geneInFilter(req.query.gene); if (gs) { where.push(gs.sql); params.push(...gs.params) } }
         if (req.query.biomark_as) { where.push('biomark_as = ?'); params.push(req.query.biomark_as) }
         const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : ''
         const edges = await query(`SELECT source, target, prob, gene, biomark_as, pathway_name FROM analysis_biomk_cellchat ${whereSql}`, params)
@@ -512,6 +659,7 @@ router.get('/pseudotime/gene-search', async (req, res) => {
         res.json({ success: true, data: rows.map(r => r.gene) })
     } catch (e) {
         console.error('analysis/pseudotime/gene-search error:', e)
+        res.locals.noCache = true // 错误兜底的空结果不进缓存
         res.json({ success: true, data: [] })
     }
 })
@@ -522,9 +670,10 @@ router.get('/pseudotime/gene-expr', async (req, res, next) => {
         const where = []
         const params = []
         if (req.query.cell_type) { where.push('cell_type = ?'); params.push(req.query.cell_type) }
-        if (req.query.gene) { where.push('gene = ?'); params.push(req.query.gene) }
+        if (req.query.gene) { const gs = geneInFilter(req.query.gene); if (gs) { where.push(gs.sql); params.push(...gs.params) } }
         const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : ''
-        const rows = await query(`SELECT cell_id, expr, gene, cell_type FROM scrna_pseudotime_gene_expr ${whereSql} LIMIT 20000`, params)
+        // 多基因时按细胞取平均表达（单基因即其本身）
+        const rows = await query(`SELECT cell_id, AVG(expr) AS expr, MAX(cell_type) AS cell_type FROM scrna_pseudotime_gene_expr ${whereSql} GROUP BY cell_id LIMIT 20000`, params)
         res.json({ success: true, data: rows })
     } catch (e) {
         console.error('analysis/pseudotime/gene-expr error:', e)

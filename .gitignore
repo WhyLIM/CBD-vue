@@ -163,3 +163,13 @@ DEPLOYMENT_STRING_PROXY.md
 CLAUDE.md
 .spec-workflow
 .trae
+
+# ZCode CLI 本地会话数据
+.zcode/
+
+# CBD2 旧版项目的本地参考副本（79MB，生产由 /www/wwwroot/CBD 直接部署，不入库）
+# 如需对 CBD2 做版本管理，删除此行即可
+CBD2/
+
+# 一次性维护脚本（硬编码本地路径，用完即弃）
+CBD-frontend/_fix_docs.py
