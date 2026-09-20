@@ -505,6 +505,23 @@ const initializeTables = async () => {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=8
     `);
 
+    // 公共 API 密钥（密文存储：仅保存 SHA-256 哈希，明文只在签发时展示一次）
+    await run(`
+      CREATE TABLE IF NOT EXISTS api_keys (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        contact VARCHAR(255) DEFAULT NULL,
+        key_hash CHAR(64) NOT NULL,
+        key_prefix VARCHAR(12) NOT NULL,
+        rate_limit INT NOT NULL DEFAULT 6000,
+        active TINYINT(1) NOT NULL DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        last_used_at DATETIME DEFAULT NULL,
+        UNIQUE KEY uniq_key_hash (key_hash),
+        INDEX idx_prefix (key_prefix)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
     // 兼容旧库：为已存在的表补充 annotation/evidence 列（新部署由上方 DDL 直接创建）
     const addColumnIfMissing = async (table, columnDef) => {
       try {

@@ -38,12 +38,15 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15分钟
   max: 1000, // 每个IP 1000个请求（50 并发场景下一个活跃会话约 50-150 请求，共享出口 IP 的团队共用额度）
+  // 携带有效 X-API-Key 的公共 API 请求由按密钥限流接管，跳过 IP 限流；
   // STRING 代理/计算路由在 routes/string.js 内单独放宽（一次完整分析会产生 6-10 个请求）
-  skip: (req) => /^\/api\/string(\/|$)/.test(req.originalUrl),
+  skip: (req) => req.apiKeyBypass === true || /^\/api\/string(\/|$)/.test(req.originalUrl),
   message: {
     error: 'Too many requests from this IP, please try again later.'
   }
 });
+// API 密钥认证（必须挂在 IP 限流之前：校验密钥、按密钥限流并标记跳过 IP 限流）
+app.use('/api/', require('./middleware/apiAuth').apiAuth);
 // 静态文件服务（放在 limiter 之前，避免图片请求被限流）
 app.use('/api/uploads', (req, res, next) => {
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');

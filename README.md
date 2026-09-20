@@ -241,6 +241,22 @@ CBD3-vue/
 | POST | `/api/download/custom` | 自定义导出 |
 | GET | `/api/stats` | 数据库统计 |
 
+## 🌐 公共 API
+
+网站数据提供只读 HTTP API：轻度使用无需账号；申请 API 密钥（请求头 `X-API-Key`）可获得独立限流额度（默认 6000 次 / 15 分钟，匿名 1000 次 / 15 分钟 / IP）。端点参考、认证方式与 curl / Python / JavaScript 调用示例见帮助文档 **Public API** 页面（`https://cbd.biomarkerdb.cn/docs/api`，含中文版）。
+
+密钥管理（在能连数据库的机器上执行）：
+
+```bash
+# 签发（明文仅展示一次）
+node CBD-backend/scripts/create_api_key.js --name "Zhang Lab" --contact lab@example.edu
+# 列表 / 吊销
+node CBD-backend/scripts/create_api_key.js --list
+node CBD-backend/scripts/create_api_key.js --revoke cbd_ab12cd34
+```
+
+下载、提交、PRS 计算与 STRING 代理不接受密钥提权，始终按每 IP 限额计数。
+
 ## 🚀 部署
 
 ### 1. 构建前端

@@ -10,7 +10,7 @@ export default withMermaid({
   // 帮助文档中引用的 /biomarker 等链接是应用路由，不是文档页面
   ignoreDeadLinks: [
     '/biomarkers', '/advanced', '/network', '/umap', '/mamof', '/about',
-    '/download', '/submission'
+    '/download', '/submission', '/zh/download'
   ],
 
   appearance: false,
@@ -78,7 +78,8 @@ export default withMermaid({
             text: 'Developers',
             collapsed: false,
             items: [
-              { text: 'Developer Guide', link: '/4_dev' }
+              { text: 'Developer Guide', link: '/4_dev' },
+              { text: 'Public API', link: '/api' }
             ]
           },
           {
@@ -146,7 +147,8 @@ export default withMermaid({
             text: '开发者',
             collapsed: false,
             items: [
-              { text: '开发者指南', link: '/zh/4_dev' }
+              { text: '开发者指南', link: '/zh/4_dev' },
+              { text: '公共 API', link: '/zh/api' }
             ]
           },
           {
