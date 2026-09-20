@@ -159,6 +159,28 @@ const res = await fetch("https://cbd.biomarkerdb.cn/api/analysis/cellchat-raw?pa
 const { data } = await res.json();
 ```
 
+## AI Agent 访问（WebMCP）
+
+CBD3 实现了 [WebMCP](https://github.com/webmachinelearning/webmcp) 提案（W3C Web Machine Learning Community Group）：在支持该规范的浏览器或 Agent 扩展中打开本站时，站点会注册以下结构化工具，AI Agent 可以直接调用它们查询数据库，而无需解析 HTML。
+
+| 工具 | 说明 |
+|---|---|
+| `get-database-stats` | 数据库全库记录计数 |
+| `search-biomarkers` | 筛选 / 搜索标志物记录 |
+| `get-biomarker-detail` | 按 id 获取完整标志物记录 |
+| `quick-search` | 全库关键词搜索 |
+| `list-filter-options` | 可用细胞类型 / 样本 / 患者取值 |
+| `search-genes` | 基因符号自动补全（单细胞数据集） |
+| `get-gene-expression` | 一个或多个基因的逐细胞表达及汇总统计 |
+| `get-deg-analysis` | 差异表达（原始队列 / 按细胞类型 / 肿瘤vs正常） |
+| `get-cellchat-interactions` | 细胞通讯（含通路注释与证据来源） |
+| `get-roc-predictive-ability` | ROC 预测能力（肿瘤vs正常 / 细胞类型） |
+| `get-clinical-evidence` | 诊断 / 生存 / 免疫浸润证据 |
+
+- 工具调用的是与网站相同的只读 API，受相同的每 IP 限流约束；
+- 能力探测：按 WebMCP 草案通过 `document.modelContext` 判断，不支持的浏览器行为完全不变；
+- Agent 通过 `document.modelContext.getTools()` / `executeTool()`（浏览器内置或实现该提案的扩展）消费这些工具。
+
 ## 合理使用约定
 
 - API 提供已发表分析结果的**只读**访问；批量导出请使用[数据下载](/zh/download)页面，而不是逐页遍历 API；

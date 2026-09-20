@@ -45,4 +45,10 @@ app.use(createPinia())
 app.use(router)
 app.use(ElementPlus)
 
+// WebMCP（W3C WebML CG 提案）：向支持该规范的 AI Agent 暴露结构化查询工具。
+// 不支持的浏览器静默跳过，详见 src/utils/webmcp.js
+import('./utils/webmcp')
+  .then(m => m.registerWebMcpTools())
+  .catch(err => console.warn('[WebMCP] registration skipped:', err?.message))
+
 app.mount('#app')

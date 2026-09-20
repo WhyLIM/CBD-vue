@@ -1,0 +1,1 @@
+import{_ as i,c as a,o as t,a3 as e}from"./chunks/framework.BurWKwwG.js";const p=JSON.parse('{"title":"公共 API","description":"","frontmatter":{},"headers":[],"relativePath":"zh/api.md","filePath":"zh/api.md"}'),d={name:"zh/api.md"};function h(n,s,l,o,r,c){return t(),a("div",null,s[0]||(s[0]=[e("",43)]))}const g=i(d,[["render",h]]);export{p as __pageData,g as default};

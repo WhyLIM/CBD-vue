@@ -159,6 +159,28 @@ const res = await fetch("https://cbd.biomarkerdb.cn/api/analysis/cellchat-raw?pa
 const { data } = await res.json();
 ```
 
+## AI agent access (WebMCP)
+
+CBD3 implements the [WebMCP](https://github.com/webmachinelearning/webmcp) proposal (W3C Web Machine Learning Community Group): when the site is opened in a WebMCP-capable browser or agent extension, it registers the structured tools below, so AI agents can query the database directly instead of scraping HTML.
+
+| Tool | Description |
+|---|---|
+| `get-database-stats` | Database-wide record counts |
+| `search-biomarkers` | Filter/search biomarker records |
+| `get-biomarker-detail` | Full biomarker record by id |
+| `quick-search` | Keyword search across the database |
+| `list-filter-options` | All cell types / samples / patients available |
+| `search-genes` | Gene symbol autocomplete (single-cell dataset) |
+| `get-gene-expression` | Per-cell expression of one or more genes, with aggregate statistics |
+| `get-deg-analysis` | Differential expression (original / by cell type / tumor-vs-normal) |
+| `get-cellchat-interactions` | Cell-cell communication with pathway annotation & evidence |
+| `get-roc-predictive-ability` | ROC predictive ability (tumor-vs-normal or cell type) |
+| `get-clinical-evidence` | Diagnosis / survival / immune infiltration evidence |
+
+- Tools call the same read-only API as the website and are subject to the same per-IP rate limits.
+- Detection: `document.modelContext` per the WebMCP draft. In browsers without support the site behaves exactly as before.
+- Agents consume tools via `document.modelContext.getTools()` / `executeTool()` (browser built-ins or extensions implementing the proposal).
+
 ## Fair-use terms
 
 - The API provides **read-only** access to published analysis results; keep bulk exports to the [Download](/download) page instead of paginating through the API.
