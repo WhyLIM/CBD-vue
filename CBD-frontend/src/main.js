@@ -13,6 +13,21 @@ import App from './App.vue'
 import router from './router'
 import './assets/css/main.css'
 
+// 屏蔽 ResizeObserver 的良性循环告警：Element Plus / ECharts / Cytoscape 的
+// 观察回调在同帧内又触发布局变化时，浏览器会推迟通知并抛出该消息，
+// 不影响任何功能（参见 https://github.com/WICG/resize-observer/issues/38）。
+// 仅过滤这两条特定消息，其它错误正常上报。
+const RO_LOOP_MESSAGES = [
+  'ResizeObserver loop completed with undelivered notifications.',
+  'ResizeObserver loop limit exceeded'
+]
+window.addEventListener('error', (e) => {
+  if (RO_LOOP_MESSAGES.includes(e.message)) {
+    e.stopImmediatePropagation()
+    e.preventDefault()
+  }
+})
+
 // 添加FontAwesome图标
 library.add(fas, far, fab)
 
