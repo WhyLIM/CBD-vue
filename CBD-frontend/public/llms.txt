@@ -1,13 +1,13 @@
-# CBD3 — Colorectal Cancer Biomarker Database
+# CBD3 - Colorectal Cancer Biomarker Database
 
 > Read-only database of colorectal cancer (CRC) biomarkers: curated biomarker records with literature references, single-cell RNA-seq analyses (UMAP, differential expression, predictive ability ROC, cell-cell communication/CellChat, network sensitivity, clinical evidence) for a 20,000+ cell human CRC dataset.
 
-The site exposes a public read-only JSON API and registers WebMCP tools for AI agents that execute page JavaScript. Machine-readable docs are at [/docs/api](https://cbd.biomarkerdb.cn/docs/api) (English) and [/docs/zh/api](https://cbd.biomarkerdb.cn/docs/zh/api) (简体中文).
+The site exposes a public read-only JSON API and registers WebMCP tools for AI agents that execute page JavaScript. Machine-readable docs are at [/docs/api](https://cbd.biomarkerdb.cn/docs/api) (English) and [/docs/zh/api](https://cbd.biomarkerdb.cn/docs/zh/api) (Chinese version).
 
 ## Docs
 
 - [Public API reference](https://cbd.biomarkerdb.cn/docs/api): endpoints, authentication, rate limits, curl/Python/JavaScript examples
-- [公共 API 文档（中文）](https://cbd.biomarkerdb.cn/docs/zh/api): 中文版端点参考与示例
+- [Public API reference (Chinese)](https://cbd.biomarkerdb.cn/docs/zh/api): Chinese version of the API docs
 
 ## API
 
