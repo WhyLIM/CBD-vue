@@ -180,6 +180,7 @@ CBD3 implements the [WebMCP](https://github.com/webmachinelearning/webmcp) propo
 - Tools call the same read-only API as the website and are subject to the same per-IP rate limits.
 - Detection: `document.modelContext` per the WebMCP draft. In browsers without support the site behaves exactly as before.
 - Agents consume tools via `document.modelContext.getTools()` / `executeTool()` (browser built-ins or extensions implementing the proposal).
+- For agents that plan before visiting (and do not execute page JavaScript), the site publishes [llms.txt](https://cbd.biomarkerdb.cn/llms.txt) describing the API and docs following the [llmstxt.org](https://llmstxt.org) convention.
 
 ## Fair-use terms
 

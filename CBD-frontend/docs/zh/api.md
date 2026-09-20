@@ -179,7 +179,8 @@ CBD3 实现了 [WebMCP](https://github.com/webmachinelearning/webmcp) 提案（W
 
 - 工具调用的是与网站相同的只读 API，受相同的每 IP 限流约束；
 - 能力探测：按 WebMCP 草案通过 `document.modelContext` 判断，不支持的浏览器行为完全不变；
-- Agent 通过 `document.modelContext.getTools()` / `executeTool()`（浏览器内置或实现该提案的扩展）消费这些工具。
+- Agent 通过 `document.modelContext.getTools()` / `executeTool()`（浏览器内置或实现该提案的扩展）消费这些工具；
+- 对于在访问前做规划、不执行页面 JavaScript 的 Agent，站点按 [llmstxt.org](https://llmstxt.org) 约定发布了 [llms.txt](https://cbd.biomarkerdb.cn/llms.txt)，描述 API 与文档入口。
 
 ## 合理使用约定
 

@@ -1,0 +1,30 @@
+# CBD3 — Colorectal Cancer Biomarker Database
+
+> Read-only database of colorectal cancer (CRC) biomarkers: curated biomarker records with literature references, single-cell RNA-seq analyses (UMAP, differential expression, predictive ability ROC, cell-cell communication/CellChat, network sensitivity, clinical evidence) for a 20,000+ cell human CRC dataset.
+
+The site exposes a public read-only JSON API and registers WebMCP tools for AI agents that execute page JavaScript. Machine-readable docs are at [/docs/api](https://cbd.biomarkerdb.cn/docs/api) (English) and [/docs/zh/api](https://cbd.biomarkerdb.cn/docs/zh/api) (简体中文).
+
+## Docs
+
+- [Public API reference](https://cbd.biomarkerdb.cn/docs/api): endpoints, authentication, rate limits, curl/Python/JavaScript examples
+- [公共 API 文档（中文）](https://cbd.biomarkerdb.cn/docs/zh/api): 中文版端点参考与示例
+
+## API
+
+All endpoints are GET (except POST /search/advanced) and return JSON envelopes `{ success, data, pagination }`. Base: https://cbd.biomarkerdb.cn/api
+
+- [Database statistics](https://cbd.biomarkerdb.cn/api/stats): record counts across the database
+- [Biomarker list](https://cbd.biomarkerdb.cn/api/biomarkers?category=Protein&limit=5): paged records; filters search/category/source/region/stage, page/limit
+- [Quick search](https://cbd.biomarkerdb.cn/api/search/quick?q=TP53): keyword search across records
+- [Gene expression](https://cbd.biomarkerdb.cn/api/scrna/gene-expr?gene=TP53,KRAS&limit=20000): per-cell expression of one or more genes (multi-gene returns per-cell mean)
+- [Cell-cell communication](https://cbd.biomarkerdb.cn/api/analysis/cellchat-raw?pathway_name=TGFb&limit=20): CellChat interactions with pathway annotation and evidence (KEGG/PMID)
+- [Differential expression](https://cbd.biomarkerdb.cn/api/analysis/gene-diff/celltype?gene=TP53): by cell type; also /api/analysis/gene-diff/tvsn (tumor vs normal) and /api/analysis/degs
+- [Predictive ability](https://cbd.biomarkerdb.cn/api/analysis/roc/tn?min_auc=0.7): ROC AUC of genes (tumor-vs-normal or cell type)
+- [Clinical survival](https://cbd.biomarkerdb.cn/api/clinical/survival?gene=TP53): survival analysis by gene; also /api/clinical/diagnosis and /api/clinical/immune
+- [Filter options](https://cbd.biomarkerdb.cn/api/analysis/metadata/filters): all valid cell types / samples / patients
+
+## Optional
+
+- Authentication is optional: send `X-API-Key: cbd_...` (request a free key from the maintainers, see /docs/5_cite) to get 6000 requests / 15 min instead of the anonymous 1000 requests / 15 min per IP. Downloads, submission, PRS computation and the STRING proxy are excluded from key benefits.
+- WebMCP: opening the site in a WebMCP-capable browser/extension exposes structured tools (search-biomarkers, get-gene-expression, get-cellchat-interactions, get-clinical-evidence, ...) via document.modelContext.
+- Bulk downloads (CSV) are available on the website's Download page rather than through the API.
