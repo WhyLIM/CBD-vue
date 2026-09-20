@@ -672,7 +672,8 @@
               <el-dialog v-model="moduleEnrichmentVisible" :title="`Module ${activeModule?.id + 1} — Functional Enrichment`"
                 width="70%">
                 <div v-loading="moduleEnrichmentLoading" style="min-height: 200px">
-                  <el-tabs v-if="moduleGroupedEnrichment && Object.keys(moduleGroupedEnrichment).length" type="card">
+                  <el-tabs v-if="moduleGroupedEnrichment && Object.keys(moduleGroupedEnrichment).length"
+                    v-model="moduleEnrichmentActiveTab" type="card">
                     <el-tab-pane v-for="(items, cat) in moduleGroupedEnrichment" :key="cat" :label="cat" :name="cat">
                       <el-table :data="items" max-height="360">
                         <el-table-column prop="term" label="Term" min-width="110">
@@ -872,10 +873,20 @@ const moduleEnrichmentVisible = ref(false)
 const moduleEnrichmentLoading = ref(false)
 const activeModule = ref(null)
 const moduleEnrichmentData = ref([])
+const moduleEnrichmentActiveTab = ref('')
 const moduleGroupedEnrichment = computed(() => {
   if (!moduleEnrichmentData.value?.length) return {}
   const processor = new EnrichmentProcessor()
   return processor.groupByCategory(moduleEnrichmentData.value)
+})
+
+// 数据异步到位后显式激活第一个分类：对话框内条件渲染的 el-tabs 若不绑定
+// v-model，内部不会自动激活任何面板，表现为表格空白、需手动点一次标签
+watch(moduleGroupedEnrichment, (grouped) => {
+  const keys = Object.keys(grouped)
+  if (keys.length && !keys.includes(moduleEnrichmentActiveTab.value)) {
+    moduleEnrichmentActiveTab.value = keys[0]
+  }
 })
 const moduleAssignments = computed(() => moduleData.value?.assignments || null)
 const modules = computed(() => moduleData.value?.modules || [])
@@ -1147,6 +1158,7 @@ const enrichModule = async (moduleRow) => {
   moduleEnrichmentVisible.value = true
   moduleEnrichmentLoading.value = true
   moduleEnrichmentData.value = []
+  moduleEnrichmentActiveTab.value = ''
   try {
     const raw = await stringApi.getEnrichmentAnalysis(moduleRow.genes, networkParams.value.species)
     if (raw && raw.length > 0) {
