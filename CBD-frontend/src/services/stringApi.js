@@ -156,11 +156,11 @@ class StringApiService {
     }
   }
 
-  // 获取网络统计信息
+  // 获取网络统计信息（STRING 的 PPI 富集端点，返回节点/边/平均度/聚集系数/期望边数/P值）
   async getNetworkStats(identifiers, species = '9606') {
     const params = { identifiers: this.joinIdentifiers(identifiers), species }
     try {
-      const response = await this.directGet('/json/stats', params)
+      const response = await this.directGet('/json/ppi_enrichment', params)
       return response.data
     } catch (directError) {
       console.warn('STRING stats direct failed, falling back to server proxy:', directError?.message)

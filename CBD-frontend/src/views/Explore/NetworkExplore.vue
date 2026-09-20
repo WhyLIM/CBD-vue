@@ -1437,6 +1437,7 @@ const formatStatLabel = (key) => {
     average_node_degree: 'Avg Degree',
     local_clustering_coefficient: 'Clustering Coeff',
     expected_number_of_edges: 'Expected Edges',
+    p_value: 'P-value',
     ppi_enrichment_p_value: 'P-value'
   }
   return labels[key] || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
