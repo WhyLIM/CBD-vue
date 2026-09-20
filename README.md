@@ -282,9 +282,10 @@ DB_PASSWORD=your_db_password
 DB_NAME=cbd
 # Python 解释器路径（服务器上若 python 命令不可用，需显式指定，如 /usr/bin/python3）
 PYTHON_BIN=python3
-# STRING-DB 代理地址（可选）：部署在出网被 Cloudflare 拦截的服务器上时必填，
+# STRING-DB 代理地址（可选）：部署在出网被 Cloudflare 拦截的服务器上时建议配置，
 # 指向本站 nginx 反代（需在伪静态中配置 location /string-db-proxy/ -> https://string-db.org/）
-# 不配置则后端直连 string-db.org，在被拦截的机器上 /api/string/* 会全部 403/500
+# 前端已改为浏览器直连 STRING 优先（访客网络出网正常即可用），代理仅作回落通道；
+# 若服务器 IP 被 string-db.org 整体拦截，代理回落也不可用，但站点功能不受影响
 STRING_BASE=https://your-domain.com/string-db-proxy
 ```
 
