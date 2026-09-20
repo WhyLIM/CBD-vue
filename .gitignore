@@ -155,6 +155,12 @@ CBD-backend/data/string_index.json
 # Python bytecode cache
 __pycache__/
 *.pyc
+
+# Python 虚拟环境
+.venv/
+venv/
+env/
+
 # Exclude codebuddy config
 .codebuddy
 Codebuddy*

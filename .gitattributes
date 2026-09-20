@@ -1,0 +1,18 @@
+# 统一行尾：仓库内一律 LF，避免 Windows 检出时 CRLF/LF 混用
+# （此前 database.js、analysis.js 等文件被编辑器转成 CRLF，git 操作持续产生行尾警告）
+* text=auto eol=lf
+
+# 二进制文件不做行尾处理
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.rds binary
