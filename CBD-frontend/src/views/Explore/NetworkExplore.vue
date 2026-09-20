@@ -785,12 +785,17 @@ const enrichmentData = ref([])
 const enrichmentActiveTab = ref('')
 const groupedEnrichment = computed(() => {
   const processor = new EnrichmentProcessor()
-  const grouped = processor.groupByCategory(enrichmentData.value || [])
+  return processor.groupByCategory(enrichmentData.value || [])
+})
+
+// 富集数据到位（或重新生成）后自动选中第一个分类：
+// 默认选中逻辑必须放在 watch 里，computed 内修改其它响应式状态会因
+// 渲染时序导致表格不渲染、需要手动再点一次标签
+watch(groupedEnrichment, (grouped) => {
   const keys = Object.keys(grouped)
-  if (!enrichmentActiveTab.value && keys.length) {
+  if (keys.length && (!enrichmentActiveTab.value || !keys.includes(enrichmentActiveTab.value))) {
     enrichmentActiveTab.value = keys[0]
   }
-  return grouped
 })
 const activeHelp = ref([])
 // Parameter Interpretation 面板整体展开/折叠：网络生成成功后自动折叠，可点击标题再展开
