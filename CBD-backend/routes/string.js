@@ -78,6 +78,10 @@ async function requestString(base, path, params, responseType = 'json') {
 }
 
 async function getStableBase() {
+    // STRING_BASE 显式指定（如走本站 nginx 反代规避出网 403）时，
+    // 始终使用该地址；不能被 stable_address 换回 string-db.org 官方域名，
+    // 否则服务器直连官方域名会被 Cloudflare 403
+    if (process.env.STRING_BASE) return PRIMARY_BASE
     const now = Date.now()
     if (cachedStableBase && (now - cachedAt) < CACHE_TTL_MS) return cachedStableBase
     try {
