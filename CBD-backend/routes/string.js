@@ -113,7 +113,7 @@ router.post('/network', async (req, res) => {
         const identifierString = identifiers
             .map(v => String(v).trim())
             .filter(v => v.length > 0)
-            .join('%0d');
+            .join('\r');
         const params = {
             identifiers: identifierString,
             species,
@@ -153,7 +153,7 @@ router.post('/stats', async (req, res) => {
         const identifierString = identifiers
             .map(v => String(v).trim())
             .filter(v => v.length > 0)
-            .join('%0d');
+            .join('\r');
         const params = {
             identifiers: identifierString,
             species
@@ -191,7 +191,7 @@ router.post('/enrichment', async (req, res) => {
         const identifierString = identifiers
             .map(v => String(v).trim())
             .filter(v => v.length > 0)
-            .join('%0d');
+            .join('\r');
         const params = {
             identifiers: identifierString,
             species
@@ -235,7 +235,7 @@ router.post('/resolve', async (req, res) => {
         const identifierString = identifiers
             .map(v => String(v).trim())
             .filter(v => v.length > 0)
-            .join('%0d');
+            .join('\r');
 
         const base = await getStableBase()
         const response = await requestString(base, '/json/get_string_ids', {
@@ -345,7 +345,7 @@ router.post('/expand', async (req, res) => {
         } else {
             // 上游两步：interaction_partners 取伙伴 -> network 取合并集合的带分数边
             const base = await getStableBase();
-            const identifierString = input.join('%0d');
+            const identifierString = input.join('\r');
             const ipResponse = await requestString(base, '/json/interaction_partners', {
                 identifiers: identifierString,
                 species,
@@ -362,7 +362,7 @@ router.post('/expand', async (req, res) => {
             const combinedIds = [...input, ...addedPartners];
             if (combinedIds.length > 0) {
                 const netResponse = await requestString(base, '/json/network', {
-                    identifiers: combinedIds.join('%0d'),
+                    identifiers: combinedIds.join('\r'),
                     species,
                     required_score: score,
                     network_type
@@ -454,7 +454,7 @@ router.post('/annotations', async (req, res) => {
         const identifierString = identifiers
             .map(v => String(v).trim())
             .filter(v => v.length > 0)
-            .join('%0d');
+            .join('\r');
 
         const base = await getStableBase()
         const response = await requestString(base, '/json/functional_annotation', {

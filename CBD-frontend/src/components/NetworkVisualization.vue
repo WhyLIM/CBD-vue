@@ -735,20 +735,18 @@ const addEventListeners = () => {
   }))
 
   // Node hover events（以 data(baseColor) 为基准做加深，兼容模块/对比等配色）
+  // cursor 不是 Cytoscape 合法样式属性，需设置在画布容器 DOM 上
   cy.on('mouseover', 'node', safeEventHandler((evt) => {
     const node = evt.target
-    // 最短路径高亮的节点保持路径配色，仅改指针
-    if (node.hasClass('path-highlight')) {
-      node.style('cursor', 'pointer')
-      return
+    cy.container().style.cursor = 'pointer'
+    // 最短路径高亮的节点保持路径配色
+    if (!node.hasClass('path-highlight')) {
+      node.style('background-color', darkenColor(node.data('baseColor'), 0.8))
     }
-    node.style({
-      'background-color': darkenColor(node.data('baseColor'), 0.8),
-      'cursor': 'pointer'
-    })
   }))
 
   cy.on('mouseout', 'node', safeEventHandler((evt) => {
+    cy.container().style.cursor = 'default'
     // 统一清除内联样式，回落到样式表状态（普通 / dimmed / path-highlight / selected 各自正确）
     evt.target.removeStyle()
   }))
@@ -756,22 +754,18 @@ const addEventListeners = () => {
   // Edge hover events
   cy.on('mouseover', 'edge', safeEventHandler((evt) => {
     const edge = evt.target
-    if (edge.hasClass('path-highlight')) {
-      edge.style('cursor', 'pointer')
-      return
-    }
+    cy.container().style.cursor = 'pointer'
+    if (edge.hasClass('path-highlight')) return
     if (edge.hasClass('dimmed')) {
       // 暗掉的边 hover 时临时点亮，移出后由 removeStyle 回到 dimmed 透明度
-      edge.style({ 'opacity': 1, 'cursor': 'pointer' })
+      edge.style({ 'opacity': 1 })
       return
     }
-    edge.style({
-      'line-color': darkenColor(edge.data('baseColor'), 0.7),
-      'cursor': 'pointer'
-    })
+    edge.style('line-color', darkenColor(edge.data('baseColor'), 0.7))
   }))
 
   cy.on('mouseout', 'edge', safeEventHandler((evt) => {
+    cy.container().style.cursor = 'default'
     evt.target.removeStyle()
   }))
 }

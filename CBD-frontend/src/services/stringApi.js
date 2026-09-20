@@ -16,12 +16,14 @@ class StringApiService {
     this.stableAddress = null
   }
 
-  // identifiers 数组 → STRING 的 %0d 分隔形式（与后端代理保持一致）
+  // identifiers 数组 → 分隔形式。注意必须用真实回车符 \r：
+  // axios 会对参数值做 URL 编码（\r → %0D，正是 STRING 文档要求的分隔符）；
+  // 若直接拼 '%0d' 字符串会被二次编码成 %250d，导致 STRING 返回 404
   joinIdentifiers(identifiers) {
     return identifiers
       .map(v => String(v).trim())
       .filter(v => v.length > 0)
-      .join('%0d')
+      .join('\r')
   }
 
   // 直连请求。返回 { success, data } 形状，与 api 实例响应拦截器的解包结果一致，
