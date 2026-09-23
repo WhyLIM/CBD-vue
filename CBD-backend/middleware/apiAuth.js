@@ -17,6 +17,37 @@ const KEY_CACHE_TTL = 5 * 60 * 1000;
 // last_used_at 每密钥至多每 60 秒回写一次，避免高频请求打写库
 const lastTouch = new Map();
 
+// 无效密钥尝试节流（按 IP）：格式正确但查无此钥的尝试会穿透缓存打一次 DB
+// SELECT，攻击者可用随机密钥做负载放大。同一 IP 在 INVALID_WINDOW_MS 内
+// 超过 INVALID_MAX 次无效尝试后直接 429，不再查库；密钥校验成功即清零。
+const INVALID_WINDOW_MS = 5 * 60 * 1000;
+const INVALID_MAX = 20;
+const invalidByIp = new Map();
+
+function sweepInvalid() {
+    const now = Date.now();
+    for (const [ip, rec] of invalidByIp) {
+        if (now - rec.windowStart > INVALID_WINDOW_MS) invalidByIp.delete(ip);
+    }
+}
+
+function recordInvalid(ip) {
+    if (invalidByIp.size > 5000) sweepInvalid();
+    const now = Date.now();
+    const rec = invalidByIp.get(ip);
+    if (!rec || now - rec.windowStart > INVALID_WINDOW_MS) {
+        invalidByIp.set(ip, { count: 1, windowStart: now });
+        return 1;
+    }
+    rec.count += 1;
+    return rec.count;
+}
+
+function invalidExceeded(ip) {
+    const rec = invalidByIp.get(ip);
+    return !!rec && rec.count >= INVALID_MAX && Date.now() - rec.windowStart <= INVALID_WINDOW_MS;
+}
+
 // 不允许通过 API 密钥提权访问的端点前缀（重型计算 / 写入 / 大体积导出）
 const RESTRICTED_PREFIXES = [
     '/api/download',
@@ -60,7 +91,17 @@ async function apiAuth(req, res, next) {
     const raw = req.get('X-API-Key');
     if (!raw) return next(); // 匿名访问，按 IP 限流
 
+    // 无效密钥尝试超限的 IP 直接 429，不再消耗 DB 查询
+    const ip = req.ip;
+    if (invalidExceeded(ip)) {
+        return res.status(429).json({
+            success: false,
+            error: 'Too many invalid API key attempts. Try again later.'
+        });
+    }
+
     if (!/^cbd_[0-9a-f]{32}$/.test(raw)) {
+        recordInvalid(ip);
         return res.status(401).json({
             success: false,
             error: 'Invalid API key format. Expected header: X-API-Key: cbd_<32 hex chars>.'
@@ -80,9 +121,11 @@ async function apiAuth(req, res, next) {
     }
 
     if (!row) {
+        recordInvalid(ip);
         return res.status(401).json({ success: false, error: 'Invalid or revoked API key.' });
     }
 
+    invalidByIp.delete(ip); // 校验成功，清除该 IP 的失败计数
     req.apiKeyId = row.id;
     req.apiRateLimit = row.rate_limit;
     req.apiKeyBypass = true;

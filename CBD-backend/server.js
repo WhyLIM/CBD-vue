@@ -8,6 +8,10 @@ const { initializeTables } = require('./config/database');
 
 const app = express();
 
+// 信任一级反向代理（宝塔 nginx）：使 req.ip 为真实客户端 IP。
+// 不配置的话所有用户 req.ip 都是 127.0.0.1，IP 限流会把全站用户算进同一个桶
+app.set('trust proxy', 1);
+
 // 中间件配置
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' }
